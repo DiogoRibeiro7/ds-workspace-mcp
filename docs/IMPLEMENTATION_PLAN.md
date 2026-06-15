@@ -82,10 +82,10 @@ Acceptance criteria:
 
 ### 3. Structured logging
 
-- [ ] Add `src/ds_workspace_mcp/logging_config.py`.
-- [ ] Configure logging from validated settings.
-- [ ] Log tool invocations and validation failures without leaking dataset contents.
-- [ ] Document logging configuration.
+- [x] Add `src/ds_workspace_mcp/logging_config.py`.
+- [x] Configure logging from validated settings.
+- [x] Log tool invocations and validation failures without leaking dataset contents.
+- [x] Document logging configuration.
 
 Acceptance criteria:
 - Logs include level, timestamp, module, and message.

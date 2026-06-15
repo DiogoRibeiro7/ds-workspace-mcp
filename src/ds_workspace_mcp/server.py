@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from mcp.server.fastmcp import FastMCP
 
 from ds_workspace_mcp.config import Settings, Transport, get_settings
@@ -11,7 +13,10 @@ from ds_workspace_mcp.core import (
     preview_csv_dataset,
     profile_csv_dataset,
 )
+from ds_workspace_mcp.logging_config import configure_logging
 from ds_workspace_mcp.profiling import DatasetProfile
+
+logger = logging.getLogger(__name__)
 
 
 def create_mcp(settings: Settings) -> FastMCP:
@@ -38,6 +43,7 @@ def list_datasets() -> str:
     """
 
     files = list_csv_files()
+    logger.info("Resource request datasets://catalog returned %s files", len(files))
 
     if not files:
         return "No CSV datasets found in the configured data directory."
@@ -58,6 +64,7 @@ def preview_csv(file_name: str, rows: int = 5) -> DatasetPreview:
         A structured preview of the dataset.
     """
 
+    logger.info("Tool preview_csv invoked file_name=%s rows=%s", file_name, rows)
     return preview_csv_dataset(file_name=file_name, rows=rows)
 
 
@@ -73,6 +80,7 @@ def profile_csv(file_name: str) -> DatasetProfile:
         Dataset shape, column names, dtypes, and missing-value statistics.
     """
 
+    logger.info("Tool profile_csv invoked file_name=%s", file_name)
     return profile_csv_dataset(file_name=file_name)
 
 
@@ -90,6 +98,7 @@ def detect_csv_issues(file_name: str) -> list[DatasetIssue]:
         A list of detected data-quality issues.
     """
 
+    logger.info("Tool detect_csv_issues invoked file_name=%s", file_name)
     return detect_csv_dataset_issues(file_name=file_name)
 
 
@@ -106,6 +115,11 @@ def dataset_analysis_prompt(file_name: str, objective: str = "exploratory analys
         A prompt that an MCP-compatible assistant can use.
     """
 
+    logger.info(
+        "Prompt dataset_analysis_prompt created file_name=%s objective_length=%s",
+        file_name,
+        len(objective),
+    )
     return f"""
 You are analysing the dataset `{file_name}`.
 
@@ -137,6 +151,14 @@ def get_transport() -> Transport:
 def main() -> None:
     """Run the MCP server."""
 
+    settings = get_settings()
+    configure_logging(settings)
+    logger.info(
+        "Starting MCP server transport=%s host=%s port=%s",
+        settings.mcp_transport,
+        settings.mcp_host,
+        settings.mcp_port,
+    )
     mcp.run(transport=get_transport())
 
 

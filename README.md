@@ -91,6 +91,20 @@ MCP_MAX_CATEGORICAL_VALUES=5
 MCP_LOG_LEVEL=INFO
 ```
 
+## Logging
+
+The server emits structured logs with timestamp, level, module, and message.
+
+- Tool and resource invocations are logged with dataset names and safe counts only.
+- Validation failures are logged clearly.
+- Full dataset contents and preview row payloads are intentionally not logged.
+
+Set the log level with `MCP_LOG_LEVEL`, for example:
+
+```bash
+MCP_LOG_LEVEL=DEBUG
+```
+
 ---
 
 ## Run with Streamable HTTP
