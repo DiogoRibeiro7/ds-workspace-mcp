@@ -14,10 +14,10 @@ Ship `v1.0.0` as a stable MCP server for local analytical workflows with explici
 
 ## Milestone 1: Public Contract
 
-- [ ] Create `docs/API_CONTRACT.md`.
-- [ ] Enumerate all public MCP resources, tools, prompts, CLI commands, and environment variables.
-- [ ] Document stable result-shape expectations and known heuristic outputs.
-- [ ] Define backward-compatibility rules for patch, minor, and major releases.
+- [x] Create `docs/API_CONTRACT.md`.
+- [x] Enumerate all public MCP resources, tools, prompts, CLI commands, and environment variables.
+- [x] Document stable result-shape expectations and known heuristic outputs.
+- [x] Define backward-compatibility rules for patch, minor, and major releases.
 
 Acceptance criteria:
 - A new contributor can tell which names and schemas are versioned.
@@ -29,8 +29,8 @@ Acceptance criteria:
 - [x] Add a `stdio` integration flow test.
 - [x] Add a Streamable HTTP integration flow test.
 - [x] Add a Streamable HTTP integration test with API-key auth enabled.
-- [ ] Run the integration suite in CI, or add a dedicated gated workflow for it.
-- [ ] Add smoke coverage for the example clients.
+- [x] Run the integration suite in CI, or add a dedicated gated workflow for it.
+- [x] Add smoke coverage for the example clients.
 
 Acceptance criteria:
 - The suite proves that real MCP clients can initialize sessions and call core tools over supported transports.

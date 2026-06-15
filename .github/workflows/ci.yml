@@ -46,5 +46,36 @@ jobs:
       - name: Run mypy
         run: poetry run mypy
 
-      - name: Run pytest
-        run: poetry run pytest
+      - name: Run unit and functional pytest suite
+        run: poetry run pytest -m "not integration"
+
+  integration:
+    name: Integration Checks (Python 3.11)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Configure Poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Cache virtual environment
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.11-${{ hashFiles('poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run integration pytest suite
+        run: poetry run pytest -m integration tests/integration tests/test_examples.py -vv
