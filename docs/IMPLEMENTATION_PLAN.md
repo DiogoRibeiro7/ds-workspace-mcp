@@ -170,3 +170,17 @@ Acceptance criteria:
 5. Add DuckDB support.
 6. Add SQLite and cache support.
 7. Add ML-oriented diagnostics after the core data-access layer is stable.
+
+## Additional Features
+
+### Baseline model evaluation
+
+- [x] Add `src/ds_workspace_mcp/ml/baselines.py`.
+- [x] Add regression, binary classification, and multiclass baseline evaluation.
+- [x] Keep the implementation limited to dummy baselines.
+- [x] Add tests for supported tasks and validation failures.
+
+Acceptance criteria:
+- Dummy baselines run for supported supervised tasks.
+- Missing target columns and insufficient data fail clearly.
+- Returned metrics are structured and bounded.

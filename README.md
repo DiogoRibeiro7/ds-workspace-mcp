@@ -378,6 +378,22 @@ Arguments:
 }
 ```
 
+#### `evaluate_baseline_model`
+
+Evaluate a dummy baseline model for regression, binary classification, or multiclass classification.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "target_column": "appointments_completed",
+  "task_type": "regression",
+  "test_size": 0.2,
+  "random_state": 42
+}
+```
+
 Example response shape:
 
 ```json
@@ -496,6 +512,12 @@ Time-series validation notes:
 - Timestamp parsing is conservative and fails if the declared time column cannot be parsed at all.
 - The validator checks sorting, duplicate timestamps, inferred frequency, missing intervals, grouped gaps, and missing target values.
 - History-length warnings are heuristic and intended for baseline forecasting readiness, not strict modeling requirements.
+
+Baseline model notes:
+
+- Only scikit-learn dummy baselines are used.
+- `regression`, `binary_classification`, and `multiclass_classification` are supported.
+- These metrics are reference baselines for comparison, not final model quality targets.
 
 ---
 

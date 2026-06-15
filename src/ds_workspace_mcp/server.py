@@ -20,6 +20,10 @@ from ds_workspace_mcp.diagnostics import (
     summarize_correlations_dataset,
 )
 from ds_workspace_mcp.logging_config import configure_logging
+from ds_workspace_mcp.ml.baselines import (
+    BaselineEvaluationResult,
+    evaluate_baseline_model_dataset,
+)
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
 from ds_workspace_mcp.sql.sqlite_engine import (
@@ -251,6 +255,31 @@ def validate_time_series_dataset_tool(
         time_column=time_column,
         target_column=target_column,
         group_column=group_column,
+    )
+
+
+@mcp.tool()
+def evaluate_baseline_model(
+    file_name: str,
+    target_column: str,
+    task_type: str,
+    test_size: float = 0.2,
+    random_state: int = 42,
+) -> BaselineEvaluationResult:
+    """Evaluate a dummy baseline model for a supervised learning task."""
+
+    logger.info(
+        "Tool evaluate_baseline_model invoked file_name=%s target_column=%s task_type=%s",
+        file_name,
+        target_column,
+        task_type,
+    )
+    return evaluate_baseline_model_dataset(
+        file_name=file_name,
+        target_column=target_column,
+        task_type=task_type,
+        test_size=test_size,
+        random_state=random_state,
     )
 
 
