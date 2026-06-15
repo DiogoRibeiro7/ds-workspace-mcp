@@ -14,6 +14,8 @@ from ds_workspace_mcp.core import (
 )
 from ds_workspace_mcp.exceptions import (
     DatasetNotFoundError,
+    DatasetReadError,
+    DatasetTooLargeError,
     InvalidDatasetNameError,
     PathTraversalError,
     ProfilingError,
@@ -163,3 +165,40 @@ def test_detect_csv_dataset_issues(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 
     assert "high_missingness" in issue_types
     assert "possible_identifier" in issue_types
+
+
+def test_preview_csv_dataset_rejects_oversized_dataset(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("MCP_MAX_DATASET_BYTES", "1024")
+    path = tmp_path / "large.csv"
+    path.write_text("value\n" + ("x" * 1500), encoding="utf-8")
+
+    with pytest.raises(DatasetTooLargeError, match="maximum allowed size"):
+        preview_csv_dataset("large.csv")
+
+
+def test_preview_csv_dataset_raises_clean_error_for_invalid_utf8(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    path = tmp_path / "invalid.csv"
+    path.write_bytes(b"value\n\xff\xfe\xfa\n")
+
+    with pytest.raises(DatasetReadError, match="Could not read dataset: invalid.csv"):
+        preview_csv_dataset("invalid.csv")
+
+
+def test_preview_csv_dataset_raises_clean_error_for_malformed_csv(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    path = tmp_path / "broken.csv"
+    path.write_text('name,value\n"north,10\nsouth,12\n', encoding="utf-8")
+
+    with pytest.raises(DatasetReadError, match="Could not read dataset: broken.csv"):
+        preview_csv_dataset("broken.csv")

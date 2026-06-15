@@ -181,7 +181,10 @@ def query_sqlite_database(
 
     settings = get_settings()
     safe_limit = _resolve_limit(limit=limit, max_sql_rows=settings.mcp_max_sql_rows)
-    normalized_sql = _validate_and_normalize_sql(sql)
+    normalized_sql = _validate_and_normalize_sql(
+        sql,
+        max_sql_query_length=settings.mcp_max_sql_query_length,
+    )
     path = resolve_sqlite_path(file_name)
 
     logger.info(
@@ -264,7 +267,7 @@ def _resolve_limit(limit: int | None, max_sql_rows: int) -> int:
     return limit
 
 
-def _validate_and_normalize_sql(sql: str) -> str:
+def _validate_and_normalize_sql(sql: str, max_sql_query_length: int) -> str:
     """Validate SQLite query safety and return a normalized statement."""
 
     normalized_sql = sql.strip()
@@ -273,6 +276,12 @@ def _validate_and_normalize_sql(sql: str) -> str:
 
     if not normalized_sql:
         raise InvalidSQLError("sql must be a non-empty string.")
+
+    if len(normalized_sql) > max_sql_query_length:
+        logger.warning("Rejected SQLite query because it exceeded the configured length limit.")
+        raise InvalidSQLError(
+            f"sql must not exceed {max_sql_query_length} characters."
+        )
 
     if ";" in normalized_sql:
         logger.warning("Rejected SQLite query because multiple statements were detected.")

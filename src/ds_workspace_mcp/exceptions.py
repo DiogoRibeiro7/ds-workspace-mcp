@@ -21,6 +21,14 @@ class DatasetNotFoundError(DsWorkspaceError, FileNotFoundError):
     """Raised when a requested dataset or database cannot be found."""
 
 
+class DatasetTooLargeError(DsWorkspaceError, ValueError):
+    """Raised when a dataset exceeds the configured size guardrail."""
+
+
+class DatasetReadError(DsWorkspaceError, RuntimeError):
+    """Raised when a dataset cannot be parsed or decoded safely."""
+
+
 class InvalidSQLError(DsWorkspaceError, ValueError):
     """Raised when a SQL statement is invalid or unsafe."""
 

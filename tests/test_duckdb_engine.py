@@ -108,3 +108,21 @@ def test_query_csv_with_duckdb_dataset_rejects_path_traversal(
             sql="SELECT * FROM dataset",
             limit=5,
         )
+
+
+def test_query_csv_with_duckdb_dataset_rejects_overlong_sql(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("MCP_MAX_SQL_QUERY_LENGTH", "100")
+    write_query_dataset(tmp_path)
+    sql_values = ", ".join(f"'{index}'" for index in range(30))
+    sql = f"SELECT * FROM dataset WHERE clinic IN ({sql_values})"
+
+    with pytest.raises(InvalidSQLError, match="must not exceed 100 characters"):
+        query_csv_with_duckdb_dataset(
+            file_name="query.csv",
+            sql=sql,
+            limit=5,
+        )

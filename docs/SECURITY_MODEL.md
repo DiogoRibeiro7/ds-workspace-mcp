@@ -124,7 +124,6 @@ If the service is reachable off-host, TLS and secret management must be handled 
 
 - no request rate limiting
 - no SQL timeout or cancellation support
-- no explicit dataset size ceiling
 - no content-based scanning for dangerous or unexpected files inside `MCP_DATA_ROOT`
 
 These gaps are operational hardening items rather than hidden behavior.

@@ -96,7 +96,9 @@ The server reads configuration from environment variables or a local `.env` file
 - `MCP_PORT`: bind port for HTTP mode. Defaults to `8000`.
 - `MCP_MAX_PREVIEW_ROWS`: maximum allowed value for `preview_csv`. Defaults to `50`.
 - `MCP_MAX_SQL_ROWS`: reserved maximum row limit for upcoming SQL tools. Defaults to `1000`.
+- `MCP_MAX_SQL_QUERY_LENGTH`: maximum allowed SQL text length for query tools. Defaults to `20000`.
 - `MCP_MAX_CATEGORICAL_VALUES`: maximum top-value examples returned per categorical column in `profile_csv`. Defaults to `5`.
+- `MCP_MAX_DATASET_BYTES`: maximum readable CSV dataset size in bytes. Defaults to `25000000`.
 - `MCP_PROFILE_CACHE_ENABLED`: enable or disable in-memory profile caching. Defaults to `true`.
 - `MCP_PROFILE_CACHE_MAX_ENTRIES`: maximum cached profile entries. Defaults to `128`.
 - `MCP_LOG_LEVEL`: server log level. Defaults to `INFO`.
@@ -114,7 +116,9 @@ MCP_HOST=127.0.0.1
 MCP_PORT=8000
 MCP_MAX_PREVIEW_ROWS=50
 MCP_MAX_SQL_ROWS=1000
+MCP_MAX_SQL_QUERY_LENGTH=20000
 MCP_MAX_CATEGORICAL_VALUES=5
+MCP_MAX_DATASET_BYTES=25000000
 MCP_PROFILE_CACHE_ENABLED=true
 MCP_PROFILE_CACHE_MAX_ENTRIES=128
 MCP_LOG_LEVEL=INFO
@@ -168,6 +172,8 @@ If tracing is enabled without the optional dependencies installed, the server co
 - `Only CSV files are supported.` or `Only SQLite files are supported.`: the requested file extension is not allowed for that tool.
 - `Access outside the configured data directory is not allowed.`: the request attempted path traversal such as `../...`.
 - `Could not profile dataset: ...`: the file could be opened but could not be profiled safely; validate the CSV structure and encoding.
+- `Could not read dataset: ...`: the CSV could not be decoded or parsed safely.
+- `Dataset exceeds the maximum allowed size ...`: the file is larger than the configured dataset-size guardrail.
 - `Destructive or schema-changing SQL is not allowed.`: the SQL tool only accepts bounded read-only `SELECT` or `WITH` queries.
 
 These errors intentionally avoid exposing absolute local paths in responses.
@@ -720,6 +726,7 @@ DuckDB query safety notes:
 - Destructive or schema-changing SQL is rejected.
 - External file-reading functions such as `read_csv(...)` are rejected.
 - A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
+- SQL text is bounded by `MCP_MAX_SQL_QUERY_LENGTH`.
 
 SQLite safety notes:
 
@@ -728,6 +735,7 @@ SQLite safety notes:
 - Schema-changing and destructive SQL is rejected.
 - Query execution is limited to a single `SELECT` or `WITH` statement.
 - A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
+- SQL text is bounded by `MCP_MAX_SQL_QUERY_LENGTH`.
 
 Diagnostics notes:
 

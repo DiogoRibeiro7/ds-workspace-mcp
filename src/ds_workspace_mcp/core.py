@@ -12,6 +12,8 @@ from ds_workspace_mcp.cache import ProfileCache, ProfileCacheKey
 from ds_workspace_mcp.config import get_settings
 from ds_workspace_mcp.exceptions import (
     DatasetNotFoundError,
+    DatasetReadError,
+    DatasetTooLargeError,
     InvalidDatasetNameError,
     PathTraversalError,
     ProfilingError,
@@ -141,8 +143,13 @@ def read_csv_dataset(file_name: str, nrows: int | None = None) -> pd.DataFrame:
         {"dataset.file_name": file_name, "dataset.nrows": nrows},
     ):
         path = resolve_dataset_path(file_name)
+        _validate_dataset_file_size(path)
         logger.info("Reading CSV dataset file_name=%s nrows=%s", file_name, nrows)
-        return pd.read_csv(path, nrows=nrows)
+        try:
+            return pd.read_csv(path, nrows=nrows)
+        except (UnicodeDecodeError, pd.errors.ParserError) as exc:
+            logger.warning("Failed to read CSV dataset file_name=%s", file_name)
+            raise DatasetReadError(f"Could not read dataset: {file_name}") from exc
 
 
 def preview_csv_dataset(file_name: str, rows: int = 5) -> DatasetPreview:
@@ -217,7 +224,7 @@ def profile_csv_dataset(file_name: str) -> DatasetProfile:
             return cached_profile
 
         try:
-            df = pd.read_csv(path)
+            df = read_csv_dataset(file_name=file_name)
             profile = build_dataset_profile(df=df, file_name=file_name)
         except Exception as exc:  # pragma: no cover - exercised by targeted tests
             logger.exception("Profiling failed for file_name=%s", file_name)
@@ -272,3 +279,20 @@ def detect_csv_dataset_issues(file_name: str) -> list[DatasetIssue]:
 
     logger.info("Detected %s dataset issues for file_name=%s", len(issues), file_name)
     return issues
+
+
+def _validate_dataset_file_size(path: Path) -> None:
+    """Reject datasets that exceed the configured maximum readable size."""
+
+    max_dataset_bytes = get_settings().mcp_max_dataset_bytes
+    file_size = path.stat().st_size
+    if file_size > max_dataset_bytes:
+        logger.warning(
+            "Rejected dataset because file_size=%s exceeded max_dataset_bytes=%s path=%s",
+            file_size,
+            max_dataset_bytes,
+            path.name,
+        )
+        raise DatasetTooLargeError(
+            f"Dataset exceeds the maximum allowed size of {max_dataset_bytes} bytes."
+        )

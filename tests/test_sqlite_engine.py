@@ -126,3 +126,21 @@ def test_query_sqlite_database_rejects_path_traversal(
             sql="SELECT * FROM visits",
             limit=5,
         )
+
+
+def test_query_sqlite_database_rejects_overlong_sql(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("MCP_MAX_SQL_QUERY_LENGTH", "100")
+    write_sqlite_database(tmp_path)
+    sql_values = ", ".join(f"'{index}'" for index in range(30))
+    sql = f"SELECT * FROM visits WHERE clinic IN ({sql_values})"
+
+    with pytest.raises(InvalidSQLError, match="must not exceed 100 characters"):
+        query_sqlite_database(
+            file_name="sample.sqlite",
+            sql=sql,
+            limit=5,
+        )

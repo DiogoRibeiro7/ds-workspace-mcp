@@ -15,7 +15,9 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 DEFAULT_MAX_PREVIEW_ROWS = 50
 DEFAULT_MAX_SQL_ROWS = 1000
+DEFAULT_MAX_SQL_QUERY_LENGTH = 20_000
 DEFAULT_MAX_CATEGORICAL_VALUES = 5
+DEFAULT_MAX_DATASET_BYTES = 25_000_000
 DEFAULT_PROFILE_CACHE_ENABLED = True
 DEFAULT_PROFILE_CACHE_MAX_ENTRIES = 128
 DEFAULT_LOG_LEVEL: LogLevel = "INFO"
@@ -39,7 +41,9 @@ class Settings(BaseSettings):
     mcp_port: int = DEFAULT_PORT
     mcp_max_preview_rows: int = DEFAULT_MAX_PREVIEW_ROWS
     mcp_max_sql_rows: int = DEFAULT_MAX_SQL_ROWS
+    mcp_max_sql_query_length: int = DEFAULT_MAX_SQL_QUERY_LENGTH
     mcp_max_categorical_values: int = DEFAULT_MAX_CATEGORICAL_VALUES
+    mcp_max_dataset_bytes: int = DEFAULT_MAX_DATASET_BYTES
     mcp_profile_cache_enabled: bool = DEFAULT_PROFILE_CACHE_ENABLED
     mcp_profile_cache_max_entries: int = DEFAULT_PROFILE_CACHE_MAX_ENTRIES
     mcp_log_level: LogLevel = DEFAULT_LOG_LEVEL
@@ -116,6 +120,15 @@ class Settings(BaseSettings):
             raise ValueError("MCP_MAX_SQL_ROWS must be between 1 and 10000.")
         return value
 
+    @field_validator("mcp_max_sql_query_length")
+    @classmethod
+    def validate_max_sql_query_length(cls, value: int) -> int:
+        """Constrain SQL query text length."""
+
+        if value < 100 or value > 100000:
+            raise ValueError("MCP_MAX_SQL_QUERY_LENGTH must be between 100 and 100000.")
+        return value
+
     @field_validator("mcp_max_categorical_values")
     @classmethod
     def validate_max_categorical_values(cls, value: int) -> int:
@@ -123,6 +136,15 @@ class Settings(BaseSettings):
 
         if value < 1 or value > 25:
             raise ValueError("MCP_MAX_CATEGORICAL_VALUES must be between 1 and 25.")
+        return value
+
+    @field_validator("mcp_max_dataset_bytes")
+    @classmethod
+    def validate_max_dataset_bytes(cls, value: int) -> int:
+        """Constrain the maximum readable dataset size."""
+
+        if value < 1024 or value > 500_000_000:
+            raise ValueError("MCP_MAX_DATASET_BYTES must be between 1024 and 500000000.")
         return value
 
     @field_validator("mcp_profile_cache_max_entries")

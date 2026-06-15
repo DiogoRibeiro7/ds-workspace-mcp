@@ -54,7 +54,10 @@ def query_csv_with_duckdb_dataset(
 
     settings = get_settings()
     safe_limit = _resolve_limit(limit=limit, max_sql_rows=settings.mcp_max_sql_rows)
-    normalized_sql = _validate_and_normalize_sql(sql)
+    normalized_sql = _validate_and_normalize_sql(
+        sql,
+        max_sql_query_length=settings.mcp_max_sql_query_length,
+    )
     df = read_csv_dataset(file_name=file_name)
 
     logger.info(
@@ -115,7 +118,7 @@ def _resolve_limit(limit: int | None, max_sql_rows: int) -> int:
     return limit
 
 
-def _validate_and_normalize_sql(sql: str) -> str:
+def _validate_and_normalize_sql(sql: str, max_sql_query_length: int) -> str:
     """Validate query safety and return a normalized single statement."""
 
     normalized_sql = sql.strip()
@@ -124,6 +127,12 @@ def _validate_and_normalize_sql(sql: str) -> str:
 
     if not normalized_sql:
         raise InvalidSQLError("sql must be a non-empty string.")
+
+    if len(normalized_sql) > max_sql_query_length:
+        logger.warning("Rejected DuckDB query because it exceeded the configured length limit.")
+        raise InvalidSQLError(
+            f"sql must not exceed {max_sql_query_length} characters."
+        )
 
     if ";" in normalized_sql:
         logger.warning("Rejected DuckDB query because multiple statements were detected.")
