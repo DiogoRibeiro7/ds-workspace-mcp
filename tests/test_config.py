@@ -13,6 +13,8 @@ from ds_workspace_mcp.config import (
     DEFAULT_MAX_PREVIEW_ROWS,
     DEFAULT_MAX_SQL_ROWS,
     DEFAULT_PORT,
+    DEFAULT_PROFILE_CACHE_ENABLED,
+    DEFAULT_PROFILE_CACHE_MAX_ENTRIES,
     Settings,
     get_settings,
 )
@@ -30,6 +32,8 @@ def test_settings_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert settings.mcp_max_preview_rows == DEFAULT_MAX_PREVIEW_ROWS
     assert settings.mcp_max_sql_rows == DEFAULT_MAX_SQL_ROWS
     assert settings.mcp_max_categorical_values == DEFAULT_MAX_CATEGORICAL_VALUES
+    assert settings.mcp_profile_cache_enabled is DEFAULT_PROFILE_CACHE_ENABLED
+    assert settings.mcp_profile_cache_max_entries == DEFAULT_PROFILE_CACHE_MAX_ENTRIES
     assert settings.mcp_log_level == DEFAULT_LOG_LEVEL
 
 
@@ -44,6 +48,7 @@ def test_settings_reject_invalid_row_limits(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("MCP_MAX_PREVIEW_ROWS", "0")
     monkeypatch.setenv("MCP_MAX_SQL_ROWS", "10001")
     monkeypatch.setenv("MCP_MAX_CATEGORICAL_VALUES", "30")
+    monkeypatch.setenv("MCP_PROFILE_CACHE_MAX_ENTRIES", "0")
 
     with pytest.raises(ValidationError) as exc_info:
         Settings()
@@ -52,6 +57,7 @@ def test_settings_reject_invalid_row_limits(monkeypatch: pytest.MonkeyPatch) -> 
     assert "MCP_MAX_PREVIEW_ROWS" in message
     assert "MCP_MAX_SQL_ROWS" in message
     assert "MCP_MAX_CATEGORICAL_VALUES" in message
+    assert "MCP_PROFILE_CACHE_MAX_ENTRIES" in message
 
 
 def test_settings_accept_custom_data_root(

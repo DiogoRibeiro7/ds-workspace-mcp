@@ -130,10 +130,10 @@ Acceptance criteria:
 
 ### 2. Metadata caching
 
-- [ ] Create `src/ds_workspace_mcp/cache.py`.
-- [ ] Cache profile results by path, size, mtime, and options.
-- [ ] Add cache enable/disable and max-entry settings.
-- [ ] Add tests for invalidation and disabled mode.
+- [x] Create `src/ds_workspace_mcp/cache.py`.
+- [x] Cache profile results by path, size, mtime, and options.
+- [x] Add cache enable/disable and max-entry settings.
+- [x] Add tests for invalidation and disabled mode.
 
 Acceptance criteria:
 - Repeated profiling uses valid cached metadata.

@@ -8,10 +8,12 @@ from typing import cast
 import pandas as pd
 from pydantic import BaseModel
 
+from ds_workspace_mcp.cache import ProfileCache, ProfileCacheKey
 from ds_workspace_mcp.config import get_settings
 from ds_workspace_mcp.profiling import DatasetProfile, build_dataset_profile
 
 logger = logging.getLogger(__name__)
+profile_cache = ProfileCache(enabled=True, max_entries=1)
 
 
 class DatasetPreview(BaseModel):
@@ -47,6 +49,12 @@ def get_data_root() -> Path:
     """
 
     return get_settings().mcp_data_root
+
+
+def reset_profile_cache() -> None:
+    """Clear the profile cache for tests or runtime resets."""
+
+    profile_cache.clear()
 
 
 def resolve_dataset_path(file_name: str) -> Path:
@@ -176,8 +184,27 @@ def profile_csv_dataset(file_name: str) -> DatasetProfile:
         A structured profile containing shape, columns, dtypes, and missing values.
     """
 
-    df = read_csv_dataset(file_name=file_name)
+    path = resolve_dataset_path(file_name)
+    settings = get_settings()
+    stat = path.stat()
+    cache_key = ProfileCacheKey(
+        path=path,
+        file_size=stat.st_size,
+        modified_time_ns=stat.st_mtime_ns,
+        max_categorical_values=settings.mcp_max_categorical_values,
+    )
+
+    profile_cache._enabled = settings.mcp_profile_cache_enabled
+    profile_cache._max_entries = settings.mcp_profile_cache_max_entries
+
+    cached_profile = profile_cache.get(cache_key)
+    if cached_profile is not None:
+        logger.info("Returned cached dataset profile for file_name=%s", file_name)
+        return cached_profile
+
+    df = pd.read_csv(path)
     profile = build_dataset_profile(df=df, file_name=file_name)
+    profile_cache.set(cache_key, profile)
     logger.info(
         "Built dataset profile for file_name=%s row_count=%s column_count=%s",
         file_name,

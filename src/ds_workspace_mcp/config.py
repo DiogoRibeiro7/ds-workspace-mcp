@@ -16,6 +16,8 @@ DEFAULT_PORT = 8000
 DEFAULT_MAX_PREVIEW_ROWS = 50
 DEFAULT_MAX_SQL_ROWS = 1000
 DEFAULT_MAX_CATEGORICAL_VALUES = 5
+DEFAULT_PROFILE_CACHE_ENABLED = True
+DEFAULT_PROFILE_CACHE_MAX_ENTRIES = 128
 DEFAULT_LOG_LEVEL: LogLevel = "INFO"
 
 
@@ -35,6 +37,8 @@ class Settings(BaseSettings):
     mcp_max_preview_rows: int = DEFAULT_MAX_PREVIEW_ROWS
     mcp_max_sql_rows: int = DEFAULT_MAX_SQL_ROWS
     mcp_max_categorical_values: int = DEFAULT_MAX_CATEGORICAL_VALUES
+    mcp_profile_cache_enabled: bool = DEFAULT_PROFILE_CACHE_ENABLED
+    mcp_profile_cache_max_entries: int = DEFAULT_PROFILE_CACHE_MAX_ENTRIES
     mcp_log_level: LogLevel = DEFAULT_LOG_LEVEL
 
     @field_validator("mcp_data_root", mode="after")
@@ -92,6 +96,15 @@ class Settings(BaseSettings):
 
         if value < 1 or value > 25:
             raise ValueError("MCP_MAX_CATEGORICAL_VALUES must be between 1 and 25.")
+        return value
+
+    @field_validator("mcp_profile_cache_max_entries")
+    @classmethod
+    def validate_profile_cache_max_entries(cls, value: int) -> int:
+        """Constrain profile cache size."""
+
+        if value < 1 or value > 1024:
+            raise ValueError("MCP_PROFILE_CACHE_MAX_ENTRIES must be between 1 and 1024.")
         return value
 
 

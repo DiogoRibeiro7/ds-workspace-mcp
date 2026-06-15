@@ -78,6 +78,8 @@ The server reads configuration from environment variables or a local `.env` file
 - `MCP_MAX_PREVIEW_ROWS`: maximum allowed value for `preview_csv`. Defaults to `50`.
 - `MCP_MAX_SQL_ROWS`: reserved maximum row limit for upcoming SQL tools. Defaults to `1000`.
 - `MCP_MAX_CATEGORICAL_VALUES`: maximum top-value examples returned per categorical column in `profile_csv`. Defaults to `5`.
+- `MCP_PROFILE_CACHE_ENABLED`: enable or disable in-memory profile caching. Defaults to `true`.
+- `MCP_PROFILE_CACHE_MAX_ENTRIES`: maximum cached profile entries. Defaults to `128`.
 - `MCP_LOG_LEVEL`: server log level. Defaults to `INFO`.
 
 Example:
@@ -90,6 +92,8 @@ MCP_PORT=8000
 MCP_MAX_PREVIEW_ROWS=50
 MCP_MAX_SQL_ROWS=1000
 MCP_MAX_CATEGORICAL_VALUES=5
+MCP_PROFILE_CACHE_ENABLED=true
+MCP_PROFILE_CACHE_MAX_ENTRIES=128
 MCP_LOG_LEVEL=INFO
 ```
 
@@ -248,6 +252,7 @@ Profiling limits:
 - Categorical examples are intentionally bounded by `MCP_MAX_CATEGORICAL_VALUES`.
 - The profiler returns summaries rather than raw wide-table payloads.
 - Datetime detection is conservative to avoid misclassifying free-text columns.
+- Profile results are cached in memory by file path, size, modified time, and profiling options.
 
 #### `detect_csv_issues`
 
