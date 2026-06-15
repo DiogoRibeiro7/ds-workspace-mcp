@@ -540,6 +540,21 @@ poetry run pytest
 
 GitHub Actions runs those checks on pushes to `main` and `develop`, and on pull requests, across Python 3.11 and 3.12.
 
+## Notebooks
+
+The repository includes two walkthrough notebooks in `notebooks/`:
+
+- `01_mcp_dataset_inspection.ipynb`: dataset discovery, preview, profiling, issue detection, and correlation inspection on the bundled sample CSV.
+- `02_forecasting_readiness_workflow.ipynb`: synthetic healthcare dataset generation, time-series validation, leakage review, and baseline regression evaluation.
+
+To run them locally, start Jupyter from the project environment:
+
+```bash
+poetry run jupyter notebook
+```
+
+If Jupyter is not installed in your Poetry environment yet, install it in that environment first with your preferred tool.
+
 ## Project Docs
 
 - `CHANGELOG.md`: user-facing change history
@@ -579,6 +594,12 @@ docker compose up --build
 ```
 
 The Compose setup binds the server to `0.0.0.0`, publishes port `8000`, and mounts the local `data/` directory into the container at `/app/data`.
+
+To inspect the running HTTP server with MCP Inspector:
+
+```bash
+npx -y @modelcontextprotocol/inspector
+```
 
 To stop the stack:
 

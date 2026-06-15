@@ -230,3 +230,15 @@ Acceptance criteria:
 - The service can be started with `docker compose up --build`.
 - The HTTP endpoint is reachable on port `8000`.
 - Local datasets remain available inside the container through `/app/data`.
+
+### Notebook demos
+
+- [x] Create a `notebooks/` directory.
+- [x] Add a dataset inspection notebook using the bundled sample CSV.
+- [x] Add a forecasting-readiness notebook using the synthetic healthcare workflow.
+- [x] Document notebook usage in the README.
+
+Acceptance criteria:
+- The notebooks demonstrate realistic analytical reasoning around the shipped tools.
+- The demos do not require private credentials.
+- README explains how to run the notebooks locally.

@@ -25,7 +25,7 @@
 - [x] Add baseline model evaluation tools.
 - [x] Add time-series frequency detection.
 - [x] Add forecasting dataset validation.
-- [ ] Add notebook-based walkthroughs.
+- [x] Add notebook-based walkthroughs.
 
 ## v0.4 — Production polish
 
@@ -34,7 +34,7 @@
 - [x] Add configuration validation.
 - [ ] Add OpenTelemetry hooks.
 - [ ] Add authentication support for HTTP deployment.
-- [ ] Add deployment example with Docker Compose.
+- [x] Add deployment example with Docker Compose.
 
 ## v0.5 — Project polish
 
