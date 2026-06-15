@@ -15,6 +15,7 @@ from ds_workspace_mcp.core import (
 )
 from ds_workspace_mcp.logging_config import configure_logging
 from ds_workspace_mcp.profiling import DatasetProfile
+from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,32 @@ def detect_csv_issues(file_name: str) -> list[DatasetIssue]:
 
     logger.info("Tool detect_csv_issues invoked file_name=%s", file_name)
     return detect_csv_dataset_issues(file_name=file_name)
+
+
+@mcp.tool()
+def query_csv_with_duckdb(
+    file_name: str,
+    sql: str,
+    limit: int | None = None,
+) -> DuckDBQueryResult:
+    """
+    Run a safe read-only DuckDB query against a CSV dataset.
+
+    Args:
+        file_name: CSV file name inside the configured data directory.
+        sql: A single SELECT or WITH query against the `dataset` table.
+        limit: Optional maximum number of rows to return.
+
+    Returns:
+        Structured query results with bounded rows and column names.
+    """
+
+    logger.info(
+        "Tool query_csv_with_duckdb invoked file_name=%s limit=%s",
+        file_name,
+        limit,
+    )
+    return query_csv_with_duckdb_dataset(file_name=file_name, sql=sql, limit=limit)
 
 
 @mcp.prompt()

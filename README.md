@@ -255,6 +255,34 @@ Arguments:
 }
 ```
 
+#### `query_csv_with_duckdb`
+
+Run a safe read-only DuckDB query against the CSV loaded as a temporary table named `dataset`.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "sql": "SELECT clinic_id, AVG(appointments_completed) AS avg_completed FROM dataset GROUP BY clinic_id ORDER BY avg_completed DESC",
+  "limit": 10
+}
+```
+
+Example response shape:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "columns": ["clinic_id", "avg_completed"],
+  "rows": [
+    {"clinic_id": "north", "avg_completed": 82.5}
+  ],
+  "row_count": 1,
+  "limit_applied": 10
+}
+```
+
 ### Prompt
 
 #### `dataset_analysis_prompt`
@@ -331,6 +359,14 @@ The server does not read arbitrary files.
 All dataset paths are resolved inside `MCP_DATA_ROOT`, which defaults to `./data`. Path traversal attempts such as `../secret.csv` are rejected.
 
 Only `.csv` files are supported in this first version.
+
+DuckDB query safety notes:
+
+- CSV files are resolved through the existing safe data-root checks before DuckDB sees any data.
+- Queries must be a single `SELECT` or `WITH` statement against the temporary `dataset` table.
+- Destructive or schema-changing SQL is rejected.
+- External file-reading functions such as `read_csv(...)` are rejected.
+- A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
 
 ---
 

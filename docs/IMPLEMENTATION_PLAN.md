@@ -104,11 +104,11 @@ Acceptance criteria:
 
 ### 5. DuckDB query support
 
-- [ ] Add DuckDB as a dependency.
-- [ ] Create `src/ds_workspace_mcp/sql/duckdb_engine.py`.
-- [ ] Add a safe `query_csv_with_duckdb` tool.
-- [ ] Enforce read-only behavior, statement restrictions, and row limits.
-- [ ] Add tests for valid queries and blocked SQL.
+- [x] Add DuckDB as a dependency.
+- [x] Create `src/ds_workspace_mcp/sql/duckdb_engine.py`.
+- [x] Add a safe `query_csv_with_duckdb` tool.
+- [x] Enforce read-only behavior, statement restrictions, and row limits.
+- [x] Add tests for valid queries and blocked SQL.
 
 Acceptance criteria:
 - Only safe read-only queries against datasets inside the data root are allowed.
