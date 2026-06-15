@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "ds-workspace-mcp"
+version = "0.1.0"
+description = "A Model Context Protocol server for safely inspecting and profiling local analytical datasets."
+authors = ["Diogo Ribeiro <hansolo.dj@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "ds_workspace_mcp", from = "src" }]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+mcp = {extras = ["cli"], version = "^1.9.0"}
+pandas = "^2.2.0"
+pydantic = "^2.7.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+ruff = "^0.5.0"
+mypy = "^1.10.0"
+pandas-stubs = "^2.2.0"
+
+[tool.poetry.scripts]
+ds-workspace-mcp = "ds_workspace_mcp.server:main"
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+files = ["src", "tests"]
