@@ -33,18 +33,37 @@ Good use cases:
 
 ```text
 ds-workspace-mcp/
+├── docs/
+│   ├── IMPLEMENTATION_PLAN.md
+│   └── RELEASE_CHECKLIST.md
+├── examples/
+│   ├── http_client.py
+│   └── stdio_client.py
 ├── data/
 │   └── sample_clinic_usage.csv
 ├── src/
 │   └── ds_workspace_mcp/
-│       ├── __init__.py
+│       ├── cli.py
 │       ├── core.py
-│       └── server.py
+│       ├── diagnostics.py
+│       ├── profiling.py
+│       ├── server.py
+│       ├── timeseries.py
+│       ├── ml/
+│       ├── sql/
+│       └── synthetic/
 ├── tests/
-│   └── test_core.py
+│   ├── test_core.py
+│   ├── test_cli.py
+│   ├── test_diagnostics.py
+│   ├── test_synthetic_healthcare.py
+│   └── test_timeseries.py
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── SECURITY.md
 ├── .env.example
 ├── .gitignore
-├── AGENTS.md
 ├── Dockerfile
 ├── README.md
 ├── ROADMAP.md
@@ -479,20 +498,6 @@ Arguments:
 }
 ```
 
-Example response shape:
-
-```json
-{
-  "file_name": "sample_clinic_usage.csv",
-  "columns": ["clinic_id", "avg_completed"],
-  "rows": [
-    {"clinic_id": "north", "avg_completed": 82.5}
-  ],
-  "row_count": 1,
-  "limit_applied": 10
-}
-```
-
 ### Prompt
 
 #### `dataset_analysis_prompt`
@@ -534,6 +539,13 @@ poetry run pytest
 ```
 
 GitHub Actions runs those checks on pushes to `main` and `develop`, and on pull requests, across Python 3.11 and 3.12.
+
+## Project Docs
+
+- `CHANGELOG.md`: user-facing change history
+- `CONTRIBUTING.md`: local development and PR expectations
+- `SECURITY.md`: security reporting and hardening expectations
+- `docs/RELEASE_CHECKLIST.md`: release prep checklist
 
 ---
 

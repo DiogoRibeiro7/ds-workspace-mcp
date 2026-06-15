@@ -12,26 +12,33 @@
 
 ## v0.2 — Better analytical workspace
 
-- [ ] Add DuckDB support.
-- [ ] Add SQLite support.
-- [ ] Add a safe SQL query tool with mandatory row limits.
-- [ ] Add dataset-level metadata cache.
-- [ ] Add column summaries for numeric, categorical, and datetime variables.
-- [ ] Add correlation summaries for numeric columns.
+- [x] Add DuckDB support.
+- [x] Add SQLite support.
+- [x] Add a safe SQL query tool with mandatory row limits.
+- [x] Add dataset-level metadata cache.
+- [x] Add column summaries for numeric, categorical, and datetime variables.
+- [x] Add correlation summaries for numeric columns.
 
 ## v0.3 — ML-oriented tools
 
-- [ ] Add train/test split diagnostics.
-- [ ] Add target leakage checks.
-- [ ] Add baseline model evaluation tools.
-- [ ] Add time-series frequency detection.
-- [ ] Add forecasting dataset validation.
+- [x] Add target leakage checks.
+- [x] Add baseline model evaluation tools.
+- [x] Add time-series frequency detection.
+- [x] Add forecasting dataset validation.
+- [ ] Add notebook-based walkthroughs.
 
 ## v0.4 — Production polish
 
-- [ ] Add GitHub Actions CI.
-- [ ] Add structured logging.
-- [ ] Add configuration validation.
+- [x] Add GitHub Actions CI.
+- [x] Add structured logging.
+- [x] Add configuration validation.
 - [ ] Add OpenTelemetry hooks.
 - [ ] Add authentication support for HTTP deployment.
 - [ ] Add deployment example with Docker Compose.
+
+## v0.5 — Project polish
+
+- [x] Add synthetic healthcare dataset generation.
+- [x] Add local workflow CLI.
+- [x] Add MCP client examples.
+- [ ] Add release packaging and publishing workflow.
