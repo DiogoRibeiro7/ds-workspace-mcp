@@ -16,6 +16,19 @@ from ds_workspace_mcp.core import (
 from ds_workspace_mcp.logging_config import configure_logging
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
+from ds_workspace_mcp.sql.sqlite_engine import (
+    SQLiteDatabaseInfo,
+    SQLiteQueryResult,
+    SQLiteTableSchema,
+    list_sqlite_files,
+    query_sqlite_database,
+)
+from ds_workspace_mcp.sql.sqlite_engine import (
+    describe_sqlite_table as describe_sqlite_table_dataset,
+)
+from ds_workspace_mcp.sql.sqlite_engine import (
+    list_sqlite_tables as list_sqlite_tables_dataset,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +61,19 @@ def list_datasets() -> str:
 
     if not files:
         return "No CSV datasets found in the configured data directory."
+
+    return "\n".join(files)
+
+
+@mcp.resource("databases://sqlite")
+def list_sqlite_databases() -> str:
+    """List SQLite databases available to the assistant."""
+
+    files = list_sqlite_files()
+    logger.info("Resource request databases://sqlite returned %s files", len(files))
+
+    if not files:
+        return "No SQLite databases found in the configured data directory."
 
     return "\n".join(files)
 
@@ -127,6 +153,46 @@ def query_csv_with_duckdb(
         limit,
     )
     return query_csv_with_duckdb_dataset(file_name=file_name, sql=sql, limit=limit)
+
+
+@mcp.tool()
+def list_sqlite_databases_tool() -> list[SQLiteDatabaseInfo]:
+    """Return SQLite database files available in the configured data directory."""
+
+    logger.info("Tool list_sqlite_databases_tool invoked")
+    return [SQLiteDatabaseInfo(file_name=file_name) for file_name in list_sqlite_files()]
+
+
+@mcp.tool()
+def list_sqlite_tables(file_name: str) -> list[str]:
+    """List user tables from a SQLite database."""
+
+    logger.info("Tool list_sqlite_tables invoked file_name=%s", file_name)
+    return list_sqlite_tables_dataset(file_name=file_name)
+
+
+@mcp.tool()
+def describe_sqlite_table(file_name: str, table_name: str) -> SQLiteTableSchema:
+    """Describe a SQLite table schema."""
+
+    logger.info(
+        "Tool describe_sqlite_table invoked file_name=%s table_name=%s",
+        file_name,
+        table_name,
+    )
+    return describe_sqlite_table_dataset(file_name=file_name, table_name=table_name)
+
+
+@mcp.tool()
+def query_sqlite(
+    file_name: str,
+    sql: str,
+    limit: int | None = None,
+) -> SQLiteQueryResult:
+    """Run a safe read-only SQLite query against a database in the data directory."""
+
+    logger.info("Tool query_sqlite invoked file_name=%s limit=%s", file_name, limit)
+    return query_sqlite_database(file_name=file_name, sql=sql, limit=limit)
 
 
 @mcp.prompt()

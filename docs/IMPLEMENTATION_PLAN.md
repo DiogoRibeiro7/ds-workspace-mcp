@@ -119,10 +119,10 @@ Acceptance criteria:
 
 ### 1. SQLite support
 
-- [ ] Create `src/ds_workspace_mcp/sql/sqlite_engine.py`.
-- [ ] Add database discovery, table listing, schema description, and safe querying.
-- [ ] Reuse current path safety patterns.
-- [ ] Add SQLite fixtures and tests.
+- [x] Create `src/ds_workspace_mcp/sql/sqlite_engine.py`.
+- [x] Add database discovery, table listing, schema description, and safe querying.
+- [x] Reuse current path safety patterns.
+- [x] Add SQLite fixtures and tests.
 
 Acceptance criteria:
 - SQLite databases inside the configured data directory are queryable in read-only mode.

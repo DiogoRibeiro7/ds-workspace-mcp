@@ -157,6 +157,12 @@ datasets://catalog
 
 Returns the list of CSV files available in the configured data directory.
 
+```text
+databases://sqlite
+```
+
+Returns the list of SQLite database files available in the configured data directory.
+
 ### Tools
 
 #### `preview_csv`
@@ -269,6 +275,63 @@ Arguments:
 }
 ```
 
+#### `list_sqlite_databases_tool`
+
+Return the SQLite database files available in the configured data directory.
+
+#### `list_sqlite_tables`
+
+List user tables from a SQLite database.
+
+Arguments:
+
+```json
+{
+  "file_name": "clinic_metrics.sqlite"
+}
+```
+
+#### `describe_sqlite_table`
+
+Describe the columns for a SQLite table.
+
+Arguments:
+
+```json
+{
+  "file_name": "clinic_metrics.sqlite",
+  "table_name": "visits"
+}
+```
+
+#### `query_sqlite`
+
+Run a safe read-only SQLite query against a database inside the configured data directory.
+
+Arguments:
+
+```json
+{
+  "file_name": "clinic_metrics.sqlite",
+  "sql": "SELECT clinic, SUM(appointments) AS total_appointments FROM visits GROUP BY clinic ORDER BY total_appointments DESC",
+  "limit": 10
+}
+```
+
+Example response shape:
+
+```json
+{
+  "file_name": "clinic_metrics.sqlite",
+  "columns": ["clinic", "total_appointments"],
+  "rows": [
+    {"clinic": "north", "total_appointments": 22}
+  ],
+  "row_count": 1,
+  "limit_applied": 10
+}
+```
+
 Example response shape:
 
 ```json
@@ -366,6 +429,14 @@ DuckDB query safety notes:
 - Queries must be a single `SELECT` or `WITH` statement against the temporary `dataset` table.
 - Destructive or schema-changing SQL is rejected.
 - External file-reading functions such as `read_csv(...)` are rejected.
+- A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
+
+SQLite safety notes:
+
+- Only `.sqlite`, `.sqlite3`, and `.db` files inside `MCP_DATA_ROOT` are allowed.
+- SQLite connections are opened in read-only mode.
+- Schema-changing and destructive SQL is rejected.
+- Query execution is limited to a single `SELECT` or `WITH` statement.
 - A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
 
 ---
