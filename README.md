@@ -100,6 +100,7 @@ The server reads configuration from environment variables or a local `.env` file
 - `MCP_PROFILE_CACHE_ENABLED`: enable or disable in-memory profile caching. Defaults to `true`.
 - `MCP_PROFILE_CACHE_MAX_ENTRIES`: maximum cached profile entries. Defaults to `128`.
 - `MCP_LOG_LEVEL`: server log level. Defaults to `INFO`.
+- `MCP_API_KEY`: optional shared bearer token for Streamable HTTP mode. Disabled by default.
 
 Example:
 
@@ -114,6 +115,7 @@ MCP_MAX_CATEGORICAL_VALUES=5
 MCP_PROFILE_CACHE_ENABLED=true
 MCP_PROFILE_CACHE_MAX_ENTRIES=128
 MCP_LOG_LEVEL=INFO
+MCP_API_KEY=
 ```
 
 ## Logging
@@ -539,6 +541,22 @@ poetry run pytest
 ```
 
 GitHub Actions runs those checks on pushes to `main` and `develop`, and on pull requests, across Python 3.11 and 3.12.
+
+## Security
+
+For local-only work, the default configuration keeps HTTP auth disabled.
+
+If you set `MCP_API_KEY`, Streamable HTTP mode requires:
+
+```text
+Authorization: Bearer <your-key>
+```
+
+Limitations of this approach:
+
+- it is a simple shared secret, not a full user or OAuth system;
+- it does not apply to `stdio` transport;
+- it should be paired with HTTPS and normal secret management if exposed beyond local development.
 
 ## Packaging and Release
 

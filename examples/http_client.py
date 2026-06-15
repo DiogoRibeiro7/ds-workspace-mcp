@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 
 from mcp.client.session import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
@@ -12,8 +13,13 @@ SERVER_URL = "http://127.0.0.1:8000/mcp"
 async def main() -> None:
     """Connect to the local server over Streamable HTTP and inspect one dataset."""
 
+    headers = None
+    api_key = os.getenv("MCP_API_KEY")
+    if api_key:
+        headers = {"Authorization": f"Bearer {api_key}"}
+
     async with (
-        streamablehttp_client(SERVER_URL) as (read_stream, write_stream, _),
+        streamablehttp_client(SERVER_URL, headers=headers) as (read_stream, write_stream, _),
         ClientSession(read_stream, write_stream) as session,
     ):
         await session.initialize()

@@ -254,3 +254,15 @@ Acceptance criteria:
 - `poetry build` produces a wheel and source distribution locally.
 - GitHub can build release artifacts on demand.
 - Tag pushes can publish to PyPI once repository secrets are configured.
+
+### HTTP authentication
+
+- [x] Add an optional `MCP_API_KEY` setting.
+- [x] Restrict bearer-token auth to Streamable HTTP mode.
+- [x] Add tests for disabled, missing, invalid, and valid auth flows.
+- [x] Document the shared-secret limitations in the README.
+
+Acceptance criteria:
+- HTTP auth remains disabled by default.
+- `stdio` mode behavior is unchanged.
+- HTTP requests without a valid bearer token are rejected when `MCP_API_KEY` is set.

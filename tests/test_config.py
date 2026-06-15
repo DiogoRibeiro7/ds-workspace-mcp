@@ -35,6 +35,7 @@ def test_settings_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert settings.mcp_profile_cache_enabled is DEFAULT_PROFILE_CACHE_ENABLED
     assert settings.mcp_profile_cache_max_entries == DEFAULT_PROFILE_CACHE_MAX_ENTRIES
     assert settings.mcp_log_level == DEFAULT_LOG_LEVEL
+    assert settings.mcp_api_key is None
 
 
 def test_settings_reject_invalid_transport(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -72,3 +73,11 @@ def test_settings_accept_custom_data_root(
     assert settings.mcp_data_root == custom_root.resolve()
     assert settings.mcp_data_root.exists()
     assert settings.mcp_data_root.is_dir()
+
+
+def test_settings_treat_blank_api_key_as_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MCP_API_KEY", "   ")
+
+    settings = Settings()
+
+    assert settings.mcp_api_key is None

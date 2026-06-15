@@ -22,6 +22,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Local workflow CLI commands.
 - Runnable MCP client examples for stdio and Streamable HTTP.
 - Release packaging metadata and a GitHub Actions publishing workflow.
+- Optional bearer-token authentication for Streamable HTTP deployments.
 
 ## [0.1.0] - 2026-06-15
 

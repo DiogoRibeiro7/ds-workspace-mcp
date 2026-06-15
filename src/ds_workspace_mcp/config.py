@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     mcp_profile_cache_enabled: bool = DEFAULT_PROFILE_CACHE_ENABLED
     mcp_profile_cache_max_entries: int = DEFAULT_PROFILE_CACHE_MAX_ENTRIES
     mcp_log_level: LogLevel = DEFAULT_LOG_LEVEL
+    mcp_api_key: str | None = None
 
     @field_validator("mcp_data_root", mode="after")
     @classmethod
@@ -61,6 +62,16 @@ class Settings(BaseSettings):
         if not stripped:
             raise ValueError("MCP_HOST must be a non-empty string.")
         return stripped
+
+    @field_validator("mcp_api_key")
+    @classmethod
+    def validate_api_key(cls, value: str | None) -> str | None:
+        """Normalize blank API keys to disabled auth."""
+
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
 
     @field_validator("mcp_port")
     @classmethod

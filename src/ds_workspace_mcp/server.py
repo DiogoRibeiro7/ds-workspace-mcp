@@ -4,6 +4,7 @@ import logging
 
 from mcp.server.fastmcp import FastMCP
 
+from ds_workspace_mcp.auth import build_http_auth
 from ds_workspace_mcp.config import Settings, Transport, get_settings
 from ds_workspace_mcp.core import (
     DatasetIssue,
@@ -47,12 +48,15 @@ logger = logging.getLogger(__name__)
 def create_mcp(settings: Settings) -> FastMCP:
     """Create the MCP server with validated runtime settings."""
 
+    auth_settings, token_verifier = build_http_auth(settings)
     return FastMCP(
         "Data Science Workspace MCP",
         json_response=True,
         host=settings.mcp_host,
         port=settings.mcp_port,
         log_level=settings.mcp_log_level,
+        auth=auth_settings,
+        token_verifier=token_verifier,
     )
 
 
@@ -335,10 +339,11 @@ def main() -> None:
     settings = get_settings()
     configure_logging(settings)
     logger.info(
-        "Starting MCP server transport=%s host=%s port=%s",
+        "Starting MCP server transport=%s host=%s port=%s auth_enabled=%s",
         settings.mcp_transport,
         settings.mcp_host,
         settings.mcp_port,
+        settings.mcp_transport == "streamable-http" and settings.mcp_api_key is not None,
     )
     mcp.run(transport=get_transport())
 
