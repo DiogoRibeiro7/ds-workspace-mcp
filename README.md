@@ -181,6 +181,36 @@ Generated columns:
 
 The generator includes weekday effects, seasonal demand, campaign lift, holiday effects, random noise, and light missingness in a couple of operational fields.
 
+## CLI
+
+The main console command now exposes a small local workflow CLI.
+
+Serve the MCP server:
+
+```bash
+poetry run ds-workspace-mcp serve
+```
+
+`poetry run ds-workspace-mcp` also defaults to `serve`.
+
+List available datasets:
+
+```bash
+poetry run ds-workspace-mcp list-datasets
+```
+
+Profile one dataset as JSON:
+
+```bash
+poetry run ds-workspace-mcp profile-dataset sample_clinic_usage.csv
+```
+
+Generate a synthetic dataset through the main CLI:
+
+```bash
+poetry run ds-workspace-mcp generate-sample-healthcare-data --days 120 --clinics 5
+```
+
 ---
 
 ## Available MCP capabilities

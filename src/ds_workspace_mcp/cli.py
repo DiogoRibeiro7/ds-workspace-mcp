@@ -1,0 +1,114 @@
+from __future__ import annotations
+
+import argparse
+import json
+from collections.abc import Sequence
+from pathlib import Path
+
+from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
+from ds_workspace_mcp.server import main as serve_main
+from ds_workspace_mcp.synthetic.healthcare import (
+    DEFAULT_CLINICS,
+    DEFAULT_DAYS,
+    DEFAULT_OUTPUT_NAME,
+    DEFAULT_SEED,
+    DEFAULT_START_DATE,
+    GeneratorConfig,
+    write_healthcare_dataset,
+)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser."""
+
+    parser = argparse.ArgumentParser(description="Local development CLI for ds-workspace-mcp.")
+    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser("serve", help="Run the MCP server.")
+    subparsers.add_parser("list-datasets", help="List CSV datasets from the configured data root.")
+
+    profile_parser = subparsers.add_parser(
+        "profile-dataset",
+        help="Profile a CSV dataset and print the result as JSON.",
+    )
+    profile_parser.add_argument("file_name", help="CSV dataset file name.")
+
+    generate_parser = subparsers.add_parser(
+        "generate-sample-healthcare-data",
+        help="Generate a synthetic healthcare operations CSV.",
+    )
+    generate_parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("data") / DEFAULT_OUTPUT_NAME,
+        help="Output CSV path.",
+    )
+    generate_parser.add_argument(
+        "--start-date",
+        default=DEFAULT_START_DATE,
+        help="Start date in YYYY-MM-DD format.",
+    )
+    generate_parser.add_argument(
+        "--days",
+        type=int,
+        default=DEFAULT_DAYS,
+        help="Number of daily observations per clinic.",
+    )
+    generate_parser.add_argument(
+        "--clinics",
+        type=int,
+        default=DEFAULT_CLINICS,
+        help="Number of clinics to simulate.",
+    )
+    generate_parser.add_argument(
+        "--seed",
+        type=int,
+        default=DEFAULT_SEED,
+        help="Random seed for reproducible generation.",
+    )
+
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Run the CLI command."""
+
+    parser = build_parser()
+    args = parser.parse_args(list(argv) if argv is not None else None)
+    command = args.command or "serve"
+
+    if command == "serve":
+        serve_main()
+        return 0
+
+    if command == "list-datasets":
+        for file_name in list_csv_files():
+            print(file_name)
+        return 0
+
+    if command == "profile-dataset":
+        profile = profile_csv_dataset(args.file_name)
+        print(json.dumps(profile.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "generate-sample-healthcare-data":
+        if args.days < 1:
+            print("--days must be greater than 0.")
+            return 1
+        if args.clinics < 1:
+            print("--clinics must be greater than 0.")
+            return 1
+
+        config = GeneratorConfig(
+            output_path=args.output,
+            start_date=args.start_date,
+            days=args.days,
+            clinics=args.clinics,
+            seed=args.seed,
+        )
+        output_path = write_healthcare_dataset(config)
+        print(output_path)
+        return 0
+
+    parser.print_help()
+    return 1

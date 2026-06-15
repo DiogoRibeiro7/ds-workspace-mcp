@@ -23,7 +23,7 @@ mypy = "^1.10.0"
 pandas-stubs = "^2.2.0"
 
 [tool.poetry.scripts]
-ds-workspace-mcp = "ds_workspace_mcp.server:main"
+ds-workspace-mcp = "ds_workspace_mcp.cli:main"
 generate-sample-healthcare-data = "ds_workspace_mcp.synthetic.healthcare:main"
 
 [build-system]

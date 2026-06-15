@@ -196,3 +196,15 @@ Acceptance criteria:
 - The generator produces a stable schema with realistic operational fields.
 - Generation is reproducible for a fixed seed.
 - The console command writes a CSV dataset successfully.
+
+### Local CLI
+
+- [x] Add `src/ds_workspace_mcp/cli.py`.
+- [x] Support `serve`, `list-datasets`, `profile-dataset`, and `generate-sample-healthcare-data`.
+- [x] Keep `ds-workspace-mcp` as the main console entrypoint.
+- [x] Add CLI tests for successful and invalid commands.
+
+Acceptance criteria:
+- The CLI can serve the MCP server and run common local development tasks.
+- Invalid options return a non-zero exit code.
+- Dataset listing and profiling work against the configured data root.

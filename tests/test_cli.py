@@ -1,0 +1,104 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+from ds_workspace_mcp import cli
+
+
+def write_cli_dataset(root: Path, name: str = "sample.csv") -> Path:
+    """Create a small dataset for CLI tests."""
+
+    path = root / name
+    pd.DataFrame(
+        {
+            "feature": [1, 2, 3],
+            "target": [4, 5, 6],
+        }
+    ).to_csv(path, index=False)
+    return path
+
+
+def test_cli_serve_calls_server(monkeypatch: pytest.MonkeyPatch) -> None:
+    called: list[str] = []
+
+    def fake_serve() -> None:
+        called.append("serve")
+
+    monkeypatch.setattr(cli, "serve_main", fake_serve)
+
+    exit_code = cli.main(["serve"])
+
+    assert exit_code == 0
+    assert called == ["serve"]
+
+
+def test_cli_list_datasets(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    write_cli_dataset(tmp_path, "b.csv")
+    write_cli_dataset(tmp_path, "a.csv")
+
+    exit_code = cli.main(["list-datasets"])
+    output = capsys.readouterr().out.strip().splitlines()
+
+    assert exit_code == 0
+    assert output == ["a.csv", "b.csv"]
+
+
+def test_cli_profile_dataset(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    write_cli_dataset(tmp_path, "sample.csv")
+
+    exit_code = cli.main(["profile-dataset", "sample.csv"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["file_name"] == "sample.csv"
+    assert payload["row_count"] == 3
+
+
+def test_cli_generate_sample_healthcare_data(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    output_path = tmp_path / "generated.csv"
+
+    exit_code = cli.main(
+        [
+            "generate-sample-healthcare-data",
+            "--output",
+            str(output_path),
+            "--days",
+            "5",
+            "--clinics",
+            "2",
+            "--seed",
+            "10",
+        ]
+    )
+
+    printed_path = Path(capsys.readouterr().out.strip())
+    assert exit_code == 0
+    assert printed_path == output_path
+    assert output_path.exists()
+
+
+def test_cli_generate_sample_healthcare_data_rejects_invalid_options(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    exit_code = cli.main(["generate-sample-healthcare-data", "--days", "0"])
+    output = capsys.readouterr().out.strip()
+
+    assert exit_code == 1
+    assert "--days must be greater than 0." in output
