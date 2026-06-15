@@ -94,9 +94,9 @@ Acceptance criteria:
 
 ### 4. GitHub Actions CI
 
-- [ ] Add `.github/workflows/ci.yml`.
-- [ ] Run `ruff`, `mypy`, and `pytest` on pushes and pull requests.
-- [ ] Use supported Python versions from the package metadata.
+- [x] Add `.github/workflows/ci.yml`.
+- [x] Run `ruff`, `mypy`, and `pytest` on pushes and pull requests.
+- [x] Use supported Python versions from the package metadata.
 
 Acceptance criteria:
 - Pull requests and pushes trigger automated checks.

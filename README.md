@@ -1,5 +1,7 @@
 # Data Science Workspace MCP Server
 
+![CI](https://github.com/DiogoRibeiro7/ds-workspace-mcp/actions/workflows/ci.yml/badge.svg)
+
 A small but practical **Model Context Protocol (MCP)** server for data science workflows.
 
 It lets an MCP-compatible assistant safely inspect local CSV datasets through:
@@ -282,6 +284,18 @@ Run static checks:
 poetry run ruff check .
 poetry run mypy
 ```
+
+## Development Workflow
+
+Local development uses the same quality gate as CI:
+
+```bash
+poetry run ruff check .
+poetry run mypy
+poetry run pytest
+```
+
+GitHub Actions runs those checks on pushes to `main` and `develop`, and on pull requests, across Python 3.11 and 3.12.
 
 ---
 
