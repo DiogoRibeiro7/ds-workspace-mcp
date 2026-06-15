@@ -13,6 +13,12 @@ from ds_workspace_mcp.core import (
     preview_csv_dataset,
     profile_csv_dataset,
 )
+from ds_workspace_mcp.diagnostics import (
+    CorrelationSummary,
+    LeakageSummary,
+    detect_possible_target_leakage_dataset,
+    summarize_correlations_dataset,
+)
 from ds_workspace_mcp.logging_config import configure_logging
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
@@ -193,6 +199,33 @@ def query_sqlite(
 
     logger.info("Tool query_sqlite invoked file_name=%s limit=%s", file_name, limit)
     return query_sqlite_database(file_name=file_name, sql=sql, limit=limit)
+
+
+@mcp.tool()
+def summarize_correlations(file_name: str, method: str = "pearson") -> CorrelationSummary:
+    """Summarize the top absolute correlations among numeric columns."""
+
+    logger.info(
+        "Tool summarize_correlations invoked file_name=%s method=%s",
+        file_name,
+        method,
+    )
+    return summarize_correlations_dataset(file_name=file_name, method=method)
+
+
+@mcp.tool()
+def detect_possible_target_leakage(file_name: str, target_column: str) -> LeakageSummary:
+    """Return heuristic warnings about possible target leakage."""
+
+    logger.info(
+        "Tool detect_possible_target_leakage invoked file_name=%s target_column=%s",
+        file_name,
+        target_column,
+    )
+    return detect_possible_target_leakage_dataset(
+        file_name=file_name,
+        target_column=target_column,
+    )
 
 
 @mcp.prompt()

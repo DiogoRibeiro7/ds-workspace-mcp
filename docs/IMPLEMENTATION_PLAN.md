@@ -141,10 +141,10 @@ Acceptance criteria:
 
 ### 3. Correlation and leakage diagnostics
 
-- [ ] Add correlation summarization for numeric columns.
-- [ ] Add heuristic leakage warnings tied to a target column.
-- [ ] Keep results concise and assistant-friendly.
-- [ ] Add tests for edge cases and false-positive-prone heuristics.
+- [x] Add correlation summarization for numeric columns.
+- [x] Add heuristic leakage warnings tied to a target column.
+- [x] Keep results concise and assistant-friendly.
+- [x] Add tests for edge cases and false-positive-prone heuristics.
 
 Acceptance criteria:
 - Correlation output is ranked and bounded.

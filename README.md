@@ -337,6 +337,32 @@ Example response shape:
 }
 ```
 
+#### `summarize_correlations`
+
+Rank the top absolute correlations among numeric columns.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "method": "pearson"
+}
+```
+
+#### `detect_possible_target_leakage`
+
+Return heuristic warnings about columns that may leak the target.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "target_column": "appointments_completed"
+}
+```
+
 Example response shape:
 
 ```json
@@ -443,6 +469,12 @@ SQLite safety notes:
 - Schema-changing and destructive SQL is rejected.
 - Query execution is limited to a single `SELECT` or `WITH` statement.
 - A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
+
+Diagnostics notes:
+
+- Correlation summaries are limited to numeric columns and return only the top ranked pairs.
+- Leakage warnings are heuristic, not proof of leakage.
+- Name overlap, strong numeric correlation, identifier-like columns, duplicate values, and datetime-like columns are treated as review signals.
 
 ---
 
