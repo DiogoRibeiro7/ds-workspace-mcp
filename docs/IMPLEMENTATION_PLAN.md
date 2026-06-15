@@ -208,3 +208,14 @@ Acceptance criteria:
 - The CLI can serve the MCP server and run common local development tasks.
 - Invalid options return a non-zero exit code.
 - Dataset listing and profiling work against the configured data root.
+
+### MCP client examples
+
+- [x] Add an `examples/` directory.
+- [x] Add a stdio client example.
+- [x] Add a Streamable HTTP client example.
+- [x] Document how to run the examples.
+
+Acceptance criteria:
+- The examples show how to initialize an MCP session and call core server capabilities.
+- README documents how to run each example locally.

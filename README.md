@@ -211,6 +211,29 @@ Generate a synthetic dataset through the main CLI:
 poetry run ds-workspace-mcp generate-sample-healthcare-data --days 120 --clinics 5
 ```
 
+## Examples
+
+The repository includes runnable MCP client examples in [`examples/`](examples/).
+
+Use stdio against a locally launched process:
+
+```bash
+poetry run python examples/stdio_client.py
+```
+
+Use Streamable HTTP after starting the server:
+
+```bash
+poetry run ds-workspace-mcp serve
+poetry run python examples/http_client.py
+```
+
+The examples show how to:
+
+- initialize an MCP client session;
+- list resources or tools;
+- call `preview_csv`, `profile_csv`, `detect_csv_issues`, and `summarize_correlations`.
+
 ---
 
 ## Available MCP capabilities
