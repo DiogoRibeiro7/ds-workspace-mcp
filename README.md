@@ -282,6 +282,14 @@ Use stdio against a locally launched process:
 poetry run python examples/stdio_client.py
 ```
 
+Expected output starts with:
+
+```text
+Resources:
+{
+  "resources": [
+```
+
 Use Streamable HTTP after starting the server:
 
 ```bash
@@ -289,11 +297,20 @@ poetry run ds-workspace-mcp serve
 poetry run python examples/http_client.py
 ```
 
+Expected output starts with:
+
+```text
+Tools:
+{
+  "tools": [
+```
+
 The examples show how to:
 
 - initialize an MCP client session;
 - list resources or tools;
 - call `preview_csv`, `profile_csv`, `detect_csv_issues`, and `summarize_correlations`.
+- exit with a non-zero status and a concise stderr message if the connection fails.
 
 ---
 
@@ -668,7 +685,7 @@ Run with Docker Compose:
 docker compose up --build
 ```
 
-The Compose setup binds the server to `0.0.0.0`, publishes port `8000`, and mounts the local `data/` directory into the container at `/app/data`.
+The Compose setup reads defaults from `.env.example`, overrides from `.env` when present, binds the server to `0.0.0.0`, publishes `MCP_PORT`, and mounts the local `data/` directory into the container at `/app/data`.
 
 To inspect the running HTTP server with MCP Inspector:
 

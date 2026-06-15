@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
@@ -22,29 +23,33 @@ async def main() -> None:
         },
     )
 
-    async with (
-        stdio_client(server) as (read_stream, write_stream),
-        ClientSession(read_stream, write_stream) as session,
-    ):
-        await session.initialize()
+    try:
+        async with (
+            stdio_client(server) as (read_stream, write_stream),
+            ClientSession(read_stream, write_stream) as session,
+        ):
+            await session.initialize()
 
-        resources = await session.list_resources()
-        print("Resources:")
-        print(json.dumps(resources.model_dump(mode="json"), indent=2))
+            resources = await session.list_resources()
+            print("Resources:")
+            print(json.dumps(resources.model_dump(mode="json"), indent=2))
 
-        preview = await session.call_tool(
-            "preview_csv",
-            {"file_name": "sample_clinic_usage.csv", "rows": 3},
-        )
-        print("\nPreview:")
-        print(json.dumps(preview.model_dump(mode="json"), indent=2))
+            preview = await session.call_tool(
+                "preview_csv",
+                {"file_name": "sample_clinic_usage.csv", "rows": 3},
+            )
+            print("\nPreview:")
+            print(json.dumps(preview.model_dump(mode="json"), indent=2))
 
-        profile = await session.call_tool(
-            "profile_csv",
-            {"file_name": "sample_clinic_usage.csv"},
-        )
-        print("\nProfile:")
-        print(json.dumps(profile.model_dump(mode="json"), indent=2))
+            profile = await session.call_tool(
+                "profile_csv",
+                {"file_name": "sample_clinic_usage.csv"},
+            )
+            print("\nProfile:")
+            print(json.dumps(profile.model_dump(mode="json"), indent=2))
+    except Exception as exc:
+        print(f"stdio example failed: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
 
 
 if __name__ == "__main__":

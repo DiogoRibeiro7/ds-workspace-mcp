@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 
 from mcp.client.session import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
@@ -16,31 +17,36 @@ async def main() -> None:
     headers = None
     api_key = os.getenv("MCP_API_KEY")
     if api_key:
+        # Reuse the same shared secret when HTTP auth is enabled locally.
         headers = {"Authorization": f"Bearer {api_key}"}
 
-    async with (
-        streamablehttp_client(SERVER_URL, headers=headers) as (read_stream, write_stream, _),
-        ClientSession(read_stream, write_stream) as session,
-    ):
-        await session.initialize()
+    try:
+        async with (
+            streamablehttp_client(SERVER_URL, headers=headers) as (read_stream, write_stream, _),
+            ClientSession(read_stream, write_stream) as session,
+        ):
+            await session.initialize()
 
-        tools = await session.list_tools()
-        print("Tools:")
-        print(json.dumps(tools.model_dump(mode="json"), indent=2))
+            tools = await session.list_tools()
+            print("Tools:")
+            print(json.dumps(tools.model_dump(mode="json"), indent=2))
 
-        issues = await session.call_tool(
-            "detect_csv_issues",
-            {"file_name": "sample_clinic_usage.csv"},
-        )
-        print("\nIssues:")
-        print(json.dumps(issues.model_dump(mode="json"), indent=2))
+            issues = await session.call_tool(
+                "detect_csv_issues",
+                {"file_name": "sample_clinic_usage.csv"},
+            )
+            print("\nIssues:")
+            print(json.dumps(issues.model_dump(mode="json"), indent=2))
 
-        correlations = await session.call_tool(
-            "summarize_correlations",
-            {"file_name": "sample_clinic_usage.csv", "method": "pearson"},
-        )
-        print("\nCorrelations:")
-        print(json.dumps(correlations.model_dump(mode="json"), indent=2))
+            correlations = await session.call_tool(
+                "summarize_correlations",
+                {"file_name": "sample_clinic_usage.csv", "method": "pearson"},
+            )
+            print("\nCorrelations:")
+            print(json.dumps(correlations.model_dump(mode="json"), indent=2))
+    except Exception as exc:
+        print(f"http example failed: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
 
 
 if __name__ == "__main__":
