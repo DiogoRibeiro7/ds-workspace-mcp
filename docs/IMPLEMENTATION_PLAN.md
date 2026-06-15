@@ -219,3 +219,14 @@ Acceptance criteria:
 Acceptance criteria:
 - The examples show how to initialize an MCP session and call core server capabilities.
 - README documents how to run each example locally.
+
+### Container workflow
+
+- [x] Add a `docker-compose.yml` for local Streamable HTTP development.
+- [x] Mount the local `data/` directory into the container.
+- [x] Document the Compose workflow in the README.
+
+Acceptance criteria:
+- The service can be started with `docker compose up --build`.
+- The HTTP endpoint is reachable on port `8000`.
+- Local datasets remain available inside the container through `/app/data`.

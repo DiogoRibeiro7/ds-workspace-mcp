@@ -1,0 +1,15 @@
+services:
+  ds-workspace-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ds-workspace-mcp:local
+    ports:
+      - "8000:8000"
+    environment:
+      MCP_TRANSPORT: streamable-http
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: 8000
+      MCP_DATA_ROOT: /app/data
+    volumes:
+      - ./data:/app/data

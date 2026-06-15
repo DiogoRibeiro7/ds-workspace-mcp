@@ -572,6 +572,20 @@ docker run --rm \
   ds-workspace-mcp
 ```
 
+Run with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+The Compose setup binds the server to `0.0.0.0`, publishes port `8000`, and mounts the local `data/` directory into the container at `/app/data`.
+
+To stop the stack:
+
+```bash
+docker compose down
+```
+
 ---
 
 ## Safety design
