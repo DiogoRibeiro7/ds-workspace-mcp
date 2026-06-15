@@ -12,6 +12,7 @@ python = ">=3.11,<3.13"
 mcp = {extras = ["cli"], version = "^1.9.0"}
 pandas = "^2.2.0"
 pydantic = "^2.7.0"
+pydantic-settings = "^2.14.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"

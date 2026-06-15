@@ -65,6 +65,32 @@ ds-workspace-mcp/
 poetry install
 ```
 
+## Configuration
+
+The server reads configuration from environment variables or a local `.env` file.
+
+- `MCP_DATA_ROOT`: directory that contains readable datasets. Defaults to `data`.
+- `MCP_TRANSPORT`: `stdio` or `streamable-http`. Defaults to `streamable-http`.
+- `MCP_HOST`: bind host for HTTP mode. Defaults to `127.0.0.1`.
+- `MCP_PORT`: bind port for HTTP mode. Defaults to `8000`.
+- `MCP_MAX_PREVIEW_ROWS`: maximum allowed value for `preview_csv`. Defaults to `50`.
+- `MCP_MAX_SQL_ROWS`: reserved maximum row limit for upcoming SQL tools. Defaults to `1000`.
+- `MCP_MAX_CATEGORICAL_VALUES`: maximum top-value examples returned per categorical column in `profile_csv`. Defaults to `5`.
+- `MCP_LOG_LEVEL`: server log level. Defaults to `INFO`.
+
+Example:
+
+```bash
+MCP_DATA_ROOT=./data
+MCP_TRANSPORT=streamable-http
+MCP_HOST=127.0.0.1
+MCP_PORT=8000
+MCP_MAX_PREVIEW_ROWS=50
+MCP_MAX_SQL_ROWS=1000
+MCP_MAX_CATEGORICAL_VALUES=5
+MCP_LOG_LEVEL=INFO
+```
+
 ---
 
 ## Run with Streamable HTTP
@@ -132,7 +158,7 @@ Arguments:
 
 #### `profile_csv`
 
-Return row count, column count, dtypes, missing values, and missing percentages.
+Return row count, column count, dtypes, missing values, missing percentages, and bounded column summaries for numeric, categorical, boolean, and datetime fields.
 
 Arguments:
 
@@ -141,6 +167,65 @@ Arguments:
   "file_name": "sample_clinic_usage.csv"
 }
 ```
+
+Example response shape:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "row_count": 120,
+  "column_count": 6,
+  "missing_values": {"wait_time": 4},
+  "numeric_columns": [
+    {
+      "column": "appointments_completed",
+      "count": 120,
+      "mean": 83.2,
+      "std": 9.4,
+      "min": 61.0,
+      "q25": 77.0,
+      "median": 84.0,
+      "q75": 90.0,
+      "max": 103.0
+    }
+  ],
+  "categorical_columns": [
+    {
+      "column": "clinic_id",
+      "count": 120,
+      "unique_count": 4,
+      "top_value": "north",
+      "top_value_frequency": 32,
+      "top_values": [{"value": "north", "count": 32}]
+    }
+  ],
+  "boolean_columns": [
+    {
+      "column": "local_holiday",
+      "true_count": 8,
+      "false_count": 112,
+      "missing_count": 0
+    }
+  ],
+  "datetime_columns": [
+    {
+      "column": "date",
+      "count": 120,
+      "min": "2024-01-01T00:00:00",
+      "max": "2024-04-29T00:00:00"
+    }
+  ],
+  "profiling_limits": {
+    "max_categorical_values": 5
+  }
+}
+```
+
+Profiling limits:
+
+- Categorical examples are intentionally bounded by `MCP_MAX_CATEGORICAL_VALUES`.
+- The profiler returns summaries rather than raw wide-table payloads.
+- Datetime detection is conservative to avoid misclassifying free-text columns.
 
 #### `detect_csv_issues`
 

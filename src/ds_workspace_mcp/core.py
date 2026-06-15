@@ -1,22 +1,14 @@
 from __future__ import annotations
 
-import os
+import math
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-
-class DatasetProfile(BaseModel):
-    """Structured profile for a tabular dataset."""
-
-    file_name: str
-    row_count: int = Field(ge=0)
-    column_count: int = Field(ge=0)
-    columns: list[str]
-    dtypes: dict[str, str]
-    missing_values: dict[str, int]
-    missing_percentage: dict[str, float]
+from ds_workspace_mcp.config import get_settings
+from ds_workspace_mcp.profiling import DatasetProfile, build_dataset_profile
 
 
 class DatasetPreview(BaseModel):
@@ -34,6 +26,16 @@ class DatasetIssue(BaseModel):
     description: str
 
 
+def _normalize_preview_value(value: object) -> object:
+    """Convert pandas missing values into JSON-friendly nulls."""
+
+    if value is None or value is pd.NA or value is pd.NaT:
+        return None
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    return value
+
+
 def get_data_root() -> Path:
     """
     Return the configured data root.
@@ -41,9 +43,7 @@ def get_data_root() -> Path:
     The default is `./data`. The directory is created if it does not exist.
     """
 
-    root = Path(os.getenv("MCP_DATA_ROOT", "data")).resolve()
-    root.mkdir(parents=True, exist_ok=True)
-    return root
+    return get_settings().mcp_data_root
 
 
 def resolve_dataset_path(file_name: str) -> Path:
@@ -127,15 +127,20 @@ def preview_csv_dataset(file_name: str, rows: int = 5) -> DatasetPreview:
     if not isinstance(rows, int):
         raise TypeError("rows must be an integer.")
 
-    if rows < 1 or rows > 50:
-        raise ValueError("rows must be between 1 and 50.")
+    max_preview_rows = get_settings().mcp_max_preview_rows
+    if rows < 1 or rows > max_preview_rows:
+        raise ValueError(f"rows must be between 1 and {max_preview_rows}.")
 
     df = read_csv_dataset(file_name=file_name, nrows=rows)
-    clean_df = df.astype(object).where(pd.notnull(df), None)
+    records = cast(list[dict[str, object]], df.astype(object).to_dict(orient="records"))
+    clean_rows = [
+        {column: _normalize_preview_value(value) for column, value in row.items()}
+        for row in records
+    ]
 
     return DatasetPreview(
         file_name=file_name,
-        rows=clean_df.to_dict(orient="records"),
+        rows=clean_rows,
     )
 
 
@@ -151,18 +156,7 @@ def profile_csv_dataset(file_name: str) -> DatasetProfile:
     """
 
     df = read_csv_dataset(file_name=file_name)
-    missing_values = df.isna().sum().astype(int).to_dict()
-    missing_percentage = (df.isna().mean() * 100).round(2).to_dict()
-
-    return DatasetProfile(
-        file_name=file_name,
-        row_count=int(df.shape[0]),
-        column_count=int(df.shape[1]),
-        columns=[str(column) for column in df.columns],
-        dtypes={str(column): str(dtype) for column, dtype in df.dtypes.items()},
-        missing_values={str(column): int(value) for column, value in missing_values.items()},
-        missing_percentage={str(column): float(value) for column, value in missing_percentage.items()},
-    )
+    return build_dataset_profile(df=df, file_name=file_name)
 
 
 def detect_csv_dataset_issues(file_name: str) -> list[DatasetIssue]:

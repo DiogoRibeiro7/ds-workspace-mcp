@@ -83,6 +83,18 @@ def test_preview_csv_dataset_rejects_invalid_row_count(
         preview_csv_dataset("sample.csv", rows=100)
 
 
+def test_preview_csv_dataset_respects_configured_row_limit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("MCP_MAX_PREVIEW_ROWS", "3")
+    write_dataset(tmp_path)
+
+    with pytest.raises(ValueError, match="between 1 and 3"):
+        preview_csv_dataset("sample.csv", rows=4)
+
+
 def test_profile_csv_dataset(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
     write_dataset(tmp_path)
@@ -104,4 +116,3 @@ def test_detect_csv_dataset_issues(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 
     assert "high_missingness" in issue_types
     assert "possible_identifier" in issue_types
-

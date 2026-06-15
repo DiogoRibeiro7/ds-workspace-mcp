@@ -1,23 +1,32 @@
 from __future__ import annotations
 
-import os
-from typing import Literal, cast
-
 from mcp.server.fastmcp import FastMCP
 
+from ds_workspace_mcp.config import Settings, Transport, get_settings
 from ds_workspace_mcp.core import (
     DatasetIssue,
     DatasetPreview,
-    DatasetProfile,
     detect_csv_dataset_issues,
     list_csv_files,
     preview_csv_dataset,
     profile_csv_dataset,
 )
+from ds_workspace_mcp.profiling import DatasetProfile
 
-Transport = Literal["stdio", "streamable-http"]
 
-mcp = FastMCP("Data Science Workspace MCP", json_response=True)
+def create_mcp(settings: Settings) -> FastMCP:
+    """Create the MCP server with validated runtime settings."""
+
+    return FastMCP(
+        "Data Science Workspace MCP",
+        json_response=True,
+        host=settings.mcp_host,
+        port=settings.mcp_port,
+        log_level=settings.mcp_log_level,
+    )
+
+
+mcp = create_mcp(get_settings())
 
 
 @mcp.resource("datasets://catalog")
@@ -122,12 +131,7 @@ def get_transport() -> Transport:
         Either `stdio` or `streamable-http`.
     """
 
-    raw_transport = os.getenv("MCP_TRANSPORT", "streamable-http")
-
-    if raw_transport not in {"stdio", "streamable-http"}:
-        raise ValueError("MCP_TRANSPORT must be either 'stdio' or 'streamable-http'.")
-
-    return cast(Transport, raw_transport)
+    return get_settings().mcp_transport
 
 
 def main() -> None:
