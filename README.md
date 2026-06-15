@@ -540,6 +540,23 @@ poetry run pytest
 
 GitHub Actions runs those checks on pushes to `main` and `develop`, and on pull requests, across Python 3.11 and 3.12.
 
+## Packaging and Release
+
+Build local release artifacts with:
+
+```bash
+poetry build
+```
+
+This produces both a wheel and a source distribution in `dist/`.
+
+GitHub Actions also includes a release workflow in `.github/workflows/release.yml`:
+
+- `workflow_dispatch` builds artifacts for a manual release dry run.
+- pushing a tag such as `v0.2.0` builds artifacts and publishes them to PyPI.
+
+Publishing requires a repository secret named `PYPI_API_TOKEN`.
+
 ## Notebooks
 
 The repository includes two walkthrough notebooks in `notebooks/`:

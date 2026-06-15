@@ -242,3 +242,15 @@ Acceptance criteria:
 - The notebooks demonstrate realistic analytical reasoning around the shipped tools.
 - The demos do not require private credentials.
 - README explains how to run the notebooks locally.
+
+### Release packaging workflow
+
+- [x] Review package metadata in `pyproject.toml`.
+- [x] Add a GitHub Actions workflow to build distribution artifacts.
+- [x] Add tag-driven PyPI publishing support.
+- [x] Document the local and GitHub-based release flow.
+
+Acceptance criteria:
+- `poetry build` produces a wheel and source distribution locally.
+- GitHub can build release artifacts on demand.
+- Tag pushes can publish to PyPI once repository secrets are configured.

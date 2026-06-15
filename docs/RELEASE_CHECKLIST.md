@@ -13,7 +13,7 @@
 - [x] Run `poetry run ruff check .`
 - [x] Run `poetry run mypy`
 - [x] Run `poetry run pytest`
-- [ ] Run `poetry build`
+- [x] Run `poetry build`
 - [ ] Smoke-test the stdio example.
 - [ ] Smoke-test the HTTP example against a local server session.
 
@@ -22,6 +22,8 @@
 - [ ] Confirm license, contribution, and security docs are present.
 - [ ] Confirm console scripts work as documented.
 - [ ] Confirm example files and sample data are included in the repository.
+- [ ] Confirm `.github/workflows/release.yml` matches the intended release process.
+- [ ] Confirm `PYPI_API_TOKEN` is configured in GitHub repository secrets before tagging a release.
 
 ## Release Notes
 

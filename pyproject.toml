@@ -6,6 +6,21 @@ authors = ["Diogo Ribeiro <hansolo.dj@gmail.com>"]
 readme = "README.md"
 packages = [{ include = "ds_workspace_mcp", from = "src" }]
 license = "MIT"
+homepage = "https://github.com/DiogoRibeiro7/ds-workspace-mcp"
+repository = "https://github.com/DiogoRibeiro7/ds-workspace-mcp"
+documentation = "https://github.com/DiogoRibeiro7/ds-workspace-mcp#readme"
+keywords = ["mcp", "model-context-protocol", "data-science", "analytics", "python"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
