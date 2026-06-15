@@ -152,10 +152,10 @@ Acceptance criteria:
 
 ### 4. Time-series validation
 
-- [ ] Create `src/ds_workspace_mcp/timeseries.py`.
-- [ ] Validate timestamp parsing, sorting, duplicates, gaps, and inferred frequency.
-- [ ] Support grouped series checks.
-- [ ] Add tests for regular and irregular series.
+- [x] Create `src/ds_workspace_mcp/timeseries.py`.
+- [x] Validate timestamp parsing, sorting, duplicates, gaps, and inferred frequency.
+- [x] Support grouped series checks.
+- [x] Add tests for regular and irregular series.
 
 Acceptance criteria:
 - Forecasting-readiness issues are surfaced in a structured result.

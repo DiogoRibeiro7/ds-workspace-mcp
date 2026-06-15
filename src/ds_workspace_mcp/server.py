@@ -35,6 +35,7 @@ from ds_workspace_mcp.sql.sqlite_engine import (
 from ds_workspace_mcp.sql.sqlite_engine import (
     list_sqlite_tables as list_sqlite_tables_dataset,
 )
+from ds_workspace_mcp.timeseries import TimeSeriesValidationResult, validate_time_series_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -225,6 +226,31 @@ def detect_possible_target_leakage(file_name: str, target_column: str) -> Leakag
     return detect_possible_target_leakage_dataset(
         file_name=file_name,
         target_column=target_column,
+    )
+
+
+@mcp.tool()
+def validate_time_series_dataset_tool(
+    file_name: str,
+    time_column: str,
+    target_column: str | None = None,
+    group_column: str | None = None,
+) -> TimeSeriesValidationResult:
+    """Validate whether a dataset looks suitable for time-series modeling."""
+
+    logger.info(
+        "Tool validate_time_series_dataset_tool invoked "
+        "file_name=%s time_column=%s target_column=%s group_column=%s",
+        file_name,
+        time_column,
+        target_column,
+        group_column,
+    )
+    return validate_time_series_dataset(
+        file_name=file_name,
+        time_column=time_column,
+        target_column=target_column,
+        group_column=group_column,
     )
 
 

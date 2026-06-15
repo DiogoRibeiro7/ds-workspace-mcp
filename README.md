@@ -363,6 +363,21 @@ Arguments:
 }
 ```
 
+#### `validate_time_series_dataset_tool`
+
+Validate whether a dataset looks ready for forecasting or time-series modeling.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "time_column": "date",
+  "target_column": "appointments_completed",
+  "group_column": "clinic_id"
+}
+```
+
 Example response shape:
 
 ```json
@@ -475,6 +490,12 @@ Diagnostics notes:
 - Correlation summaries are limited to numeric columns and return only the top ranked pairs.
 - Leakage warnings are heuristic, not proof of leakage.
 - Name overlap, strong numeric correlation, identifier-like columns, duplicate values, and datetime-like columns are treated as review signals.
+
+Time-series validation notes:
+
+- Timestamp parsing is conservative and fails if the declared time column cannot be parsed at all.
+- The validator checks sorting, duplicate timestamps, inferred frequency, missing intervals, grouped gaps, and missing target values.
+- History-length warnings are heuristic and intended for baseline forecasting readiness, not strict modeling requirements.
 
 ---
 
