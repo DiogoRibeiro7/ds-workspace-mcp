@@ -652,6 +652,10 @@ If Jupyter is not installed in your Poetry environment yet, install it in that e
 - `CHANGELOG.md`: user-facing change history
 - `CONTRIBUTING.md`: local development and PR expectations
 - `SECURITY.md`: security reporting and hardening expectations
+- `docs/API_CONTRACT.md`: versioned public MCP, CLI, and configuration contract
+- `docs/SECURITY_MODEL.md`: trust boundaries, controls, and known security gaps
+- `docs/DEPLOYMENT.md`: supported local, HTTP, Docker, and Compose deployment paths
+- `docs/ARCHITECTURE.md`: component responsibilities and request flow
 - `docs/RELEASE_CHECKLIST.md`: release prep checklist
 
 ---

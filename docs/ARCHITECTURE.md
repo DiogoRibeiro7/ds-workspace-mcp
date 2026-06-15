@@ -1,0 +1,176 @@
+# Architecture Overview
+
+## High-Level Structure
+
+`ds-workspace-mcp` is a thin MCP server layer over a set of bounded dataset utilities. The design keeps transport, validation, and data operations separate enough that the public surface can stay stable while the implementation evolves.
+
+## Main Components
+
+### `server.py`
+
+Responsibilities:
+
+- constructs the FastMCP server
+- registers MCP resources, tools, and prompts
+- wires in optional HTTP auth
+- configures logging and tracing at process startup
+
+This file is the public MCP entrypoint.
+
+### `cli.py`
+
+Responsibilities:
+
+- exposes the console workflow
+- dispatches to `serve`
+- provides local utilities such as dataset listing, JSON profiling, and synthetic dataset generation
+
+### `config.py`
+
+Responsibilities:
+
+- defines validated runtime settings
+- reads environment variables and `.env`
+- enforces bounds for ports, preview limits, SQL limits, cache sizes, and tracing settings
+
+This is the central configuration boundary for the application.
+
+### `core.py`
+
+Responsibilities:
+
+- resolves dataset paths under `MCP_DATA_ROOT`
+- lists CSV files
+- reads CSV content
+- builds dataset previews
+- orchestrates profiling and issue detection
+
+This is the core CSV access layer.
+
+### `profiling.py`
+
+Responsibilities:
+
+- converts a pandas `DataFrame` into a bounded structured profile
+- summarizes numeric, categorical, boolean, and datetime-like columns
+- records the runtime profiling limits applied to the result
+
+### `sql/duckdb_engine.py`
+
+Responsibilities:
+
+- validates safe DuckDB SQL
+- registers the CSV as a temporary `dataset` table
+- executes bounded read-only analytical queries
+- normalizes tabular results into JSON-friendly rows
+
+### `sql/sqlite_engine.py`
+
+Responsibilities:
+
+- resolves SQLite files safely
+- lists databases and tables
+- describes table schemas
+- executes bounded read-only SQLite queries through read-only connections
+
+### `diagnostics.py`
+
+Responsibilities:
+
+- computes bounded correlation summaries
+- emits heuristic target-leakage warnings
+
+These outputs are intentionally advisory rather than definitive.
+
+### `timeseries.py`
+
+Responsibilities:
+
+- validates timestamp parsing
+- inspects sorting, duplicates, inferred frequency, and missing intervals
+- emits baseline-readiness warnings for time-series workflows
+
+### `ml/baselines.py`
+
+Responsibilities:
+
+- evaluates dummy regression and classification baselines
+- returns structured metrics for comparison against future models
+
+### Supporting modules
+
+- `auth.py`: optional shared-token auth for HTTP mode
+- `logging_config.py`: process logging setup
+- `tracing.py`: optional OpenTelemetry integration
+- `cache.py`: in-memory profile caching
+- `exceptions.py`: stable application error categories
+- `synthetic/`: reproducible sample dataset generators
+
+## Request Flow
+
+### CSV tool flow
+
+1. An MCP client invokes a tool such as `profile_csv`.
+2. `server.py` logs and traces the tool boundary.
+3. `core.py` resolves `file_name` under `MCP_DATA_ROOT`.
+4. The relevant subsystem runs:
+   - `profiling.py` for summaries
+   - `diagnostics.py` for heuristics
+   - `sql/duckdb_engine.py` for SQL
+   - `timeseries.py` for forecasting-readiness checks
+   - `ml/baselines.py` for dummy model evaluation
+5. Structured results are returned through FastMCP as JSON.
+
+### SQLite tool flow
+
+1. An MCP client invokes a SQLite tool.
+2. `sqlite_engine.py` resolves the database path under `MCP_DATA_ROOT`.
+3. The database is opened in read-only mode.
+4. Schema or query results are normalized into structured responses.
+
+## Data Flow Principles
+
+- all public operations start from validated names rather than arbitrary paths
+- file reads happen only after data-root resolution
+- SQL results are normalized to JSON-friendly scalar values
+- expensive or verbose outputs are bounded before returning to the client
+- heuristics are labeled as heuristics rather than hidden behind deterministic wording
+
+## Runtime Modes
+
+### `stdio`
+
+- best for local single-client launches
+- no HTTP listener
+- no app-layer auth
+
+### `streamable-http`
+
+- best for long-running local or containerized use
+- can be protected with `MCP_API_KEY`
+- exposes the MCP endpoint at `/mcp`
+
+## Cross-Cutting Concerns
+
+### Validation
+
+- environment validation happens in `config.py`
+- path and file-type validation happen in `core.py` and `sqlite_engine.py`
+- SQL validation happens before query execution
+
+### Observability
+
+- logs capture operational metadata
+- tracing is optional and non-fatal if dependencies are missing
+
+### Caching
+
+- profile results can be cached in memory
+- cache keys include file path, size, modified time, and profiling options
+
+## Design Tradeoffs
+
+- pandas-first CSV handling keeps the implementation simple, but very large files may still be expensive
+- SQL validation is pragmatic and bounded, not a formal sandbox
+- auth is intentionally minimal to support local and small self-hosted use without introducing a full identity layer
+- heuristics are exposed because analytical guidance is useful, but they are documented as non-authoritative
