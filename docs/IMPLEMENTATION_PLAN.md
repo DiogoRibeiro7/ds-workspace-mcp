@@ -184,3 +184,15 @@ Acceptance criteria:
 - Dummy baselines run for supported supervised tasks.
 - Missing target columns and insufficient data fail clearly.
 - Returned metrics are structured and bounded.
+
+### Synthetic healthcare dataset generation
+
+- [x] Add `src/ds_workspace_mcp/synthetic/healthcare.py`.
+- [x] Generate realistic clinic operations columns with reproducible randomness.
+- [x] Add a console command for writing datasets into `data/` or a custom path.
+- [x] Add tests for schema, reproducibility, row counts, and date ranges.
+
+Acceptance criteria:
+- The generator produces a stable schema with realistic operational fields.
+- Generation is reproducible for a fixed seed.
+- The console command writes a CSV dataset successfully.

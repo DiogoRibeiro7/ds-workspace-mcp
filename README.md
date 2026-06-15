@@ -149,6 +149,38 @@ MCP_TRANSPORT=stdio poetry run ds-workspace-mcp
 
 This is useful when connecting the server directly to an MCP client that launches local servers.
 
+## Synthetic Dataset
+
+The repository also includes a reproducible healthcare operations dataset generator.
+
+Generate a fresh sample into `data/`:
+
+```bash
+poetry run generate-sample-healthcare-data
+```
+
+Custom example:
+
+```bash
+poetry run generate-sample-healthcare-data --output data/custom_clinic_usage.csv --days 180 --clinics 6 --seed 7
+```
+
+Generated columns:
+
+- `clinic_id`
+- `date`
+- `appointments_scheduled`
+- `appointments_completed`
+- `cancellations`
+- `no_shows`
+- `marketing_campaign`
+- `local_holiday`
+- `staff_available`
+- `average_wait_time`
+- `patient_satisfaction_score`
+
+The generator includes weekday effects, seasonal demand, campaign lift, holiday effects, random noise, and light missingness in a couple of operational fields.
+
 ---
 
 ## Available MCP capabilities

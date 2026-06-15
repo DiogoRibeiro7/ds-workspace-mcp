@@ -24,6 +24,7 @@ pandas-stubs = "^2.2.0"
 
 [tool.poetry.scripts]
 ds-workspace-mcp = "ds_workspace_mcp.server:main"
+generate-sample-healthcare-data = "ds_workspace_mcp.synthetic.healthcare:main"
 
 [build-system]
 requires = ["poetry-core>=1.9.0"]
