@@ -32,7 +32,7 @@
 - [x] Add GitHub Actions CI.
 - [x] Add structured logging.
 - [x] Add configuration validation.
-- [ ] Add OpenTelemetry hooks.
+- [x] Add OpenTelemetry hooks.
 - [x] Add authentication support for HTTP deployment.
 - [x] Add deployment example with Docker Compose.
 

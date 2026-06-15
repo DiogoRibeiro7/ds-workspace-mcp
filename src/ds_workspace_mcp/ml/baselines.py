@@ -16,6 +16,7 @@ from sklearn.metrics import (  # type: ignore[import-untyped]
 from sklearn.model_selection import train_test_split  # type: ignore[import-untyped]
 
 from ds_workspace_mcp.core import read_csv_dataset
+from ds_workspace_mcp.exceptions import InsufficientDataError
 
 TaskType = Literal["regression", "binary_classification", "multiclass_classification"]
 MIN_BASELINE_ROWS = 10
@@ -65,7 +66,7 @@ def evaluate_baseline_model_dataset(
 
     cleaned = df.dropna(subset=[target_column]).copy()
     if len(cleaned) < MIN_BASELINE_ROWS:
-        raise ValueError(
+        raise InsufficientDataError(
             f"Target column must have at least {MIN_BASELINE_ROWS} non-null rows for evaluation."
         )
 
@@ -79,7 +80,7 @@ def evaluate_baseline_model_dataset(
     )
 
     if len(X_test) == 0 or len(X_train) == 0:
-        raise ValueError("test_size produced an empty train or test split.")
+        raise InsufficientDataError("test_size produced an empty train or test split.")
 
     if validated_task_type == "regression":
         return _evaluate_regression(

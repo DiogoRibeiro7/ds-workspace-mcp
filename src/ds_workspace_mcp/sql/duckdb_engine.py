@@ -11,6 +11,8 @@ from pydantic import BaseModel, Field
 
 from ds_workspace_mcp.config import get_settings
 from ds_workspace_mcp.core import read_csv_dataset
+from ds_workspace_mcp.exceptions import InvalidSQLError
+from ds_workspace_mcp.tracing import traced_operation
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +46,11 @@ def query_csv_with_duckdb_dataset(
 
     if not isinstance(sql, str):
         logger.warning("Rejected DuckDB query because sql was not a string.")
-        raise TypeError("sql must be a string.")
+        raise InvalidSQLError("sql must be a string.")
 
     if not sql.strip():
         logger.warning("Rejected DuckDB query because sql was empty.")
-        raise ValueError("sql must be a non-empty string.")
+        raise InvalidSQLError("sql must be a non-empty string.")
 
     settings = get_settings()
     safe_limit = _resolve_limit(limit=limit, max_sql_rows=settings.mcp_max_sql_rows)
@@ -62,7 +64,16 @@ def query_csv_with_duckdb_dataset(
         safe_limit,
     )
 
-    with duckdb.connect(database=":memory:") as connection:
+    with (
+        traced_operation(
+            "sql.duckdb.query",
+            {
+                "dataset.file_name": file_name,
+                "sql.limit": safe_limit,
+            },
+        ),
+        duckdb.connect(database=":memory:") as connection,
+    ):
         connection.register(SAFE_DATASET_TABLE, df)
         query = f"SELECT * FROM ({normalized_sql}) AS safe_query LIMIT {safe_limit}"
         result_frame = connection.execute(query).fetch_df()
@@ -96,10 +107,10 @@ def _resolve_limit(limit: int | None, max_sql_rows: int) -> int:
         return max_sql_rows
 
     if not isinstance(limit, int):
-        raise TypeError("limit must be an integer.")
+        raise InvalidSQLError("limit must be an integer.")
 
     if limit < 1 or limit > max_sql_rows:
-        raise ValueError(f"limit must be between 1 and {max_sql_rows}.")
+        raise InvalidSQLError(f"limit must be between 1 and {max_sql_rows}.")
 
     return limit
 
@@ -112,27 +123,27 @@ def _validate_and_normalize_sql(sql: str) -> str:
         normalized_sql = normalized_sql[:-1].rstrip()
 
     if not normalized_sql:
-        raise ValueError("sql must be a non-empty string.")
+        raise InvalidSQLError("sql must be a non-empty string.")
 
     if ";" in normalized_sql:
         logger.warning("Rejected DuckDB query because multiple statements were detected.")
-        raise ValueError("Only a single SQL statement is allowed.")
+        raise InvalidSQLError("Only a single SQL statement is allowed.")
 
     if DESTRUCTIVE_SQL_PATTERN.search(normalized_sql):
         logger.warning("Rejected DuckDB query because it contained blocked SQL keywords.")
-        raise ValueError("Destructive or schema-changing SQL is not allowed.")
+        raise InvalidSQLError("Destructive or schema-changing SQL is not allowed.")
 
     if not normalized_sql.lower().startswith(("select", "with")):
         logger.warning("Rejected DuckDB query because it was not a SELECT or WITH statement.")
-        raise ValueError("Only SELECT and WITH queries are allowed.")
+        raise InvalidSQLError("Only SELECT and WITH queries are allowed.")
 
     if EXTERNAL_ACCESS_PATTERN.search(normalized_sql):
         logger.warning("Rejected DuckDB query because it attempted external data access.")
-        raise ValueError("SQL cannot access external files or DuckDB scanning functions.")
+        raise InvalidSQLError("SQL cannot access external files or DuckDB scanning functions.")
 
     if SAFE_DATASET_TABLE.lower() not in normalized_sql.lower():
         logger.warning("Rejected DuckDB query because it did not reference the dataset table.")
-        raise ValueError("Queries must reference the dataset table named `dataset`.")
+        raise InvalidSQLError("Queries must reference the dataset table named `dataset`.")
 
     return normalized_sql
 

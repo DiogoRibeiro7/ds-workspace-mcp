@@ -101,6 +101,9 @@ The server reads configuration from environment variables or a local `.env` file
 - `MCP_PROFILE_CACHE_MAX_ENTRIES`: maximum cached profile entries. Defaults to `128`.
 - `MCP_LOG_LEVEL`: server log level. Defaults to `INFO`.
 - `MCP_API_KEY`: optional shared bearer token for Streamable HTTP mode. Disabled by default.
+- `MCP_TRACING_ENABLED`: enable optional OpenTelemetry spans. Defaults to `false`.
+- `MCP_TRACING_SERVICE_NAME`: service name reported in traces. Defaults to `ds-workspace-mcp`.
+- `MCP_TRACING_CONSOLE_EXPORTER`: print spans to stdout through the OpenTelemetry console exporter. Defaults to `false`.
 
 Example:
 
@@ -116,6 +119,9 @@ MCP_PROFILE_CACHE_ENABLED=true
 MCP_PROFILE_CACHE_MAX_ENTRIES=128
 MCP_LOG_LEVEL=INFO
 MCP_API_KEY=
+MCP_TRACING_ENABLED=false
+MCP_TRACING_SERVICE_NAME=ds-workspace-mcp
+MCP_TRACING_CONSOLE_EXPORTER=false
 ```
 
 ## Logging
@@ -131,6 +137,40 @@ Set the log level with `MCP_LOG_LEVEL`, for example:
 ```bash
 MCP_LOG_LEVEL=DEBUG
 ```
+
+## Tracing
+
+OpenTelemetry tracing is optional production polish.
+
+Install the optional dependencies with:
+
+```bash
+poetry install --extras opentelemetry
+```
+
+To enable local tracing with console output:
+
+```bash
+MCP_TRACING_ENABLED=true
+MCP_TRACING_CONSOLE_EXPORTER=true
+poetry run ds-workspace-mcp serve
+```
+
+Current spans cover dataset resolution, CSV reads, profiling, SQL query execution, and MCP tool boundaries.
+
+If tracing is enabled without the optional dependencies installed, the server continues to run and logs a warning instead of failing.
+
+---
+
+## Troubleshooting
+
+- `Dataset not found: ...`: the file name must exist inside `MCP_DATA_ROOT`, and the server only sees files under that directory.
+- `Only CSV files are supported.` or `Only SQLite files are supported.`: the requested file extension is not allowed for that tool.
+- `Access outside the configured data directory is not allowed.`: the request attempted path traversal such as `../...`.
+- `Could not profile dataset: ...`: the file could be opened but could not be profiled safely; validate the CSV structure and encoding.
+- `Destructive or schema-changing SQL is not allowed.`: the SQL tool only accepts bounded read-only `SELECT` or `WITH` queries.
+
+These errors intentionally avoid exposing absolute local paths in responses.
 
 ---
 

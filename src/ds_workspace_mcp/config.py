@@ -19,6 +19,9 @@ DEFAULT_MAX_CATEGORICAL_VALUES = 5
 DEFAULT_PROFILE_CACHE_ENABLED = True
 DEFAULT_PROFILE_CACHE_MAX_ENTRIES = 128
 DEFAULT_LOG_LEVEL: LogLevel = "INFO"
+DEFAULT_TRACING_ENABLED = False
+DEFAULT_TRACING_SERVICE_NAME = "ds-workspace-mcp"
+DEFAULT_TRACING_CONSOLE_EXPORTER = False
 
 
 class Settings(BaseSettings):
@@ -41,6 +44,9 @@ class Settings(BaseSettings):
     mcp_profile_cache_max_entries: int = DEFAULT_PROFILE_CACHE_MAX_ENTRIES
     mcp_log_level: LogLevel = DEFAULT_LOG_LEVEL
     mcp_api_key: str | None = None
+    mcp_tracing_enabled: bool = DEFAULT_TRACING_ENABLED
+    mcp_tracing_service_name: str = DEFAULT_TRACING_SERVICE_NAME
+    mcp_tracing_console_exporter: bool = DEFAULT_TRACING_CONSOLE_EXPORTER
 
     @field_validator("mcp_data_root", mode="after")
     @classmethod
@@ -72,6 +78,16 @@ class Settings(BaseSettings):
             return None
         stripped = value.strip()
         return stripped or None
+
+    @field_validator("mcp_tracing_service_name")
+    @classmethod
+    def validate_tracing_service_name(cls, value: str) -> str:
+        """Reject blank tracing service names."""
+
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("MCP_TRACING_SERVICE_NAME must be a non-empty string.")
+        return stripped
 
     @field_validator("mcp_port")
     @classmethod

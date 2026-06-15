@@ -10,6 +10,14 @@ from pydantic import BaseModel, Field
 
 from ds_workspace_mcp.config import get_settings
 from ds_workspace_mcp.core import get_data_root
+from ds_workspace_mcp.exceptions import (
+    DatasetNotFoundError,
+    InvalidDatasetNameError,
+    InvalidSQLError,
+    PathTraversalError,
+    UnsupportedFileTypeError,
+)
+from ds_workspace_mcp.tracing import traced_operation
 
 logger = logging.getLogger(__name__)
 
@@ -73,26 +81,26 @@ def resolve_sqlite_path(file_name: str) -> Path:
 
     if not isinstance(file_name, str):
         logger.warning("Rejected SQLite path resolution because file_name was not a string.")
-        raise TypeError("file_name must be a string.")
+        raise InvalidDatasetNameError("file_name must be a string.")
 
     if not file_name.strip():
         logger.warning("Rejected SQLite path resolution because file_name was empty.")
-        raise ValueError("file_name must be a non-empty string.")
+        raise InvalidDatasetNameError("file_name must be a non-empty string.")
 
     data_root = get_data_root()
     path = (data_root / file_name).resolve()
 
     if path != data_root and data_root not in path.parents:
         logger.warning("Rejected SQLite path outside data root for file_name=%s", file_name)
-        raise ValueError("Access outside the configured data directory is not allowed.")
+        raise PathTraversalError("Access outside the configured data directory is not allowed.")
 
     if path.suffix.lower() not in SQLITE_SUFFIXES:
         logger.warning("Rejected non-SQLite file for file_name=%s", file_name)
-        raise ValueError("Only SQLite files are supported.")
+        raise UnsupportedFileTypeError("Only SQLite files are supported.")
 
     if not path.exists():
         logger.warning("SQLite database not found for file_name=%s", file_name)
-        raise FileNotFoundError(f"Database not found: {file_name}")
+        raise DatasetNotFoundError(f"Database not found: {file_name}")
 
     logger.info("Resolved SQLite database path for file_name=%s", file_name)
     return path
@@ -121,9 +129,9 @@ def describe_sqlite_table(file_name: str, table_name: str) -> SQLiteTableSchema:
     """Describe a SQLite table using PRAGMA table_info."""
 
     if not isinstance(table_name, str):
-        raise TypeError("table_name must be a string.")
+        raise InvalidDatasetNameError("table_name must be a string.")
     if not table_name.strip():
-        raise ValueError("table_name must be a non-empty string.")
+        raise InvalidDatasetNameError("table_name must be a non-empty string.")
 
     path = resolve_sqlite_path(file_name)
     validated_table_name = _validate_table_name(file_name, table_name)
@@ -183,7 +191,16 @@ def query_sqlite_database(
         safe_limit,
     )
 
-    with _connect_read_only(path) as connection:
+    with (
+        traced_operation(
+            "sql.sqlite.query",
+            {
+                "dataset.file_name": file_name,
+                "sql.limit": safe_limit,
+            },
+        ),
+        _connect_read_only(path) as connection,
+    ):
         cursor = connection.execute(
             f"SELECT * FROM ({normalized_sql}) AS safe_query LIMIT ?",
             (safe_limit,),
@@ -241,9 +258,9 @@ def _resolve_limit(limit: int | None, max_sql_rows: int) -> int:
     if limit is None:
         return max_sql_rows
     if not isinstance(limit, int):
-        raise TypeError("limit must be an integer.")
+        raise InvalidSQLError("limit must be an integer.")
     if limit < 1 or limit > max_sql_rows:
-        raise ValueError(f"limit must be between 1 and {max_sql_rows}.")
+        raise InvalidSQLError(f"limit must be between 1 and {max_sql_rows}.")
     return limit
 
 
@@ -255,19 +272,19 @@ def _validate_and_normalize_sql(sql: str) -> str:
         normalized_sql = normalized_sql[:-1].rstrip()
 
     if not normalized_sql:
-        raise ValueError("sql must be a non-empty string.")
+        raise InvalidSQLError("sql must be a non-empty string.")
 
     if ";" in normalized_sql:
         logger.warning("Rejected SQLite query because multiple statements were detected.")
-        raise ValueError("Only a single SQL statement is allowed.")
+        raise InvalidSQLError("Only a single SQL statement is allowed.")
 
     if DESTRUCTIVE_SQL_PATTERN.search(normalized_sql):
         logger.warning("Rejected SQLite query because it contained blocked SQL keywords.")
-        raise ValueError("Destructive or schema-changing SQL is not allowed.")
+        raise InvalidSQLError("Destructive or schema-changing SQL is not allowed.")
 
     if not normalized_sql.lower().startswith(("select", "with")):
         logger.warning("Rejected SQLite query because it was not a SELECT or WITH statement.")
-        raise ValueError("Only SELECT and WITH queries are allowed.")
+        raise InvalidSQLError("Only SELECT and WITH queries are allowed.")
 
     return normalized_sql
 

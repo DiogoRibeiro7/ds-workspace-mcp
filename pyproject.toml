@@ -30,6 +30,8 @@ pandas = "^2.2.0"
 pydantic = "^2.7.0"
 pydantic-settings = "^2.14.1"
 scikit-learn = "^1.7.0"
+opentelemetry-api = { version = "^1.36.0", optional = true }
+opentelemetry-sdk = { version = "^1.36.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"
@@ -40,6 +42,9 @@ pandas-stubs = "^2.2.0"
 [tool.poetry.scripts]
 ds-workspace-mcp = "ds_workspace_mcp.cli:main"
 generate-sample-healthcare-data = "ds_workspace_mcp.synthetic.healthcare:main"
+
+[tool.poetry.extras]
+opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 
 [build-system]
 requires = ["poetry-core>=1.9.0"]

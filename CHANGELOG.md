@@ -23,6 +23,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Runnable MCP client examples for stdio and Streamable HTTP.
 - Release packaging metadata and a GitHub Actions publishing workflow.
 - Optional bearer-token authentication for Streamable HTTP deployments.
+- Optional OpenTelemetry tracing hooks for core dataset and tool operations.
+- Project-specific exceptions with clearer, safer user-facing error messages.
 
 ## [0.1.0] - 2026-06-15
 

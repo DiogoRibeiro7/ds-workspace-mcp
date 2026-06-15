@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from ds_workspace_mcp.exceptions import InvalidSQLError, PathTraversalError
 from ds_workspace_mcp.sql.sqlite_engine import (
     describe_sqlite_table,
     list_sqlite_files,
@@ -104,7 +105,7 @@ def test_query_sqlite_database_rejects_destructive_sql(
     monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
     write_sqlite_database(tmp_path)
 
-    with pytest.raises(ValueError, match="Destructive"):
+    with pytest.raises(InvalidSQLError, match="Destructive"):
         query_sqlite_database(
             file_name="sample.sqlite",
             sql="DROP TABLE visits",
@@ -119,7 +120,7 @@ def test_query_sqlite_database_rejects_path_traversal(
     monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
     write_sqlite_database(tmp_path)
 
-    with pytest.raises(ValueError, match="outside"):
+    with pytest.raises(PathTraversalError, match="outside"):
         query_sqlite_database(
             file_name="../secret.sqlite",
             sql="SELECT * FROM visits",

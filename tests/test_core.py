@@ -12,6 +12,13 @@ from ds_workspace_mcp.core import (
     profile_csv_dataset,
     resolve_dataset_path,
 )
+from ds_workspace_mcp.exceptions import (
+    DatasetNotFoundError,
+    InvalidDatasetNameError,
+    PathTraversalError,
+    ProfilingError,
+    UnsupportedFileTypeError,
+)
 
 
 def write_dataset(root: Path, name: str = "sample.csv") -> Path:
@@ -45,7 +52,7 @@ def test_resolve_dataset_path_rejects_path_traversal(
 ) -> None:
     monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
 
-    with pytest.raises(ValueError, match="outside"):
+    with pytest.raises(PathTraversalError, match="outside"):
         resolve_dataset_path("../secret.csv")
 
 
@@ -57,8 +64,32 @@ def test_resolve_dataset_path_rejects_non_csv(
     path = tmp_path / "sample.txt"
     path.write_text("not,csv")
 
-    with pytest.raises(ValueError, match="Only CSV"):
+    with pytest.raises(UnsupportedFileTypeError, match="Only CSV"):
         resolve_dataset_path("sample.txt")
+
+
+def test_resolve_dataset_path_rejects_blank_name(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+
+    with pytest.raises(InvalidDatasetNameError, match="non-empty"):
+        resolve_dataset_path("   ")
+
+
+def test_resolve_dataset_path_raises_dataset_not_found_without_leaking_absolute_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+
+    with pytest.raises(DatasetNotFoundError) as exc_info:
+        resolve_dataset_path("missing.csv")
+
+    message = str(exc_info.value)
+    assert "missing.csv" in message
+    assert str(tmp_path.resolve()) not in message
 
 
 def test_preview_csv_dataset(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -105,6 +136,22 @@ def test_profile_csv_dataset(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     assert profile.column_count == 4
     assert profile.missing_values["age"] == 1
     assert profile.missing_percentage["age"] == 25.0
+
+
+def test_profile_csv_dataset_raises_profiling_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    write_dataset(tmp_path)
+
+    def fail_profile(*args: object, **kwargs: object) -> object:
+        raise ValueError("boom")
+
+    monkeypatch.setattr("ds_workspace_mcp.core.build_dataset_profile", fail_profile)
+
+    with pytest.raises(ProfilingError, match="Could not profile dataset: sample.csv"):
+        profile_csv_dataset("sample.csv")
 
 
 def test_detect_csv_dataset_issues(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -10,7 +10,15 @@ from pydantic import BaseModel
 
 from ds_workspace_mcp.cache import ProfileCache, ProfileCacheKey
 from ds_workspace_mcp.config import get_settings
+from ds_workspace_mcp.exceptions import (
+    DatasetNotFoundError,
+    InvalidDatasetNameError,
+    PathTraversalError,
+    ProfilingError,
+    UnsupportedFileTypeError,
+)
 from ds_workspace_mcp.profiling import DatasetProfile, build_dataset_profile
+from ds_workspace_mcp.tracing import traced_operation
 
 logger = logging.getLogger(__name__)
 profile_cache = ProfileCache(enabled=True, max_entries=1)
@@ -73,32 +81,33 @@ def resolve_dataset_path(file_name: str) -> Path:
         FileNotFoundError: If the CSV file does not exist.
     """
 
-    if not isinstance(file_name, str):
-        logger.warning("Rejected dataset path resolution because file_name was not a string.")
-        raise TypeError("file_name must be a string.")
+    with traced_operation("dataset.resolve", {"dataset.file_name": file_name}):
+        if not isinstance(file_name, str):
+            logger.warning("Rejected dataset path resolution because file_name was not a string.")
+            raise InvalidDatasetNameError("file_name must be a string.")
 
-    if not file_name.strip():
-        logger.warning("Rejected dataset path resolution because file_name was empty.")
-        raise ValueError("file_name must be a non-empty string.")
+        if not file_name.strip():
+            logger.warning("Rejected dataset path resolution because file_name was empty.")
+            raise InvalidDatasetNameError("file_name must be a non-empty string.")
 
-    data_root = get_data_root()
-    path = (data_root / file_name).resolve()
+        data_root = get_data_root()
+        path = (data_root / file_name).resolve()
 
-    # Prevent path traversal such as ../secret.csv.
-    if path != data_root and data_root not in path.parents:
-        logger.warning("Rejected dataset path outside data root for file_name=%s", file_name)
-        raise ValueError("Access outside the configured data directory is not allowed.")
+        # Prevent path traversal such as ../secret.csv.
+        if path != data_root and data_root not in path.parents:
+            logger.warning("Rejected dataset path outside data root for file_name=%s", file_name)
+            raise PathTraversalError("Access outside the configured data directory is not allowed.")
 
-    if path.suffix.lower() != ".csv":
-        logger.warning("Rejected non-CSV dataset for file_name=%s", file_name)
-        raise ValueError("Only CSV files are supported.")
+        if path.suffix.lower() != ".csv":
+            logger.warning("Rejected non-CSV dataset for file_name=%s", file_name)
+            raise UnsupportedFileTypeError("Only CSV files are supported.")
 
-    if not path.exists():
-        logger.warning("Dataset not found for file_name=%s", file_name)
-        raise FileNotFoundError(f"Dataset not found: {file_name}")
+        if not path.exists():
+            logger.warning("Dataset not found for file_name=%s", file_name)
+            raise DatasetNotFoundError(f"Dataset not found: {file_name}")
 
-    logger.info("Resolved dataset path for file_name=%s", file_name)
-    return path
+        logger.info("Resolved dataset path for file_name=%s", file_name)
+        return path
 
 
 def list_csv_files() -> list[str]:
@@ -127,9 +136,13 @@ def read_csv_dataset(file_name: str, nrows: int | None = None) -> pd.DataFrame:
         A pandas DataFrame.
     """
 
-    path = resolve_dataset_path(file_name)
-    logger.info("Reading CSV dataset file_name=%s nrows=%s", file_name, nrows)
-    return pd.read_csv(path, nrows=nrows)
+    with traced_operation(
+        "dataset.read_csv",
+        {"dataset.file_name": file_name, "dataset.nrows": nrows},
+    ):
+        path = resolve_dataset_path(file_name)
+        logger.info("Reading CSV dataset file_name=%s nrows=%s", file_name, nrows)
+        return pd.read_csv(path, nrows=nrows)
 
 
 def preview_csv_dataset(file_name: str, rows: int = 5) -> DatasetPreview:
@@ -184,34 +197,39 @@ def profile_csv_dataset(file_name: str) -> DatasetProfile:
         A structured profile containing shape, columns, dtypes, and missing values.
     """
 
-    path = resolve_dataset_path(file_name)
-    settings = get_settings()
-    stat = path.stat()
-    cache_key = ProfileCacheKey(
-        path=path,
-        file_size=stat.st_size,
-        modified_time_ns=stat.st_mtime_ns,
-        max_categorical_values=settings.mcp_max_categorical_values,
-    )
+    with traced_operation("dataset.profile", {"dataset.file_name": file_name}):
+        path = resolve_dataset_path(file_name)
+        settings = get_settings()
+        stat = path.stat()
+        cache_key = ProfileCacheKey(
+            path=path,
+            file_size=stat.st_size,
+            modified_time_ns=stat.st_mtime_ns,
+            max_categorical_values=settings.mcp_max_categorical_values,
+        )
 
-    profile_cache._enabled = settings.mcp_profile_cache_enabled
-    profile_cache._max_entries = settings.mcp_profile_cache_max_entries
+        profile_cache._enabled = settings.mcp_profile_cache_enabled
+        profile_cache._max_entries = settings.mcp_profile_cache_max_entries
 
-    cached_profile = profile_cache.get(cache_key)
-    if cached_profile is not None:
-        logger.info("Returned cached dataset profile for file_name=%s", file_name)
-        return cached_profile
+        cached_profile = profile_cache.get(cache_key)
+        if cached_profile is not None:
+            logger.info("Returned cached dataset profile for file_name=%s", file_name)
+            return cached_profile
 
-    df = pd.read_csv(path)
-    profile = build_dataset_profile(df=df, file_name=file_name)
-    profile_cache.set(cache_key, profile)
-    logger.info(
-        "Built dataset profile for file_name=%s row_count=%s column_count=%s",
-        file_name,
-        profile.row_count,
-        profile.column_count,
-    )
-    return profile
+        try:
+            df = pd.read_csv(path)
+            profile = build_dataset_profile(df=df, file_name=file_name)
+        except Exception as exc:  # pragma: no cover - exercised by targeted tests
+            logger.exception("Profiling failed for file_name=%s", file_name)
+            raise ProfilingError(f"Could not profile dataset: {file_name}") from exc
+        profile_cache.set(cache_key, profile)
+        logger.info(
+            "Built dataset profile for file_name=%s row_count=%s column_count=%s",
+            file_name,
+            profile.row_count,
+            profile.column_count,
+        )
+        return profile
 
 
 def detect_csv_dataset_issues(file_name: str) -> list[DatasetIssue]:

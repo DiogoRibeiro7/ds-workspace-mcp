@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from ds_workspace_mcp.exceptions import InsufficientDataError
 from ds_workspace_mcp.ml.baselines import evaluate_baseline_model_dataset
 
 
@@ -110,7 +111,7 @@ def test_evaluate_baseline_model_too_few_samples(
     df = pd.DataFrame({"feature": list(range(4)), "target": [1.0, 2.0, 3.0, 4.0]})
     write_baseline_dataset(tmp_path, "small.csv", df)
 
-    with pytest.raises(ValueError, match="at least"):
+    with pytest.raises(InsufficientDataError, match="at least"):
         evaluate_baseline_model_dataset(
             file_name="small.csv",
             target_column="target",

@@ -41,6 +41,7 @@ from ds_workspace_mcp.sql.sqlite_engine import (
     list_sqlite_tables as list_sqlite_tables_dataset,
 )
 from ds_workspace_mcp.timeseries import TimeSeriesValidationResult, validate_time_series_dataset
+from ds_workspace_mcp.tracing import configure_tracing, traced_operation
 
 logger = logging.getLogger(__name__)
 
@@ -71,26 +72,28 @@ def list_datasets() -> str:
     Resources are useful for exposing data without side effects.
     """
 
-    files = list_csv_files()
-    logger.info("Resource request datasets://catalog returned %s files", len(files))
+    with traced_operation("resource.list_datasets"):
+        files = list_csv_files()
+        logger.info("Resource request datasets://catalog returned %s files", len(files))
 
-    if not files:
-        return "No CSV datasets found in the configured data directory."
+        if not files:
+            return "No CSV datasets found in the configured data directory."
 
-    return "\n".join(files)
+        return "\n".join(files)
 
 
 @mcp.resource("databases://sqlite")
 def list_sqlite_databases() -> str:
     """List SQLite databases available to the assistant."""
 
-    files = list_sqlite_files()
-    logger.info("Resource request databases://sqlite returned %s files", len(files))
+    with traced_operation("resource.list_sqlite_databases"):
+        files = list_sqlite_files()
+        logger.info("Resource request databases://sqlite returned %s files", len(files))
 
-    if not files:
-        return "No SQLite databases found in the configured data directory."
+        if not files:
+            return "No SQLite databases found in the configured data directory."
 
-    return "\n".join(files)
+        return "\n".join(files)
 
 
 @mcp.tool()
@@ -106,8 +109,12 @@ def preview_csv(file_name: str, rows: int = 5) -> DatasetPreview:
         A structured preview of the dataset.
     """
 
-    logger.info("Tool preview_csv invoked file_name=%s rows=%s", file_name, rows)
-    return preview_csv_dataset(file_name=file_name, rows=rows)
+    with traced_operation(
+        "tool.preview_csv",
+        {"tool.name": "preview_csv", "dataset.file_name": file_name, "tool.rows": rows},
+    ):
+        logger.info("Tool preview_csv invoked file_name=%s rows=%s", file_name, rows)
+        return preview_csv_dataset(file_name=file_name, rows=rows)
 
 
 @mcp.tool()
@@ -122,8 +129,12 @@ def profile_csv(file_name: str) -> DatasetProfile:
         Dataset shape, column names, dtypes, and missing-value statistics.
     """
 
-    logger.info("Tool profile_csv invoked file_name=%s", file_name)
-    return profile_csv_dataset(file_name=file_name)
+    with traced_operation(
+        "tool.profile_csv",
+        {"tool.name": "profile_csv", "dataset.file_name": file_name},
+    ):
+        logger.info("Tool profile_csv invoked file_name=%s", file_name)
+        return profile_csv_dataset(file_name=file_name)
 
 
 @mcp.tool()
@@ -140,8 +151,12 @@ def detect_csv_issues(file_name: str) -> list[DatasetIssue]:
         A list of detected data-quality issues.
     """
 
-    logger.info("Tool detect_csv_issues invoked file_name=%s", file_name)
-    return detect_csv_dataset_issues(file_name=file_name)
+    with traced_operation(
+        "tool.detect_csv_issues",
+        {"tool.name": "detect_csv_issues", "dataset.file_name": file_name},
+    ):
+        logger.info("Tool detect_csv_issues invoked file_name=%s", file_name)
+        return detect_csv_dataset_issues(file_name=file_name)
 
 
 @mcp.tool()
@@ -162,40 +177,57 @@ def query_csv_with_duckdb(
         Structured query results with bounded rows and column names.
     """
 
-    logger.info(
-        "Tool query_csv_with_duckdb invoked file_name=%s limit=%s",
-        file_name,
-        limit,
-    )
-    return query_csv_with_duckdb_dataset(file_name=file_name, sql=sql, limit=limit)
+    with traced_operation(
+        "tool.query_csv_with_duckdb",
+        {"tool.name": "query_csv_with_duckdb", "dataset.file_name": file_name, "tool.limit": limit},
+    ):
+        logger.info(
+            "Tool query_csv_with_duckdb invoked file_name=%s limit=%s",
+            file_name,
+            limit,
+        )
+        return query_csv_with_duckdb_dataset(file_name=file_name, sql=sql, limit=limit)
 
 
 @mcp.tool()
 def list_sqlite_databases_tool() -> list[SQLiteDatabaseInfo]:
     """Return SQLite database files available in the configured data directory."""
 
-    logger.info("Tool list_sqlite_databases_tool invoked")
-    return [SQLiteDatabaseInfo(file_name=file_name) for file_name in list_sqlite_files()]
+    with traced_operation("tool.list_sqlite_databases", {"tool.name": "list_sqlite_databases"}):
+        logger.info("Tool list_sqlite_databases_tool invoked")
+        return [SQLiteDatabaseInfo(file_name=file_name) for file_name in list_sqlite_files()]
 
 
 @mcp.tool()
 def list_sqlite_tables(file_name: str) -> list[str]:
     """List user tables from a SQLite database."""
 
-    logger.info("Tool list_sqlite_tables invoked file_name=%s", file_name)
-    return list_sqlite_tables_dataset(file_name=file_name)
+    with traced_operation(
+        "tool.list_sqlite_tables",
+        {"tool.name": "list_sqlite_tables", "dataset.file_name": file_name},
+    ):
+        logger.info("Tool list_sqlite_tables invoked file_name=%s", file_name)
+        return list_sqlite_tables_dataset(file_name=file_name)
 
 
 @mcp.tool()
 def describe_sqlite_table(file_name: str, table_name: str) -> SQLiteTableSchema:
     """Describe a SQLite table schema."""
 
-    logger.info(
-        "Tool describe_sqlite_table invoked file_name=%s table_name=%s",
-        file_name,
-        table_name,
-    )
-    return describe_sqlite_table_dataset(file_name=file_name, table_name=table_name)
+    with traced_operation(
+        "tool.describe_sqlite_table",
+        {
+            "tool.name": "describe_sqlite_table",
+            "dataset.file_name": file_name,
+            "sqlite.table_name": table_name,
+        },
+    ):
+        logger.info(
+            "Tool describe_sqlite_table invoked file_name=%s table_name=%s",
+            file_name,
+            table_name,
+        )
+        return describe_sqlite_table_dataset(file_name=file_name, table_name=table_name)
 
 
 @mcp.tool()
@@ -206,35 +238,55 @@ def query_sqlite(
 ) -> SQLiteQueryResult:
     """Run a safe read-only SQLite query against a database in the data directory."""
 
-    logger.info("Tool query_sqlite invoked file_name=%s limit=%s", file_name, limit)
-    return query_sqlite_database(file_name=file_name, sql=sql, limit=limit)
+    with traced_operation(
+        "tool.query_sqlite",
+        {"tool.name": "query_sqlite", "dataset.file_name": file_name, "tool.limit": limit},
+    ):
+        logger.info("Tool query_sqlite invoked file_name=%s limit=%s", file_name, limit)
+        return query_sqlite_database(file_name=file_name, sql=sql, limit=limit)
 
 
 @mcp.tool()
 def summarize_correlations(file_name: str, method: str = "pearson") -> CorrelationSummary:
     """Summarize the top absolute correlations among numeric columns."""
 
-    logger.info(
-        "Tool summarize_correlations invoked file_name=%s method=%s",
-        file_name,
-        method,
-    )
-    return summarize_correlations_dataset(file_name=file_name, method=method)
+    with traced_operation(
+        "tool.summarize_correlations",
+        {
+            "tool.name": "summarize_correlations",
+            "dataset.file_name": file_name,
+            "tool.method": method,
+        },
+    ):
+        logger.info(
+            "Tool summarize_correlations invoked file_name=%s method=%s",
+            file_name,
+            method,
+        )
+        return summarize_correlations_dataset(file_name=file_name, method=method)
 
 
 @mcp.tool()
 def detect_possible_target_leakage(file_name: str, target_column: str) -> LeakageSummary:
     """Return heuristic warnings about possible target leakage."""
 
-    logger.info(
-        "Tool detect_possible_target_leakage invoked file_name=%s target_column=%s",
-        file_name,
-        target_column,
-    )
-    return detect_possible_target_leakage_dataset(
-        file_name=file_name,
-        target_column=target_column,
-    )
+    with traced_operation(
+        "tool.detect_possible_target_leakage",
+        {
+            "tool.name": "detect_possible_target_leakage",
+            "dataset.file_name": file_name,
+            "tool.target_column": target_column,
+        },
+    ):
+        logger.info(
+            "Tool detect_possible_target_leakage invoked file_name=%s target_column=%s",
+            file_name,
+            target_column,
+        )
+        return detect_possible_target_leakage_dataset(
+            file_name=file_name,
+            target_column=target_column,
+        )
 
 
 @mcp.tool()
@@ -246,20 +298,30 @@ def validate_time_series_dataset_tool(
 ) -> TimeSeriesValidationResult:
     """Validate whether a dataset looks suitable for time-series modeling."""
 
-    logger.info(
-        "Tool validate_time_series_dataset_tool invoked "
-        "file_name=%s time_column=%s target_column=%s group_column=%s",
-        file_name,
-        time_column,
-        target_column,
-        group_column,
-    )
-    return validate_time_series_dataset(
-        file_name=file_name,
-        time_column=time_column,
-        target_column=target_column,
-        group_column=group_column,
-    )
+    with traced_operation(
+        "tool.validate_time_series_dataset",
+        {
+            "tool.name": "validate_time_series_dataset",
+            "dataset.file_name": file_name,
+            "tool.time_column": time_column,
+            "tool.target_column": target_column,
+            "tool.group_column": group_column,
+        },
+    ):
+        logger.info(
+            "Tool validate_time_series_dataset_tool invoked "
+            "file_name=%s time_column=%s target_column=%s group_column=%s",
+            file_name,
+            time_column,
+            target_column,
+            group_column,
+        )
+        return validate_time_series_dataset(
+            file_name=file_name,
+            time_column=time_column,
+            target_column=target_column,
+            group_column=group_column,
+        )
 
 
 @mcp.tool()
@@ -272,19 +334,28 @@ def evaluate_baseline_model(
 ) -> BaselineEvaluationResult:
     """Evaluate a dummy baseline model for a supervised learning task."""
 
-    logger.info(
-        "Tool evaluate_baseline_model invoked file_name=%s target_column=%s task_type=%s",
-        file_name,
-        target_column,
-        task_type,
-    )
-    return evaluate_baseline_model_dataset(
-        file_name=file_name,
-        target_column=target_column,
-        task_type=task_type,
-        test_size=test_size,
-        random_state=random_state,
-    )
+    with traced_operation(
+        "tool.evaluate_baseline_model",
+        {
+            "tool.name": "evaluate_baseline_model",
+            "dataset.file_name": file_name,
+            "tool.target_column": target_column,
+            "tool.task_type": task_type,
+        },
+    ):
+        logger.info(
+            "Tool evaluate_baseline_model invoked file_name=%s target_column=%s task_type=%s",
+            file_name,
+            target_column,
+            task_type,
+        )
+        return evaluate_baseline_model_dataset(
+            file_name=file_name,
+            target_column=target_column,
+            task_type=task_type,
+            test_size=test_size,
+            random_state=random_state,
+        )
 
 
 @mcp.prompt()
@@ -300,12 +371,20 @@ def dataset_analysis_prompt(file_name: str, objective: str = "exploratory analys
         A prompt that an MCP-compatible assistant can use.
     """
 
-    logger.info(
-        "Prompt dataset_analysis_prompt created file_name=%s objective_length=%s",
-        file_name,
-        len(objective),
-    )
-    return f"""
+    with traced_operation(
+        "prompt.dataset_analysis_prompt",
+        {
+            "prompt.name": "dataset_analysis_prompt",
+            "dataset.file_name": file_name,
+            "prompt.objective_length": len(objective),
+        },
+    ):
+        logger.info(
+            "Prompt dataset_analysis_prompt created file_name=%s objective_length=%s",
+            file_name,
+            len(objective),
+        )
+        return f"""
 You are analysing the dataset `{file_name}`.
 
 Objective:
@@ -338,6 +417,7 @@ def main() -> None:
 
     settings = get_settings()
     configure_logging(settings)
+    configure_tracing(settings)
     logger.info(
         "Starting MCP server transport=%s host=%s port=%s auth_enabled=%s",
         settings.mcp_transport,

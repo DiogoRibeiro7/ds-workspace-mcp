@@ -15,6 +15,9 @@ from ds_workspace_mcp.config import (
     DEFAULT_PORT,
     DEFAULT_PROFILE_CACHE_ENABLED,
     DEFAULT_PROFILE_CACHE_MAX_ENTRIES,
+    DEFAULT_TRACING_CONSOLE_EXPORTER,
+    DEFAULT_TRACING_ENABLED,
+    DEFAULT_TRACING_SERVICE_NAME,
     Settings,
     get_settings,
 )
@@ -36,6 +39,9 @@ def test_settings_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert settings.mcp_profile_cache_max_entries == DEFAULT_PROFILE_CACHE_MAX_ENTRIES
     assert settings.mcp_log_level == DEFAULT_LOG_LEVEL
     assert settings.mcp_api_key is None
+    assert settings.mcp_tracing_enabled is DEFAULT_TRACING_ENABLED
+    assert settings.mcp_tracing_service_name == DEFAULT_TRACING_SERVICE_NAME
+    assert settings.mcp_tracing_console_exporter is DEFAULT_TRACING_CONSOLE_EXPORTER
 
 
 def test_settings_reject_invalid_transport(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -81,3 +87,10 @@ def test_settings_treat_blank_api_key_as_disabled(monkeypatch: pytest.MonkeyPatc
     settings = Settings()
 
     assert settings.mcp_api_key is None
+
+
+def test_settings_reject_blank_tracing_service_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MCP_TRACING_SERVICE_NAME", "   ")
+
+    with pytest.raises(ValidationError, match="MCP_TRACING_SERVICE_NAME"):
+        Settings()

@@ -266,3 +266,27 @@ Acceptance criteria:
 - HTTP auth remains disabled by default.
 - `stdio` mode behavior is unchanged.
 - HTTP requests without a valid bearer token are rejected when `MCP_API_KEY` is set.
+
+### OpenTelemetry hooks
+
+- [x] Add optional OpenTelemetry package extras.
+- [x] Add tracing settings for enablement and console export.
+- [x] Add spans around dataset resolution, CSV reads, profiling, SQL execution, and tool boundaries.
+- [x] Keep tracing optional and non-fatal when dependencies are absent.
+
+Acceptance criteria:
+- The server behaves normally when tracing is disabled.
+- Enabling tracing without optional packages does not break runtime behavior.
+- README explains how to enable local tracing.
+
+### Error handling
+
+- [x] Add project-specific exceptions for common dataset and SQL failures.
+- [x] Use explicit exceptions in dataset resolution, profiling, SQL validation, and baseline data checks.
+- [x] Add tests that messages stay clear and do not expose absolute local paths.
+- [x] Add a troubleshooting section to the README.
+
+Acceptance criteria:
+- Common failures map to stable exception types.
+- User-facing messages stay concise and path-safe.
+- Regression tests cover the main exception paths.

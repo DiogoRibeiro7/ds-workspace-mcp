@@ -812,6 +812,60 @@ files = [
 ]
 
 [[package]]
+name = "opentelemetry-api"
+version = "1.42.1"
+description = "OpenTelemetry Python API"
+optional = true
+python-versions = ">=3.10"
+groups = ["main"]
+markers = "extra == \"opentelemetry\""
+files = [
+    {file = "opentelemetry_api-1.42.1-py3-none-any.whl", hash = "sha256:51a69edacadbc03a8950ace1c4c21099cacc538820ac2c9e36277e78cebba714"},
+    {file = "opentelemetry_api-1.42.1.tar.gz", hash = "sha256:56c63bea9f77b62856be8c47600474acad853b2924b99b1687c4cb6297166716"},
+]
+
+[package.dependencies]
+typing-extensions = ">=4.5.0"
+
+[[package]]
+name = "opentelemetry-sdk"
+version = "1.42.1"
+description = "OpenTelemetry Python SDK"
+optional = true
+python-versions = ">=3.10"
+groups = ["main"]
+markers = "extra == \"opentelemetry\""
+files = [
+    {file = "opentelemetry_sdk-1.42.1-py3-none-any.whl", hash = "sha256:083cd4bbfaa5aa7b5a9e552430d9951219967cfb27aa61feb13a77aba1fc839d"},
+    {file = "opentelemetry_sdk-1.42.1.tar.gz", hash = "sha256:8c834e8f8c9ba4171d4ec843d0cb8a67e4c7394d3f9e9297e582cbd9456ddbf7"},
+]
+
+[package.dependencies]
+opentelemetry-api = "1.42.1"
+opentelemetry-semantic-conventions = "0.63b1"
+typing-extensions = ">=4.5.0"
+
+[package.extras]
+file-configuration = ["jsonschema (>=4.0)", "pyyaml (>=6.0)"]
+
+[[package]]
+name = "opentelemetry-semantic-conventions"
+version = "0.63b1"
+description = "OpenTelemetry Semantic Conventions"
+optional = true
+python-versions = ">=3.10"
+groups = ["main"]
+markers = "extra == \"opentelemetry\""
+files = [
+    {file = "opentelemetry_semantic_conventions-0.63b1-py3-none-any.whl", hash = "sha256:dfe5ef4dee82586b746f522b818ceb298d00b3d59f660042bd79404bff8d0682"},
+    {file = "opentelemetry_semantic_conventions-0.63b1.tar.gz", hash = "sha256:3daf963611334b365e98a57438183eb012d3bfb40b2d931a9af613476b8701a9"},
+]
+
+[package.dependencies]
+opentelemetry-api = "1.42.1"
+typing-extensions = ">=4.5.0"
+
+[[package]]
 name = "packaging"
 version = "26.2"
 description = "Core utilities for Python packages"
@@ -1811,7 +1865,10 @@ h11 = ">=0.8"
 [package.extras]
 standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.8.0)", "python-dotenv (>=0.13)", "pyyaml (>=5.1)", "uvloop (>=0.15.1) ; sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation != \"PyPy\"", "watchfiles (>=0.20)", "websockets (>=10.4)"]
 
+[extras]
+opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
+
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.13"
-content-hash = "8a6275d93174941467c3cd62405b793242120b42358e7bf077e8a7adca642c07"
+content-hash = "9803a7f2a9197eaec6a615e7f8e1342aad0f3b3a7b3d64e7df1d5113f376e48c"
