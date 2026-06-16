@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ds-workspace-mcp"
-version = "1.0.0"
+version = "1.0.1"
 description = "A Model Context Protocol server for safely inspecting and profiling local analytical datasets."
 authors = ["Diogo Ribeiro <hansolo.dj@gmail.com>"]
 readme = "README.md"
@@ -34,7 +34,7 @@ opentelemetry-api = { version = "^1.36.0", optional = true }
 opentelemetry-sdk = { version = "^1.36.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.2.0"
+pytest = "^9.0.3"
 ruff = "^0.5.0"
 mypy = "^1.10.0"
 pandas-stubs = "^2.2.0"

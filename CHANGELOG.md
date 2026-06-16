@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-06-16
+
+### Changed
+
+- Upgraded `pytest` to `9.1.0` to address `GHSA-6w46-j5rx-g56g` / `CVE-2025-71176`.
+- Clarified the PyPI release prerequisites after the failed `v1.0.0` publish attempt.
+
+### Fixed
+
+- Removed the known moderate Dependabot alert caused by `pytest < 9.0.3` in `poetry.lock`.
+
 ## [1.0.0] - 2026-06-16
 
 ### Added
