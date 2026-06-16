@@ -366,6 +366,19 @@ Arguments:
 }
 ```
 
+#### `suggest_feature_columns`
+
+Suggest which columns to include, review, or exclude for a supervised modeling target.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "target_column": "appointments_completed"
+}
+```
+
 #### `preview_csv`
 
 Preview the first rows of a CSV file.

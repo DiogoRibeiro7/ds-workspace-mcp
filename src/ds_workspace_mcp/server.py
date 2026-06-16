@@ -20,6 +20,10 @@ from ds_workspace_mcp.diagnostics import (
     detect_possible_target_leakage_dataset,
     summarize_correlations_dataset,
 )
+from ds_workspace_mcp.feature_selection import (
+    FeatureSelectionResult,
+    suggest_feature_columns_dataset,
+)
 from ds_workspace_mcp.logging_config import configure_logging
 from ds_workspace_mcp.ml.baselines import (
     BaselineEvaluationResult,
@@ -202,6 +206,38 @@ def suggest_target_columns(file_name: str) -> TargetSuggestionResult:
     ):
         logger.info("Tool suggest_target_columns invoked file_name=%s", file_name)
         return suggest_target_columns_dataset(file_name=file_name)
+
+
+@mcp.tool()
+def suggest_feature_columns(file_name: str, target_column: str) -> FeatureSelectionResult:
+    """
+    Suggest which feature columns to include, review, or exclude for modeling.
+
+    Args:
+        file_name: CSV file name inside the configured data directory.
+        target_column: Target column to protect against leakage and trivial features.
+
+    Returns:
+        Structured feature-selection guidance for a baseline modeling workflow.
+    """
+
+    with traced_operation(
+        "tool.suggest_feature_columns",
+        {
+            "tool.name": "suggest_feature_columns",
+            "dataset.file_name": file_name,
+            "tool.target_column": target_column,
+        },
+    ):
+        logger.info(
+            "Tool suggest_feature_columns invoked file_name=%s target_column=%s",
+            file_name,
+            target_column,
+        )
+        return suggest_feature_columns_dataset(
+            file_name=file_name,
+            target_column=target_column,
+        )
 
 
 @mcp.tool()

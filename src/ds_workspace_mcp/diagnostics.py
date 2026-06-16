@@ -215,6 +215,8 @@ def _is_highly_correlated(left: pd.Series[Any], right: pd.Series[Any]) -> bool:
     combined = pd.concat([left, right], axis=1).dropna()
     if len(combined) < 3:
         return False
+    if combined.iloc[:, 0].nunique() <= 1 or combined.iloc[:, 1].nunique() <= 1:
+        return False
 
     correlation = combined.iloc[:, 0].corr(combined.iloc[:, 1])
     if pd.isna(correlation):

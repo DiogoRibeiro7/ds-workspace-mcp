@@ -93,6 +93,29 @@ The following are considered non-breaking:
   - identifier-like and datetime-like columns may still appear in the list but are penalized and explained
   - `suggested_task_type` is advisory and should be reviewed against the real use case
 
+#### `suggest_feature_columns(file_name: str, target_column: str)`
+
+- Stable name: `suggest_feature_columns`
+- Purpose: suggest which columns to include, review, or exclude for supervised modeling
+- Stable result fields:
+  - `file_name: str`
+  - `target_column: str`
+  - `include_columns: list[str]`
+  - `review_columns: list[str]`
+  - `exclude_columns: list[str]`
+  - `suggestions: list[FeatureSuggestion]`
+  - `summary: str`
+- Stable suggestion fields:
+  - `column: str`
+  - `decision: str`
+  - `missing_percentage: float`
+  - `unique_count: int`
+  - `reasons: list[str]`
+- Heuristic notes:
+  - the tool is designed for practical baseline readiness, not definitive feature engineering
+  - identifier-like, duplicate, target-overlap, and strongly target-correlated columns may be excluded as leakage risks
+  - datetime-like and moderately sparse columns are usually marked for review rather than automatic exclusion
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`
