@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ds-workspace-mcp"
-version = "0.1.0"
+version = "1.0.0"
 description = "A Model Context Protocol server for safely inspecting and profiling local analytical datasets."
 authors = ["Diogo Ribeiro <hansolo.dj@gmail.com>"]
 readme = "README.md"
@@ -11,7 +11,7 @@ repository = "https://github.com/DiogoRibeiro7/ds-workspace-mcp"
 documentation = "https://github.com/DiogoRibeiro7/ds-workspace-mcp#readme"
 keywords = ["mcp", "model-context-protocol", "data-science", "analytics", "python"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",

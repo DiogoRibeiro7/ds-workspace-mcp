@@ -6,6 +6,28 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-16
+
+### Added
+
+- Stable public API contract covering MCP resources, tools, prompts, CLI commands, environment variables, and compatibility expectations.
+- End-to-end integration coverage for stdio, Streamable HTTP, HTTP auth, and runnable example clients.
+- Security model, deployment guide, and architecture overview for third-party use.
+- Dataset-size, SQL-length, and SQL-timeout guardrails with clean user-facing error categories.
+
+### Changed
+
+- Promoted the project surface to a documented `v1.0.0` contract for local analytical workflows.
+- Clarified operational boundaries and heuristic limitations across the documentation set.
+
+### Known Limitations
+
+- Leakage diagnostics and forecasting-readiness checks remain heuristic.
+- HTTP authentication is still a shared-secret layer, not a full identity system.
+- DuckDB timeout enforcement is best-effort interruption rather than a hard execution sandbox.
+
+## [0.2.0] - 2026-06-15
+
 ### Added
 
 - Configuration validation with typed settings and documented environment variables.

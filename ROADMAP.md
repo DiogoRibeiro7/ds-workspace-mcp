@@ -42,3 +42,11 @@
 - [x] Add local workflow CLI.
 - [x] Add MCP client examples.
 - [x] Add release packaging and publishing workflow.
+
+## v1.0 — Stable release
+
+- [x] Document the public API contract.
+- [x] Add end-to-end transport coverage for stdio, HTTP, and HTTP auth.
+- [x] Add security, deployment, and architecture docs.
+- [x] Add dataset, SQL length, and SQL timeout guardrails.
+- [x] Prepare `1.0.0` release metadata and notes.
