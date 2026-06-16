@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
+from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
 from ds_workspace_mcp.server import main as serve_main
 from ds_workspace_mcp.synthetic.healthcare import (
     DEFAULT_CLINICS,
@@ -32,6 +33,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Profile a CSV dataset and print the result as JSON.",
     )
     profile_parser.add_argument("file_name", help="CSV dataset file name.")
+
+    plan_parser = subparsers.add_parser(
+        "plan-modeling",
+        help="Build a first-pass modeling experiment plan and print the result as JSON.",
+    )
+    plan_parser.add_argument("file_name", help="CSV dataset file name.")
+    plan_parser.add_argument(
+        "--target-column",
+        help="Optional target column override.",
+    )
 
     generate_parser = subparsers.add_parser(
         "generate-sample-healthcare-data",
@@ -89,6 +100,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "profile-dataset":
         profile = profile_csv_dataset(args.file_name)
         print(json.dumps(profile.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "plan-modeling":
+        plan = build_experiment_plan_dataset(
+            file_name=args.file_name,
+            target_column=args.target_column,
+        )
+        print(json.dumps(plan.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "generate-sample-healthcare-data":

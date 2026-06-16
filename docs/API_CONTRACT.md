@@ -137,6 +137,31 @@ The following are considered non-breaking:
   - validation strategy is advisory and may prefer time-series review when datetime context and regression-style targets are both present
   - this tool summarizes downstream heuristics and does not replace manual target or feature judgment
 
+#### `build_experiment_plan(file_name: str, target_column: str | None = None)`
+
+- Stable name: `build_experiment_plan`
+- Purpose: turn the modeling-readiness workflow into a concrete starter experiment plan
+- Stable result fields:
+  - `file_name: str`
+  - `target_column: str`
+  - `target_source: str`
+  - `suggested_task_type: str`
+  - `validation_strategy: str`
+  - `feature_columns: list[str]`
+  - `review_columns: list[str]`
+  - `risks: list[str]`
+  - `baseline_models: list[ModelCandidate]`
+  - `evaluation_metrics: list[str]`
+  - `next_steps: list[str]`
+  - `summary: str`
+- Stable model-candidate fields:
+  - `name: str`
+  - `rationale: str`
+- Heuristic notes:
+  - model suggestions are planning guidance, not implemented training pipelines
+  - baseline model names may refer to standard model families rather than built-in MCP execution capabilities
+  - when `target_column` is omitted, the plan uses the top suggested target candidate
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`
@@ -371,6 +396,8 @@ The `ds-workspace-mcp` console script is public.
   - prints CSV file names, one per line
 - `ds-workspace-mcp profile-dataset <file_name>`
   - prints the `profile_csv` result as JSON
+- `ds-workspace-mcp plan-modeling <file_name> [--target-column]`
+  - prints the `build_experiment_plan` result as JSON
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`
   - writes a synthetic healthcare CSV and prints the output path
 

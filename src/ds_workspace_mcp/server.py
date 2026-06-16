@@ -20,6 +20,10 @@ from ds_workspace_mcp.diagnostics import (
     detect_possible_target_leakage_dataset,
     summarize_correlations_dataset,
 )
+from ds_workspace_mcp.experiment_plan import (
+    ExperimentPlanResult,
+    build_experiment_plan_dataset,
+)
 from ds_workspace_mcp.feature_selection import (
     FeatureSelectionResult,
     suggest_feature_columns_dataset,
@@ -274,6 +278,41 @@ def assess_modeling_readiness(
             target_column,
         )
         return assess_modeling_readiness_dataset(
+            file_name=file_name,
+            target_column=target_column,
+        )
+
+
+@mcp.tool()
+def build_experiment_plan(
+    file_name: str,
+    target_column: str | None = None,
+) -> ExperimentPlanResult:
+    """
+    Build a concrete first-pass modeling experiment plan for a dataset.
+
+    Args:
+        file_name: CSV file name inside the configured data directory.
+        target_column: Optional target override. When omitted, the top suggested target is used.
+
+    Returns:
+        A structured experiment plan with starter models, risks, metrics, and next steps.
+    """
+
+    with traced_operation(
+        "tool.build_experiment_plan",
+        {
+            "tool.name": "build_experiment_plan",
+            "dataset.file_name": file_name,
+            "tool.target_column": target_column,
+        },
+    ):
+        logger.info(
+            "Tool build_experiment_plan invoked file_name=%s target_column=%s",
+            file_name,
+            target_column,
+        )
+        return build_experiment_plan_dataset(
             file_name=file_name,
             target_column=target_column,
         )

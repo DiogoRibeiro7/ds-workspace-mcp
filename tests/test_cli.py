@@ -68,6 +68,24 @@ def test_cli_profile_dataset(
     assert payload["row_count"] == 3
 
 
+def test_cli_plan_modeling(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    write_cli_dataset(tmp_path, "sample.csv")
+
+    exit_code = cli.main(["plan-modeling", "sample.csv", "--target-column", "target"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["file_name"] == "sample.csv"
+    assert payload["target_column"] == "target"
+    assert "baseline_models" in payload
+    assert "evaluation_metrics" in payload
+
+
 def test_cli_generate_sample_healthcare_data(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

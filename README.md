@@ -276,6 +276,12 @@ Profile one dataset as JSON:
 poetry run ds-workspace-mcp profile-dataset sample_clinic_usage.csv
 ```
 
+Build a first-pass modeling plan as JSON:
+
+```bash
+poetry run ds-workspace-mcp plan-modeling sample_clinic_usage.csv --target-column appointments_completed
+```
+
 Generate a synthetic dataset through the main CLI:
 
 ```bash
@@ -382,6 +388,19 @@ Arguments:
 #### `assess_modeling_readiness`
 
 Return a compact modeling-readiness summary that combines target suggestion, feature selection, leakage review, and next-step guidance.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "target_column": "appointments_completed"
+}
+```
+
+#### `build_experiment_plan`
+
+Build a concrete first-pass modeling plan with starter models, validation guidance, risks, metrics, and next steps.
 
 Arguments:
 
