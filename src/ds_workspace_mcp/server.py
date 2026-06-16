@@ -41,6 +41,10 @@ from ds_workspace_mcp.sql.sqlite_engine import (
 from ds_workspace_mcp.sql.sqlite_engine import (
     list_sqlite_tables as list_sqlite_tables_dataset,
 )
+from ds_workspace_mcp.targeting import (
+    TargetSuggestionResult,
+    suggest_target_columns_dataset,
+)
 from ds_workspace_mcp.timeseries import TimeSeriesValidationResult, validate_time_series_dataset
 from ds_workspace_mcp.tracing import configure_tracing, traced_operation
 
@@ -178,6 +182,26 @@ def summarize_dataset(file_name: str) -> DatasetOverview:
     ):
         logger.info("Tool summarize_dataset invoked file_name=%s", file_name)
         return summarize_dataset_overview(file_name=file_name)
+
+
+@mcp.tool()
+def suggest_target_columns(file_name: str) -> TargetSuggestionResult:
+    """
+    Suggest plausible target columns for modeling.
+
+    Args:
+        file_name: CSV file name inside the configured data directory.
+
+    Returns:
+        Ranked target candidates with suggested task types and reasoning.
+    """
+
+    with traced_operation(
+        "tool.suggest_target_columns",
+        {"tool.name": "suggest_target_columns", "dataset.file_name": file_name},
+    ):
+        logger.info("Tool suggest_target_columns invoked file_name=%s", file_name)
+        return suggest_target_columns_dataset(file_name=file_name)
 
 
 @mcp.tool()

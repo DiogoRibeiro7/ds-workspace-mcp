@@ -88,7 +88,7 @@ def _build_recommended_next_tools(
 ) -> list[str]:
     """Recommend the next most useful MCP tools for exploration."""
 
-    recommendations = ["profile_csv", "detect_csv_issues"]
+    recommendations = ["profile_csv", "detect_csv_issues", "suggest_target_columns"]
     if has_numeric:
         recommendations.append("summarize_correlations")
     if has_datetime:

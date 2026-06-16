@@ -354,6 +354,18 @@ Arguments:
 }
 ```
 
+#### `suggest_target_columns`
+
+Suggest plausible target columns for modeling, with task-type hints and reasoning.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv"
+}
+```
+
 #### `preview_csv`
 
 Preview the first rows of a CSV file.

@@ -72,6 +72,27 @@ The following are considered non-breaking:
   - `summary` is intentionally human-readable and may change wording without changing the contract
   - issue highlights and recommended next tools are guidance, not strict prescriptions
 
+#### `suggest_target_columns(file_name: str)`
+
+- Stable name: `suggest_target_columns`
+- Purpose: suggest plausible target columns for modeling and forecasting workflows
+- Stable result fields:
+  - `file_name: str`
+  - `candidates: list[TargetCandidate]`
+  - `summary: str`
+- Stable candidate fields:
+  - `column: str`
+  - `score: float`
+  - `suggested_task_type: str`
+  - `non_null_count: int`
+  - `unique_count: int`
+  - `missing_percentage: float`
+  - `reasons: list[str]`
+- Heuristic notes:
+  - suggestions rank columns by practical modeling usefulness, not guaranteed business value
+  - identifier-like and datetime-like columns may still appear in the list but are penalized and explained
+  - `suggested_task_type` is advisory and should be reviewed against the real use case
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`
