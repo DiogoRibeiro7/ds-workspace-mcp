@@ -247,13 +247,13 @@ Acceptance criteria:
 
 - [x] Review package metadata in `pyproject.toml`.
 - [x] Add a GitHub Actions workflow to build distribution artifacts.
-- [x] Add tag-driven PyPI publishing support.
+- [x] Add tag-driven release artifact workflow.
 - [x] Document the local and GitHub-based release flow.
 
 Acceptance criteria:
 - `poetry build` produces a wheel and source distribution locally.
 - GitHub can build release artifacts on demand.
-- Tag pushes can publish to PyPI once repository secrets are configured.
+- Tag pushes can build release artifacts from a tagged repository state.
 
 ### HTTP authentication
 

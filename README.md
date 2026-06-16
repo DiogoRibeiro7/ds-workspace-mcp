@@ -637,9 +637,9 @@ This produces both a wheel and a source distribution in `dist/`.
 GitHub Actions also includes a release workflow in `.github/workflows/release.yml`:
 
 - `workflow_dispatch` builds artifacts for a manual release dry run.
-- pushing a tag such as `v0.2.0` builds artifacts and publishes them to PyPI.
+- pushing a tag such as `v1.0.0` builds release artifacts from the tagged repository state.
 
-Publishing requires a repository secret named `PYPI_API_TOKEN`.
+This repository treats Git tags and GitHub releases as the primary release mechanism. Package indexes are optional and are not part of the core product workflow.
 
 ## Notebooks
 

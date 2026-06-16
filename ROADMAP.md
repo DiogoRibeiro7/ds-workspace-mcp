@@ -41,7 +41,7 @@
 - [x] Add synthetic healthcare dataset generation.
 - [x] Add local workflow CLI.
 - [x] Add MCP client examples.
-- [x] Add release packaging and publishing workflow.
+- [x] Add release artifact and GitHub-tag workflow.
 
 ## v1.0 — Stable release
 

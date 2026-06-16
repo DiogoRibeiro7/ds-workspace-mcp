@@ -13,9 +13,9 @@
 The `v1.0.0` tag was pushed successfully, but:
 
 - GitHub still reported an open Dependabot alert because the repository lockfile used `pytest 8.4.2`
-- the PyPI publish job failed because the repository had no `PYPI_API_TOKEN` secret configured and the fallback trusted-publisher claims did not match a configured PyPI publisher
+- the repository release workflow was still framed around PyPI publishing, which is not part of the core product goals for this repo
 
-This patch release fixes the dependency alert in-repo. PyPI publishing still requires repository or PyPI-side configuration before tagging the next release.
+This patch release fixes the dependency alert in-repo and aligns the release story back to GitHub-tagged releases and release artifacts.
 
 ## Validation Summary
 

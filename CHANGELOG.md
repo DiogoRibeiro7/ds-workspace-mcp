@@ -11,7 +11,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Changed
 
 - Upgraded `pytest` to `9.1.0` to address `GHSA-6w46-j5rx-g56g` / `CVE-2025-71176`.
-- Clarified the PyPI release prerequisites after the failed `v1.0.0` publish attempt.
+- Removed PyPI-first release assumptions from the workflow and release documentation.
 
 ### Fixed
 
@@ -58,6 +58,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Optional bearer-token authentication for Streamable HTTP deployments.
 - Optional OpenTelemetry tracing hooks for core dataset and tool operations.
 - Project-specific exceptions with clearer, safer user-facing error messages.
+- GitHub-tag-based release artifacts and release notes workflow.
 
 ## [0.1.0] - 2026-06-15
 

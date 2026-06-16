@@ -54,7 +54,7 @@ Acceptance criteria:
 - [ ] Update `pyproject.toml` and `src/ds_workspace_mcp/__init__.py` to `1.0.0`.
 - [ ] Add `docs/V1_0_0_RELEASE_NOTES.md`.
 - [ ] Run full validation: unit tests, integration tests, linting, typing, and build.
-- [ ] Tag and publish the `v1.0.0` release.
+- [ ] Tag the `v1.0.0` release and build release artifacts.
 
 Acceptance criteria:
 - The release can be cut from a documented checklist with no hidden manual steps.

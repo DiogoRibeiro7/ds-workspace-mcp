@@ -23,7 +23,7 @@
 - [x] Confirm console scripts work as documented.
 - [x] Confirm example files and sample data are included in the repository.
 - [x] Confirm `.github/workflows/release.yml` matches the intended release process.
-- [ ] Confirm either `PYPI_API_TOKEN` is configured in GitHub repository secrets or a matching PyPI trusted publisher is configured before tagging a release.
+- [x] Confirm the release workflow builds artifacts and matches the GitHub-tag-based release process.
 
 ## Release Notes
 
