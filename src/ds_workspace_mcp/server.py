@@ -29,6 +29,10 @@ from ds_workspace_mcp.ml.baselines import (
     BaselineEvaluationResult,
     evaluate_baseline_model_dataset,
 )
+from ds_workspace_mcp.modeling_readiness import (
+    ModelingReadinessResult,
+    assess_modeling_readiness_dataset,
+)
 from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
@@ -235,6 +239,41 @@ def suggest_feature_columns(file_name: str, target_column: str) -> FeatureSelect
             target_column,
         )
         return suggest_feature_columns_dataset(
+            file_name=file_name,
+            target_column=target_column,
+        )
+
+
+@mcp.tool()
+def assess_modeling_readiness(
+    file_name: str,
+    target_column: str | None = None,
+) -> ModelingReadinessResult:
+    """
+    Assess whether a dataset is ready for a first supervised modeling iteration.
+
+    Args:
+        file_name: CSV file name inside the configured data directory.
+        target_column: Optional target override. When omitted, the top suggested target is used.
+
+    Returns:
+        A compact orchestration of target selection, feature review, and leakage checks.
+    """
+
+    with traced_operation(
+        "tool.assess_modeling_readiness",
+        {
+            "tool.name": "assess_modeling_readiness",
+            "dataset.file_name": file_name,
+            "tool.target_column": target_column,
+        },
+    ):
+        logger.info(
+            "Tool assess_modeling_readiness invoked file_name=%s target_column=%s",
+            file_name,
+            target_column,
+        )
+        return assess_modeling_readiness_dataset(
             file_name=file_name,
             target_column=target_column,
         )

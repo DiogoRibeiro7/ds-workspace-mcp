@@ -116,6 +116,27 @@ The following are considered non-breaking:
   - identifier-like, duplicate, target-overlap, and strongly target-correlated columns may be excluded as leakage risks
   - datetime-like and moderately sparse columns are usually marked for review rather than automatic exclusion
 
+#### `assess_modeling_readiness(file_name: str, target_column: str | None = None)`
+
+- Stable name: `assess_modeling_readiness`
+- Purpose: orchestrate target suggestion, feature selection, leakage review, and next-step guidance
+- Stable result fields:
+  - `file_name: str`
+  - `target_column: str`
+  - `target_source: str`
+  - `suggested_task_type: str`
+  - `validation_strategy: str`
+  - `target_candidate: TargetCandidate | null`
+  - `target_suggestions: list[TargetCandidate]`
+  - `feature_selection: FeatureSelectionResult`
+  - `leakage_warnings: list[LeakageWarning]`
+  - `recommended_next_tools: list[str]`
+  - `summary: str`
+- Heuristic notes:
+  - when `target_column` is omitted, the tool uses the top suggested target candidate
+  - validation strategy is advisory and may prefer time-series review when datetime context and regression-style targets are both present
+  - this tool summarizes downstream heuristics and does not replace manual target or feature judgment
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`

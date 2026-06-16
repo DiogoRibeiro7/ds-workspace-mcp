@@ -379,6 +379,19 @@ Arguments:
 }
 ```
 
+#### `assess_modeling_readiness`
+
+Return a compact modeling-readiness summary that combines target suggestion, feature selection, leakage review, and next-step guidance.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "target_column": "appointments_completed"
+}
+```
+
 #### `preview_csv`
 
 Preview the first rows of a CSV file.
