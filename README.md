@@ -288,6 +288,12 @@ Build a markdown modeling report:
 poetry run ds-workspace-mcp report-modeling sample_clinic_usage.csv --target-column appointments_completed
 ```
 
+Save a markdown modeling report into `reports/`:
+
+```bash
+poetry run ds-workspace-mcp save-modeling-report sample_clinic_usage.csv --target-column appointments_completed --output-name clinic-usage-report.md
+```
+
 Generate a synthetic dataset through the main CLI:
 
 ```bash
@@ -427,6 +433,20 @@ Arguments:
 {
   "file_name": "sample_clinic_usage.csv",
   "target_column": "appointments_completed"
+}
+```
+
+#### `save_modeling_report`
+
+Build and save a markdown report artifact inside the local `reports/` directory.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "target_column": "appointments_completed",
+  "output_name": "clinic-usage-report.md"
 }
 ```
 

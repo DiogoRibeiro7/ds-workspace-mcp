@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from pydantic import BaseModel
+
+from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalError
+from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
+
+REPORTS_DIR = Path("reports")
+
+
+class SavedModelingReport(BaseModel):
+    """Metadata for a saved modeling report artifact."""
+
+    file_name: str
+    target_column: str
+    output_path: str
+    headline: str
+
+
+def save_modeling_report_dataset(
+    file_name: str,
+    target_column: str | None = None,
+    output_name: str | None = None,
+) -> SavedModelingReport:
+    """Build and persist a modeling report inside the local reports directory."""
+
+    report = build_modeling_report_dataset(
+        file_name=file_name,
+        target_column=target_column,
+    )
+    output_path = resolve_report_output_path(
+        file_name=file_name,
+        target_column=report.target_column,
+        output_name=output_name,
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(report.markdown, encoding="utf-8")
+    return SavedModelingReport(
+        file_name=file_name,
+        target_column=report.target_column,
+        output_path=str(output_path),
+        headline=report.headline,
+    )
+
+
+def resolve_report_output_path(
+    file_name: str,
+    target_column: str,
+    output_name: str | None = None,
+) -> Path:
+    """Resolve a safe markdown output path inside the reports directory."""
+
+    reports_root = REPORTS_DIR.resolve()
+    reports_root.mkdir(parents=True, exist_ok=True)
+
+    candidate_name = output_name or _default_output_name(file_name, target_column)
+    if not isinstance(candidate_name, str) or not candidate_name.strip():
+        raise InvalidDatasetNameError("output_name must be a non-empty string.")
+    if Path(candidate_name).name != candidate_name:
+        raise PathTraversalError("Report output must stay inside the reports directory.")
+    if not candidate_name.lower().endswith(".md"):
+        raise InvalidDatasetNameError("Report output_name must end with .md.")
+
+    resolved = (reports_root / candidate_name).resolve()
+    if resolved.parent != reports_root:
+        raise PathTraversalError("Report output must stay inside the reports directory.")
+    return resolved
+
+
+def _default_output_name(file_name: str, target_column: str) -> str:
+    """Build a stable default markdown file name for a report artifact."""
+
+    dataset_stem = Path(file_name).stem
+    safe_dataset = _slugify(dataset_stem)
+    safe_target = _slugify(target_column)
+    return f"{safe_dataset}--{safe_target}--modeling-report.md"
+
+
+def _slugify(value: str) -> str:
+    """Convert free text into a conservative file-name slug."""
+
+    cleaned = "".join(character.lower() if character.isalnum() else "-" for character in value)
+    collapsed = "-".join(part for part in cleaned.split("-") if part)
+    return collapsed or "report"

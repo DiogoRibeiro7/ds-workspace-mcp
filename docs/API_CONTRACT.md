@@ -176,6 +176,22 @@ The following are considered non-breaking:
   - the report is intended for human review and handoff rather than machine parsing
   - when `target_column` is omitted, the report uses the top suggested target candidate
 
+#### `save_modeling_report(file_name: str, target_column: str | None = None, output_name: str | None = None)`
+
+- Stable name: `save_modeling_report`
+- Purpose: persist a markdown modeling report into the local `reports/` directory
+- Stable result fields:
+  - `file_name: str`
+  - `target_column: str`
+  - `output_path: str`
+  - `headline: str`
+- Stable behavior:
+  - output is always written inside the local `reports/` directory
+  - `output_name`, when provided, must be a single markdown file name ending in `.md`
+- Heuristic notes:
+  - when `target_column` is omitted, the saved report uses the top suggested target candidate
+  - default output names are derived from the dataset name and selected target
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`
@@ -414,6 +430,8 @@ The `ds-workspace-mcp` console script is public.
   - prints the `build_experiment_plan` result as JSON
 - `ds-workspace-mcp report-modeling <file_name> [--target-column]`
   - prints the `build_modeling_report` markdown output
+- `ds-workspace-mcp save-modeling-report <file_name> [--target-column] [--output-name]`
+  - writes the `save_modeling_report` artifact and prints the saved path
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`
   - writes a synthetic healthcare CSV and prints the output path
 

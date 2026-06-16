@@ -43,6 +43,7 @@ from ds_workspace_mcp.modeling_report import (
 )
 from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.profiling import DatasetProfile
+from ds_workspace_mcp.report_export import SavedModelingReport, save_modeling_report_dataset
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
 from ds_workspace_mcp.sql.sqlite_engine import (
     SQLiteDatabaseInfo,
@@ -354,6 +355,46 @@ def build_modeling_report(
         return build_modeling_report_dataset(
             file_name=file_name,
             target_column=target_column,
+        )
+
+
+@mcp.tool()
+def save_modeling_report(
+    file_name: str,
+    target_column: str | None = None,
+    output_name: str | None = None,
+) -> SavedModelingReport:
+    """
+    Save a modeling report artifact into the local reports directory.
+
+    Args:
+        file_name: CSV file name inside the configured data directory.
+        target_column: Optional target override. When omitted, the top suggested target is used.
+        output_name: Optional markdown file name inside `reports/`.
+
+    Returns:
+        Metadata about the saved report artifact.
+    """
+
+    with traced_operation(
+        "tool.save_modeling_report",
+        {
+            "tool.name": "save_modeling_report",
+            "dataset.file_name": file_name,
+            "tool.target_column": target_column,
+            "tool.output_name": output_name,
+        },
+    ):
+        logger.info(
+            "Tool save_modeling_report invoked file_name=%s target_column=%s output_name=%s",
+            file_name,
+            target_column,
+            output_name,
+        )
+        return save_modeling_report_dataset(
+            file_name=file_name,
+            target_column=target_column,
+            output_name=output_name,
         )
 
 
