@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
 from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
+from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.server import main as serve_main
 from ds_workspace_mcp.synthetic.healthcare import (
     DEFAULT_CLINICS,
@@ -40,6 +41,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     plan_parser.add_argument("file_name", help="CSV dataset file name.")
     plan_parser.add_argument(
+        "--target-column",
+        help="Optional target column override.",
+    )
+
+    report_parser = subparsers.add_parser(
+        "report-modeling",
+        help="Build a markdown modeling report for a dataset.",
+    )
+    report_parser.add_argument("file_name", help="CSV dataset file name.")
+    report_parser.add_argument(
         "--target-column",
         help="Optional target column override.",
     )
@@ -108,6 +119,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             target_column=args.target_column,
         )
         print(json.dumps(plan.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "report-modeling":
+        report = build_modeling_report_dataset(
+            file_name=args.file_name,
+            target_column=args.target_column,
+        )
+        print(report.markdown)
         return 0
 
     if command == "generate-sample-healthcare-data":

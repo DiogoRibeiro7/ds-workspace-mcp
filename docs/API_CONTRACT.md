@@ -162,6 +162,20 @@ The following are considered non-breaking:
   - baseline model names may refer to standard model families rather than built-in MCP execution capabilities
   - when `target_column` is omitted, the plan uses the top suggested target candidate
 
+#### `build_modeling_report(file_name: str, target_column: str | None = None)`
+
+- Stable name: `build_modeling_report`
+- Purpose: render the experiment-planning workflow as a compact markdown artifact
+- Stable result fields:
+  - `file_name: str`
+  - `target_column: str`
+  - `headline: str`
+  - `markdown: str`
+- Heuristic notes:
+  - markdown wording may evolve across patch and minor releases
+  - the report is intended for human review and handoff rather than machine parsing
+  - when `target_column` is omitted, the report uses the top suggested target candidate
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`
@@ -398,6 +412,8 @@ The `ds-workspace-mcp` console script is public.
   - prints the `profile_csv` result as JSON
 - `ds-workspace-mcp plan-modeling <file_name> [--target-column]`
   - prints the `build_experiment_plan` result as JSON
+- `ds-workspace-mcp report-modeling <file_name> [--target-column]`
+  - prints the `build_modeling_report` markdown output
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`
   - writes a synthetic healthcare CSV and prints the output path
 

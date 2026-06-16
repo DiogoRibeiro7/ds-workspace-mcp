@@ -282,6 +282,12 @@ Build a first-pass modeling plan as JSON:
 poetry run ds-workspace-mcp plan-modeling sample_clinic_usage.csv --target-column appointments_completed
 ```
 
+Build a markdown modeling report:
+
+```bash
+poetry run ds-workspace-mcp report-modeling sample_clinic_usage.csv --target-column appointments_completed
+```
+
 Generate a synthetic dataset through the main CLI:
 
 ```bash
@@ -401,6 +407,19 @@ Arguments:
 #### `build_experiment_plan`
 
 Build a concrete first-pass modeling plan with starter models, validation guidance, risks, metrics, and next steps.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "target_column": "appointments_completed"
+}
+```
+
+#### `build_modeling_report`
+
+Build a compact markdown report artifact for review or handoff.
 
 Arguments:
 

@@ -86,6 +86,22 @@ def test_cli_plan_modeling(
     assert "evaluation_metrics" in payload
 
 
+def test_cli_report_modeling(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    write_cli_dataset(tmp_path, "sample.csv")
+
+    exit_code = cli.main(["report-modeling", "sample.csv", "--target-column", "target"])
+    output = capsys.readouterr().out
+
+    assert exit_code == 0
+    assert "## Summary" in output
+    assert "`target`" in output
+
+
 def test_cli_generate_sample_healthcare_data(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

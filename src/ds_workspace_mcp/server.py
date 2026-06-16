@@ -37,6 +37,10 @@ from ds_workspace_mcp.modeling_readiness import (
     ModelingReadinessResult,
     assess_modeling_readiness_dataset,
 )
+from ds_workspace_mcp.modeling_report import (
+    ModelingReportResult,
+    build_modeling_report_dataset,
+)
 from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
@@ -313,6 +317,41 @@ def build_experiment_plan(
             target_column,
         )
         return build_experiment_plan_dataset(
+            file_name=file_name,
+            target_column=target_column,
+        )
+
+
+@mcp.tool()
+def build_modeling_report(
+    file_name: str,
+    target_column: str | None = None,
+) -> ModelingReportResult:
+    """
+    Build a markdown modeling report artifact for a dataset.
+
+    Args:
+        file_name: CSV file name inside the configured data directory.
+        target_column: Optional target override. When omitted, the top suggested target is used.
+
+    Returns:
+        A compact markdown report suitable for review or handoff.
+    """
+
+    with traced_operation(
+        "tool.build_modeling_report",
+        {
+            "tool.name": "build_modeling_report",
+            "dataset.file_name": file_name,
+            "tool.target_column": target_column,
+        },
+    ):
+        logger.info(
+            "Tool build_modeling_report invoked file_name=%s target_column=%s",
+            file_name,
+            target_column,
+        )
+        return build_modeling_report_dataset(
             file_name=file_name,
             target_column=target_column,
         )
