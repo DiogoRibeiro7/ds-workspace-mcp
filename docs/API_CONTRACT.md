@@ -48,6 +48,30 @@ The following are considered non-breaking:
 
 ### Tools
 
+#### `summarize_dataset(file_name: str)`
+
+- Stable name: `summarize_dataset`
+- Purpose: return a compact first-pass overview of a CSV dataset
+- Stable result fields:
+  - `file_name: str`
+  - `row_count: int`
+  - `column_count: int`
+  - `sample_columns: list[str]`
+  - `numeric_column_count: int`
+  - `categorical_column_count: int`
+  - `boolean_column_count: int`
+  - `datetime_column_count: int`
+  - `columns_with_missing_values: list[str]`
+  - `high_missingness_columns: list[str]`
+  - `possible_identifier_columns: list[str]`
+  - `top_correlations: list[CorrelationPair]`
+  - `recommended_next_tools: list[str]`
+  - `summary: str`
+- Heuristic notes:
+  - this tool is a compact orchestration of existing profiling, issue-detection, and correlation logic
+  - `summary` is intentionally human-readable and may change wording without changing the contract
+  - issue highlights and recommended next tools are guidance, not strict prescriptions
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`

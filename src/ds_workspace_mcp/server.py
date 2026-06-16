@@ -25,6 +25,7 @@ from ds_workspace_mcp.ml.baselines import (
     BaselineEvaluationResult,
     evaluate_baseline_model_dataset,
 )
+from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
 from ds_workspace_mcp.sql.sqlite_engine import (
@@ -157,6 +158,26 @@ def detect_csv_issues(file_name: str) -> list[DatasetIssue]:
     ):
         logger.info("Tool detect_csv_issues invoked file_name=%s", file_name)
         return detect_csv_dataset_issues(file_name=file_name)
+
+
+@mcp.tool()
+def summarize_dataset(file_name: str) -> DatasetOverview:
+    """
+    Return a compact first-pass overview of a CSV dataset.
+
+    Args:
+        file_name: CSV file name inside the configured data directory.
+
+    Returns:
+        A concise overview with dataset shape, issue highlights, correlations, and next steps.
+    """
+
+    with traced_operation(
+        "tool.summarize_dataset",
+        {"tool.name": "summarize_dataset", "dataset.file_name": file_name},
+    ):
+        logger.info("Tool summarize_dataset invoked file_name=%s", file_name)
+        return summarize_dataset_overview(file_name=file_name)
 
 
 @mcp.tool()

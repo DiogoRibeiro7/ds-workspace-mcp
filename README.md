@@ -7,6 +7,7 @@ A small but practical **Model Context Protocol (MCP)** server for data science w
 It lets an MCP-compatible assistant safely inspect local CSV datasets through:
 
 - **Resources** for dataset discovery.
+- **Overview tools** for fast first-pass dataset understanding.
 - **Tools** for CSV preview, profiling, and simple data-quality checks.
 - **Prompts** for reusable dataset analysis instructions.
 
@@ -340,6 +341,18 @@ databases://sqlite
 Returns the list of SQLite database files available in the configured data directory.
 
 ### Tools
+
+#### `summarize_dataset`
+
+Return a compact first-pass overview of a dataset, including shape, missingness highlights, identifier-like columns, strongest correlations, and recommended next tools.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv"
+}
+```
 
 #### `preview_csv`
 
