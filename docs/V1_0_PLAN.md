@@ -42,7 +42,7 @@ Acceptance criteria:
 - [x] Add a deployment guide in `docs/DEPLOYMENT.md`.
 - [x] Add an architecture overview in `docs/ARCHITECTURE.md`.
 - [x] Define and test behavior for malformed CSVs, large files, and encoding edge cases.
-- [ ] Evaluate SQL timeout or cancellation behavior for long-running queries.
+- [x] Evaluate SQL timeout or cancellation behavior for long-running queries.
 - [x] Add request and dataset size guardrails where missing.
 
 Acceptance criteria:

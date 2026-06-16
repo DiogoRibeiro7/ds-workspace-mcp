@@ -4,6 +4,7 @@ import logging
 import math
 import re
 import sqlite3
+import time
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -15,6 +16,7 @@ from ds_workspace_mcp.exceptions import (
     InvalidDatasetNameError,
     InvalidSQLError,
     PathTraversalError,
+    QueryTimeoutError,
     UnsupportedFileTypeError,
 )
 from ds_workspace_mcp.tracing import traced_operation
@@ -204,9 +206,11 @@ def query_sqlite_database(
         ),
         _connect_read_only(path) as connection,
     ):
-        cursor = connection.execute(
-            f"SELECT * FROM ({normalized_sql}) AS safe_query LIMIT ?",
-            (safe_limit,),
+        cursor = _execute_query_with_timeout(
+            connection=connection,
+            query=f"SELECT * FROM ({normalized_sql}) AS safe_query LIMIT ?",
+            parameters=(safe_limit,),
+            timeout_ms=settings.mcp_sql_timeout_ms,
         )
         rows = cursor.fetchall()
         columns = [str(description[0]) for description in cursor.description or []]
@@ -306,3 +310,30 @@ def _normalize_scalar(value: object) -> object:
     if isinstance(value, float) and math.isnan(value):
         return None
     return value
+
+
+def _execute_query_with_timeout(
+    connection: sqlite3.Connection,
+    query: str,
+    parameters: tuple[object, ...],
+    timeout_ms: int,
+) -> sqlite3.Cursor:
+    """Execute a SQLite query with a progress-handler timeout."""
+
+    deadline = time.monotonic() + (timeout_ms / 1000)
+
+    def progress_handler() -> int:
+        return 1 if time.monotonic() >= deadline else 0
+
+    connection.set_progress_handler(progress_handler, 1_000)
+    try:
+        return connection.execute(query, parameters)
+    except sqlite3.OperationalError as exc:
+        if "interrupted" in str(exc).lower():
+            logger.warning("Interrupted SQLite query after timeout_ms=%s", timeout_ms)
+            raise QueryTimeoutError(
+                f"SQL query exceeded the timeout of {timeout_ms} ms."
+            ) from exc
+        raise
+    finally:
+        connection.set_progress_handler(None, 0)

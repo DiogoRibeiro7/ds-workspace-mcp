@@ -29,6 +29,10 @@ class DatasetReadError(DsWorkspaceError, RuntimeError):
     """Raised when a dataset cannot be parsed or decoded safely."""
 
 
+class QueryTimeoutError(DsWorkspaceError, TimeoutError):
+    """Raised when a SQL query exceeds the configured execution timeout."""
+
+
 class InvalidSQLError(DsWorkspaceError, ValueError):
     """Raised when a SQL statement is invalid or unsafe."""
 

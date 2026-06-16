@@ -296,6 +296,7 @@ These runtime settings are public and documented:
 - `MCP_MAX_PREVIEW_ROWS`
 - `MCP_MAX_SQL_ROWS`
 - `MCP_MAX_SQL_QUERY_LENGTH`
+- `MCP_SQL_TIMEOUT_MS`
 - `MCP_MAX_CATEGORICAL_VALUES`
 - `MCP_MAX_DATASET_BYTES`
 - `MCP_PROFILE_CACHE_ENABLED`
@@ -313,6 +314,7 @@ Stable expectations:
 - validation bounds on numeric settings may reject invalid values but will not silently reinterpret them
 - CSV reads are rejected when the file exceeds `MCP_MAX_DATASET_BYTES`
 - SQL query text is rejected when it exceeds `MCP_MAX_SQL_QUERY_LENGTH`
+- SQL queries are interrupted when they exceed `MCP_SQL_TIMEOUT_MS`
 
 ## Error Contract
 
@@ -324,6 +326,7 @@ User-facing failures may surface through these stable exception categories:
 - `DatasetNotFoundError`
 - `DatasetTooLargeError`
 - `DatasetReadError`
+- `QueryTimeoutError`
 - `InvalidSQLError`
 - `ProfilingError`
 - `InsufficientDataError`

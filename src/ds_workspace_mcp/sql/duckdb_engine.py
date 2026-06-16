@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import math
 import re
+import threading
 from typing import cast
 
 import duckdb
@@ -11,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from ds_workspace_mcp.config import get_settings
 from ds_workspace_mcp.core import read_csv_dataset
-from ds_workspace_mcp.exceptions import InvalidSQLError
+from ds_workspace_mcp.exceptions import InvalidSQLError, QueryTimeoutError
 from ds_workspace_mcp.tracing import traced_operation
 
 logger = logging.getLogger(__name__)
@@ -79,7 +80,11 @@ def query_csv_with_duckdb_dataset(
     ):
         connection.register(SAFE_DATASET_TABLE, df)
         query = f"SELECT * FROM ({normalized_sql}) AS safe_query LIMIT {safe_limit}"
-        result_frame = connection.execute(query).fetch_df()
+        result_frame = _execute_query_with_timeout(
+            connection=connection,
+            query=query,
+            timeout_ms=settings.mcp_sql_timeout_ms,
+        )
 
     records = cast(list[dict[str, object]], result_frame.astype(object).to_dict(orient="records"))
     clean_rows = [
@@ -170,3 +175,42 @@ def _normalize_scalar(value: object) -> object:
         except TypeError:
             return value
     return value
+
+
+def _execute_query_with_timeout(
+    connection: duckdb.DuckDBPyConnection,
+    query: str,
+    timeout_ms: int,
+) -> pd.DataFrame:
+    """Execute a DuckDB query with best-effort interruption on timeout."""
+
+    result_frame: pd.DataFrame | None = None
+    captured_error: BaseException | None = None
+    completed = threading.Event()
+
+    def run_query() -> None:
+        nonlocal result_frame, captured_error
+        try:
+            result_frame = connection.execute(query).fetch_df()
+        except BaseException as exc:  # pragma: no cover - exercised via timeout behavior
+            captured_error = exc
+        finally:
+            completed.set()
+
+    worker = threading.Thread(target=run_query, daemon=True)
+    worker.start()
+
+    if not completed.wait(timeout_ms / 1000):
+        logger.warning("Interrupted DuckDB query after timeout_ms=%s", timeout_ms)
+        connection.interrupt()
+        worker.join(timeout=1.0)
+        raise QueryTimeoutError(
+            f"SQL query exceeded the timeout of {timeout_ms} ms."
+        )
+
+    worker.join()
+    if captured_error is not None:
+        raise captured_error
+    if result_frame is None:
+        raise RuntimeError("DuckDB query finished without a result frame.")
+    return result_frame

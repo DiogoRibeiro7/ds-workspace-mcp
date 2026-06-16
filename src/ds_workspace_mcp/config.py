@@ -16,6 +16,7 @@ DEFAULT_PORT = 8000
 DEFAULT_MAX_PREVIEW_ROWS = 50
 DEFAULT_MAX_SQL_ROWS = 1000
 DEFAULT_MAX_SQL_QUERY_LENGTH = 20_000
+DEFAULT_SQL_TIMEOUT_MS = 5_000
 DEFAULT_MAX_CATEGORICAL_VALUES = 5
 DEFAULT_MAX_DATASET_BYTES = 25_000_000
 DEFAULT_PROFILE_CACHE_ENABLED = True
@@ -42,6 +43,7 @@ class Settings(BaseSettings):
     mcp_max_preview_rows: int = DEFAULT_MAX_PREVIEW_ROWS
     mcp_max_sql_rows: int = DEFAULT_MAX_SQL_ROWS
     mcp_max_sql_query_length: int = DEFAULT_MAX_SQL_QUERY_LENGTH
+    mcp_sql_timeout_ms: int = DEFAULT_SQL_TIMEOUT_MS
     mcp_max_categorical_values: int = DEFAULT_MAX_CATEGORICAL_VALUES
     mcp_max_dataset_bytes: int = DEFAULT_MAX_DATASET_BYTES
     mcp_profile_cache_enabled: bool = DEFAULT_PROFILE_CACHE_ENABLED
@@ -127,6 +129,15 @@ class Settings(BaseSettings):
 
         if value < 100 or value > 100000:
             raise ValueError("MCP_MAX_SQL_QUERY_LENGTH must be between 100 and 100000.")
+        return value
+
+    @field_validator("mcp_sql_timeout_ms")
+    @classmethod
+    def validate_sql_timeout_ms(cls, value: int) -> int:
+        """Constrain the SQL execution timeout."""
+
+        if value < 100 or value > 600000:
+            raise ValueError("MCP_SQL_TIMEOUT_MS must be between 100 and 600000.")
         return value
 
     @field_validator("mcp_max_categorical_values")

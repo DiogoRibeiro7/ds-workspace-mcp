@@ -56,6 +56,7 @@ Primary settings:
 - `MCP_MAX_PREVIEW_ROWS`
 - `MCP_MAX_SQL_ROWS`
 - `MCP_MAX_SQL_QUERY_LENGTH`
+- `MCP_SQL_TIMEOUT_MS`
 - `MCP_MAX_CATEGORICAL_VALUES`
 - `MCP_MAX_DATASET_BYTES`
 - `MCP_PROFILE_CACHE_ENABLED`
@@ -189,6 +190,7 @@ Common startup or runtime failures:
 - malformed or incompatible CSV content causing clean dataset read failures
 - CSV files larger than `MCP_MAX_DATASET_BYTES`
 - rejected SQL because the query is not read-only or exceeds limits
+- SQL queries interrupted after `MCP_SQL_TIMEOUT_MS`
 
 ## Deployment Boundaries
 

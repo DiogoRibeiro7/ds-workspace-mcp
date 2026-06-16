@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import threading
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 import pytest
 
-from ds_workspace_mcp.exceptions import InvalidSQLError, PathTraversalError
-from ds_workspace_mcp.sql.duckdb_engine import query_csv_with_duckdb_dataset
+from ds_workspace_mcp.exceptions import InvalidSQLError, PathTraversalError, QueryTimeoutError
+from ds_workspace_mcp.sql.duckdb_engine import (
+    _execute_query_with_timeout,
+    query_csv_with_duckdb_dataset,
+)
 
 
 def write_query_dataset(root: Path, name: str = "query.csv") -> Path:
@@ -125,4 +130,32 @@ def test_query_csv_with_duckdb_dataset_rejects_overlong_sql(
             file_name="query.csv",
             sql=sql,
             limit=5,
+        )
+
+
+def test_execute_query_with_timeout_interrupts_duckdb_connection() -> None:
+    class FakeCursor:
+        def fetch_df(self) -> pd.DataFrame:
+            return pd.DataFrame([{"value": 1}])
+
+    class FakeConnection:
+        def __init__(self) -> None:
+            self.released = threading.Event()
+            self.interrupted = False
+
+        def execute(self, query: str) -> FakeCursor:
+            self.released.wait(timeout=1.0)
+            if self.interrupted:
+                raise RuntimeError("interrupted")
+            return FakeCursor()
+
+        def interrupt(self) -> None:
+            self.interrupted = True
+            self.released.set()
+
+    with pytest.raises(QueryTimeoutError, match="timeout of 100 ms"):
+        _execute_query_with_timeout(
+            connection=cast(Any, FakeConnection()),
+            query="SELECT 1",
+            timeout_ms=100,
         )
