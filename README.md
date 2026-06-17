@@ -294,6 +294,12 @@ Save a markdown modeling report into `reports/`:
 poetry run ds-workspace-mcp save-modeling-report sample_clinic_usage.csv --target-column appointments_completed --output-name clinic-usage-report.md
 ```
 
+List saved modeling reports:
+
+```bash
+poetry run ds-workspace-mcp list-modeling-reports
+```
+
 Generate a synthetic dataset through the main CLI:
 
 ```bash
@@ -357,6 +363,12 @@ databases://sqlite
 ```
 
 Returns the list of SQLite database files available in the configured data directory.
+
+```text
+reports://modeling
+```
+
+Returns the list of saved modeling report file names from the local `reports/` directory.
 
 ### Tools
 
@@ -449,6 +461,10 @@ Arguments:
   "output_name": "clinic-usage-report.md"
 }
 ```
+
+#### `list_modeling_reports`
+
+Return markdown modeling reports saved inside the local `reports/` directory.
 
 #### `preview_csv`
 

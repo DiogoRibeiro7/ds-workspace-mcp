@@ -8,7 +8,7 @@ from pathlib import Path
 from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
 from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
-from ds_workspace_mcp.report_export import save_modeling_report_dataset
+from ds_workspace_mcp.report_export import list_saved_modeling_reports, save_modeling_report_dataset
 from ds_workspace_mcp.server import main as serve_main
 from ds_workspace_mcp.synthetic.healthcare import (
     DEFAULT_CLINICS,
@@ -68,6 +68,11 @@ def build_parser() -> argparse.ArgumentParser:
     save_report_parser.add_argument(
         "--output-name",
         help="Optional markdown file name inside reports/.",
+    )
+
+    subparsers.add_parser(
+        "list-modeling-reports",
+        help="List markdown modeling reports saved inside the local reports directory.",
     )
 
     generate_parser = subparsers.add_parser(
@@ -145,12 +150,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if command == "save-modeling-report":
-        saved_report = save_modeling_report_dataset(
+        saved_report_result = save_modeling_report_dataset(
             file_name=args.file_name,
             target_column=args.target_column,
             output_name=args.output_name,
         )
-        print(saved_report.output_path)
+        print(saved_report_result.output_path)
+        return 0
+
+    if command == "list-modeling-reports":
+        for listed_report in list_saved_modeling_reports():
+            print(listed_report.output_name)
         return 0
 
     if command == "generate-sample-healthcare-data":

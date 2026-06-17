@@ -6,7 +6,11 @@ import pandas as pd
 import pytest
 
 from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalError
-from ds_workspace_mcp.report_export import resolve_report_output_path, save_modeling_report_dataset
+from ds_workspace_mcp.report_export import (
+    list_saved_modeling_reports,
+    resolve_report_output_path,
+    save_modeling_report_dataset,
+)
 
 
 def write_report_export_dataset(root: Path, name: str = "report_export.csv") -> Path:
@@ -59,3 +63,19 @@ def test_save_modeling_report_dataset_writes_file(
     assert saved_path.name == "custom-report.md"
     assert saved_path.parent.name == "reports"
     assert "## Summary" in saved_path.read_text(encoding="utf-8")
+
+
+def test_list_saved_modeling_reports_returns_sorted_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "b-report.md").write_text("b", encoding="utf-8")
+    (reports_dir / "a-report.md").write_text("aa", encoding="utf-8")
+
+    reports = list_saved_modeling_reports()
+
+    assert [report.output_name for report in reports] == ["a-report.md", "b-report.md"]
+    assert reports[0].size_bytes == 2

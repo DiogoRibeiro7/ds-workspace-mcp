@@ -46,6 +46,13 @@ The following are considered non-breaking:
 - Stable behavior: returns newline-separated SQLite database file names visible under `MCP_DATA_ROOT`
 - Empty-state behavior: returns the sentence `No SQLite databases found in the configured data directory.`
 
+#### `reports://modeling`
+
+- Stable name: `reports://modeling`
+- Return type: text payload
+- Stable behavior: returns newline-separated markdown report file names visible under the local `reports/` directory
+- Empty-state behavior: returns the sentence `No modeling reports found in the local reports directory.`
+
 ### Tools
 
 #### `summarize_dataset(file_name: str)`
@@ -191,6 +198,16 @@ The following are considered non-breaking:
 - Heuristic notes:
   - when `target_column` is omitted, the saved report uses the top suggested target candidate
   - default output names are derived from the dataset name and selected target
+
+#### `list_modeling_reports()`
+
+- Stable name: `list_modeling_reports`
+- Purpose: list markdown modeling reports saved in the local `reports/` directory
+- Stable result shape: `list[StoredModelingReport]`
+- Stable item fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `size_bytes: int`
 
 #### `preview_csv(file_name: str, rows: int = 5)`
 
@@ -432,6 +449,8 @@ The `ds-workspace-mcp` console script is public.
   - prints the `build_modeling_report` markdown output
 - `ds-workspace-mcp save-modeling-report <file_name> [--target-column] [--output-name]`
   - writes the `save_modeling_report` artifact and prints the saved path
+- `ds-workspace-mcp list-modeling-reports`
+  - prints saved modeling report file names, one per line
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`
   - writes a synthetic healthcare CSV and prints the output path
 

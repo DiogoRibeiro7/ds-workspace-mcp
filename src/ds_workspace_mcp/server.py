@@ -43,7 +43,12 @@ from ds_workspace_mcp.modeling_report import (
 )
 from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.profiling import DatasetProfile
-from ds_workspace_mcp.report_export import SavedModelingReport, save_modeling_report_dataset
+from ds_workspace_mcp.report_export import (
+    SavedModelingReport,
+    StoredModelingReport,
+    list_saved_modeling_reports,
+    save_modeling_report_dataset,
+)
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
 from ds_workspace_mcp.sql.sqlite_engine import (
     SQLiteDatabaseInfo,
@@ -116,6 +121,20 @@ def list_sqlite_databases() -> str:
             return "No SQLite databases found in the configured data directory."
 
         return "\n".join(files)
+
+
+@mcp.resource("reports://modeling")
+def list_modeling_reports_resource() -> str:
+    """List saved modeling report artifacts from the local reports directory."""
+
+    with traced_operation("resource.list_modeling_reports"):
+        reports = list_saved_modeling_reports()
+        logger.info("Resource request reports://modeling returned %s reports", len(reports))
+
+        if not reports:
+            return "No modeling reports found in the local reports directory."
+
+        return "\n".join(report.output_name for report in reports)
 
 
 @mcp.tool()
@@ -396,6 +415,15 @@ def save_modeling_report(
             target_column=target_column,
             output_name=output_name,
         )
+
+
+@mcp.tool()
+def list_modeling_reports() -> list[StoredModelingReport]:
+    """Return markdown modeling reports saved inside the local reports directory."""
+
+    with traced_operation("tool.list_modeling_reports", {"tool.name": "list_modeling_reports"}):
+        logger.info("Tool list_modeling_reports invoked")
+        return list_saved_modeling_reports()
 
 
 @mcp.tool()

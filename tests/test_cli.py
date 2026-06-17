@@ -129,6 +129,24 @@ def test_cli_save_modeling_report(
     assert saved_path.parent.name == "reports"
 
 
+def test_cli_list_modeling_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "b-report.md").write_text("b", encoding="utf-8")
+    (reports_dir / "a-report.md").write_text("a", encoding="utf-8")
+
+    exit_code = cli.main(["list-modeling-reports"])
+    output = capsys.readouterr().out.strip().splitlines()
+
+    assert exit_code == 0
+    assert output == ["a-report.md", "b-report.md"]
+
+
 def test_cli_generate_sample_healthcare_data(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

@@ -19,6 +19,14 @@ class SavedModelingReport(BaseModel):
     headline: str
 
 
+class StoredModelingReport(BaseModel):
+    """A saved modeling report discovered from the reports directory."""
+
+    output_name: str
+    output_path: str
+    size_bytes: int
+
+
 def save_modeling_report_dataset(
     file_name: str,
     target_column: str | None = None,
@@ -43,6 +51,26 @@ def save_modeling_report_dataset(
         output_path=str(output_path),
         headline=report.headline,
     )
+
+
+def list_saved_modeling_reports() -> list[StoredModelingReport]:
+    """List markdown modeling reports saved inside the local reports directory."""
+
+    reports_root = REPORTS_DIR.resolve()
+    reports_root.mkdir(parents=True, exist_ok=True)
+    reports: list[StoredModelingReport] = []
+    for path in sorted(reports_root.glob("*.md")):
+        if not path.is_file():
+            continue
+        stat = path.stat()
+        reports.append(
+            StoredModelingReport(
+                output_name=path.name,
+                output_path=str(path.resolve()),
+                size_bytes=stat.st_size,
+            )
+        )
+    return reports
 
 
 def resolve_report_output_path(
