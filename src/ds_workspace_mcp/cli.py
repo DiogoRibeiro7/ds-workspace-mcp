@@ -10,7 +10,9 @@ from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.report_export import (
     delete_saved_modeling_report,
+    inspect_saved_modeling_report,
     list_saved_modeling_reports,
+    preview_saved_modeling_report,
     read_saved_modeling_report,
     save_modeling_report_dataset,
 )
@@ -94,6 +96,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Delete one saved markdown modeling report from the local reports directory.",
     )
     delete_report_parser.add_argument(
+        "output_name",
+        help="Markdown report file name inside reports/.",
+    )
+
+    inspect_report_parser = subparsers.add_parser(
+        "inspect-modeling-report",
+        help="Print metadata for one saved markdown modeling report.",
+    )
+    inspect_report_parser.add_argument(
+        "output_name",
+        help="Markdown report file name inside reports/.",
+    )
+
+    preview_report_parser = subparsers.add_parser(
+        "preview-modeling-report",
+        help="Print a bounded preview of one saved markdown modeling report.",
+    )
+    preview_report_parser.add_argument(
         "output_name",
         help="Markdown report file name inside reports/.",
     )
@@ -194,6 +214,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "delete-modeling-report":
         deleted_report = delete_saved_modeling_report(args.output_name)
         print(deleted_report.output_path)
+        return 0
+
+    if command == "inspect-modeling-report":
+        metadata = inspect_saved_modeling_report(args.output_name)
+        print(json.dumps(metadata.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "preview-modeling-report":
+        preview = preview_saved_modeling_report(args.output_name)
+        print(json.dumps(preview.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "generate-sample-healthcare-data":

@@ -45,11 +45,15 @@ from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overvie
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.report_export import (
     DeletedModelingReport,
+    ModelingReportMetadata,
+    PreviewModelingReport,
     ReadModelingReport,
     SavedModelingReport,
     StoredModelingReport,
     delete_saved_modeling_report,
+    inspect_saved_modeling_report,
     list_saved_modeling_reports,
+    preview_saved_modeling_report,
     read_saved_modeling_report,
     save_modeling_report_dataset,
 )
@@ -452,6 +456,30 @@ def delete_modeling_report(output_name: str) -> DeletedModelingReport:
     ):
         logger.info("Tool delete_modeling_report invoked output_name=%s", output_name)
         return delete_saved_modeling_report(output_name=output_name)
+
+
+@mcp.tool()
+def inspect_modeling_report(output_name: str) -> ModelingReportMetadata:
+    """Return metadata for one saved markdown modeling report."""
+
+    with traced_operation(
+        "tool.inspect_modeling_report",
+        {"tool.name": "inspect_modeling_report", "tool.output_name": output_name},
+    ):
+        logger.info("Tool inspect_modeling_report invoked output_name=%s", output_name)
+        return inspect_saved_modeling_report(output_name=output_name)
+
+
+@mcp.tool()
+def preview_modeling_report(output_name: str) -> PreviewModelingReport:
+    """Return a bounded preview of one saved markdown modeling report."""
+
+    with traced_operation(
+        "tool.preview_modeling_report",
+        {"tool.name": "preview_modeling_report", "tool.output_name": output_name},
+    ):
+        logger.info("Tool preview_modeling_report invoked output_name=%s", output_name)
+        return preview_saved_modeling_report(output_name=output_name)
 
 
 @mcp.tool()

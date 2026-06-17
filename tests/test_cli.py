@@ -183,6 +183,47 @@ def test_cli_delete_modeling_report(
     assert not report_path.exists()
 
 
+def test_cli_inspect_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    report_path = reports_dir / "sample-report.md"
+    report_path.write_text("# Sample\n\nBody", encoding="utf-8")
+
+    exit_code = cli.main(["inspect-modeling-report", "sample-report.md"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["output_name"] == "sample-report.md"
+    assert payload["output_path"] == str(report_path.resolve())
+    assert payload["size_bytes"] > 0
+
+
+def test_cli_preview_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    report_path = reports_dir / "sample-report.md"
+    report_path.write_text("# Sample\n\n## Summary\nBody", encoding="utf-8")
+
+    exit_code = cli.main(["preview-modeling-report", "sample-report.md"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["output_name"] == "sample-report.md"
+    assert payload["headline"] == "Sample"
+    assert payload["output_path"] == str(report_path.resolve())
+    assert "## Summary" in payload["preview_markdown"]
+
+
 def test_cli_generate_sample_healthcare_data(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

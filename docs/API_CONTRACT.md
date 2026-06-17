@@ -232,6 +232,35 @@ The following are considered non-breaking:
   - `output_name` must be a single markdown file name inside `reports/`
   - traversal-style paths are rejected
 
+#### `inspect_modeling_report(output_name: str)`
+
+- Stable name: `inspect_modeling_report`
+- Purpose: inspect metadata for one markdown modeling report saved in the local `reports/` directory
+- Stable result fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `size_bytes: int`
+  - `created_at: str`
+  - `modified_at: str`
+- Stable behavior:
+  - `output_name` must be a single markdown file name inside `reports/`
+  - traversal-style paths are rejected
+
+#### `preview_modeling_report(output_name: str)`
+
+- Stable name: `preview_modeling_report`
+- Purpose: return a bounded preview of one markdown modeling report saved in the local `reports/` directory
+- Stable result fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `headline: str`
+  - `preview_markdown: str`
+  - `line_count: int`
+- Stable behavior:
+  - `output_name` must be a single markdown file name inside `reports/`
+  - traversal-style paths are rejected
+  - `preview_markdown` is intentionally bounded and does not contain the full report
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`
@@ -478,6 +507,10 @@ The `ds-workspace-mcp` console script is public.
   - prints one saved modeling report as markdown
 - `ds-workspace-mcp delete-modeling-report <output_name>`
   - deletes one saved modeling report and prints the deleted path
+- `ds-workspace-mcp inspect-modeling-report <output_name>`
+  - prints metadata for one saved modeling report as JSON
+- `ds-workspace-mcp preview-modeling-report <output_name>`
+  - prints a bounded preview of one saved modeling report as JSON
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`
   - writes a synthetic healthcare CSV and prints the output path
 

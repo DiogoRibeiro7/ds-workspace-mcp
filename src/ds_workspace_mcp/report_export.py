@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -40,6 +41,29 @@ class DeletedModelingReport(BaseModel):
 
     output_name: str
     output_path: str
+
+
+class ModelingReportMetadata(BaseModel):
+    """Metadata summary for one saved modeling report artifact."""
+
+    output_name: str
+    output_path: str
+    size_bytes: int
+    created_at: str
+    modified_at: str
+
+
+class PreviewModelingReport(BaseModel):
+    """A bounded preview of one saved modeling report artifact."""
+
+    output_name: str
+    output_path: str
+    headline: str
+    preview_markdown: str
+    line_count: int
+
+
+MAX_REPORT_PREVIEW_LINES = 12
 
 
 def save_modeling_report_dataset(
@@ -110,6 +134,38 @@ def delete_saved_modeling_report(output_name: str) -> DeletedModelingReport:
     )
 
 
+def inspect_saved_modeling_report(output_name: str) -> ModelingReportMetadata:
+    """Return metadata for one saved markdown modeling report."""
+
+    path = resolve_existing_report_path(output_name)
+    stat = path.stat()
+    return ModelingReportMetadata(
+        output_name=path.name,
+        output_path=str(path),
+        size_bytes=stat.st_size,
+        created_at=_format_timestamp(stat.st_ctime),
+        modified_at=_format_timestamp(stat.st_mtime),
+    )
+
+
+def preview_saved_modeling_report(output_name: str) -> PreviewModelingReport:
+    """Return a bounded preview of one saved markdown modeling report."""
+
+    path = resolve_existing_report_path(output_name)
+    markdown = path.read_text(encoding="utf-8")
+    lines = markdown.splitlines()
+    headline = _extract_headline(lines)
+    preview_lines = lines[:MAX_REPORT_PREVIEW_LINES]
+    preview_markdown = "\n".join(preview_lines)
+    return PreviewModelingReport(
+        output_name=path.name,
+        output_path=str(path),
+        headline=headline,
+        preview_markdown=preview_markdown,
+        line_count=len(lines),
+    )
+
+
 def resolve_report_output_path(
     file_name: str,
     target_column: str,
@@ -170,3 +226,19 @@ def _slugify(value: str) -> str:
     cleaned = "".join(character.lower() if character.isalnum() else "-" for character in value)
     collapsed = "-".join(part for part in cleaned.split("-") if part)
     return collapsed or "report"
+
+
+def _format_timestamp(timestamp: float) -> str:
+    """Convert filesystem timestamps into UTC ISO-8601 strings."""
+
+    return datetime.fromtimestamp(timestamp, tz=UTC).isoformat()
+
+
+def _extract_headline(lines: list[str]) -> str:
+    """Extract a human-readable report headline from markdown lines."""
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            return stripped.removeprefix("# ").strip()
+    return "Untitled modeling report"
