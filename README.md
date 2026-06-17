@@ -312,6 +312,12 @@ List the most recent modeling reports:
 poetry run ds-workspace-mcp list-recent-modeling-reports --limit 3
 ```
 
+Summarize saved modeling reports:
+
+```bash
+poetry run ds-workspace-mcp summarize-modeling-reports --limit 3
+```
+
 Read one saved modeling report:
 
 ```bash
@@ -517,6 +523,18 @@ Arguments:
 #### `list_recent_modeling_reports`
 
 Return the most recently modified saved markdown modeling reports.
+
+Arguments:
+
+```json
+{
+  "limit": 5
+}
+```
+
+#### `summarize_modeling_report_catalog`
+
+Return a compact summary of saved modeling reports, including total count, total size, and recent entries.
 
 Arguments:
 

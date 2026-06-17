@@ -235,6 +235,18 @@ The following are considered non-breaking:
 - Stable behavior:
   - `limit` must be greater than 0
 
+#### `summarize_modeling_report_catalog(limit: int = 5)`
+
+- Stable name: `summarize_modeling_report_catalog`
+- Implementation note: the Python function is named `summarize_modeling_report_catalog_tool`
+- Purpose: summarize the local markdown modeling report catalog with counts, storage size, and recent entries
+- Stable result fields:
+  - `report_count: int`
+  - `total_size_bytes: int`
+  - `most_recent_reports: list[StoredModelingReport]`
+- Stable behavior:
+  - `limit` must be greater than 0
+
 #### `read_modeling_report(output_name: str)`
 
 - Stable name: `read_modeling_report`
@@ -533,6 +545,8 @@ The `ds-workspace-mcp` console script is public.
   - prints matching saved modeling report file names, one per line
 - `ds-workspace-mcp list-recent-modeling-reports [--limit]`
   - prints the most recently modified saved modeling report file names, one per line
+- `ds-workspace-mcp summarize-modeling-reports [--limit]`
+  - prints a compact summary of saved modeling reports as JSON
 - `ds-workspace-mcp read-modeling-report <output_name>`
   - prints one saved modeling report as markdown
 - `ds-workspace-mcp delete-modeling-report <output_name>`

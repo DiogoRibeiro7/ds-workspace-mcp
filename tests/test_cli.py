@@ -189,6 +189,30 @@ def test_cli_list_recent_modeling_reports(
     assert output == ["newer.md", "older.md"]
 
 
+def test_cli_summarize_modeling_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("aa", encoding="utf-8")
+    newer.write_text("bbbb", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["summarize-modeling-reports", "--limit", "1"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["report_count"] == 2
+    assert payload["total_size_bytes"] == 6
+    assert [report["output_name"] for report in payload["most_recent_reports"]] == ["newer.md"]
+
+
 def test_cli_read_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

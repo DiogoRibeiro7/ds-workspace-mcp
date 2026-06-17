@@ -17,6 +17,7 @@ from ds_workspace_mcp.report_export import (
     read_saved_modeling_report,
     save_modeling_report_dataset,
     search_saved_modeling_reports,
+    summarize_modeling_report_catalog,
 )
 from ds_workspace_mcp.server import main as serve_main
 from ds_workspace_mcp.synthetic.healthcare import (
@@ -99,6 +100,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=5,
         help="Maximum number of reports to print.",
+    )
+
+    summarize_report_parser = subparsers.add_parser(
+        "summarize-modeling-reports",
+        help="Print a compact summary of saved modeling reports as JSON.",
+    )
+    summarize_report_parser.add_argument(
+        "--limit",
+        type=int,
+        default=5,
+        help="Maximum number of recent reports to include in the summary.",
     )
 
     read_report_parser = subparsers.add_parser(
@@ -233,6 +245,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "list-recent-modeling-reports":
         for recent_report in list_recent_modeling_reports(limit=args.limit):
             print(recent_report.output_name)
+        return 0
+
+    if command == "summarize-modeling-reports":
+        summary = summarize_modeling_report_catalog(limit=args.limit)
+        print(json.dumps(summary.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "read-modeling-report":

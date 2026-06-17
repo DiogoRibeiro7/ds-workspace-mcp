@@ -17,6 +17,7 @@ from ds_workspace_mcp.report_export import (
     resolve_report_output_path,
     save_modeling_report_dataset,
     search_saved_modeling_reports,
+    summarize_modeling_report_catalog,
 )
 
 
@@ -248,3 +249,24 @@ def test_list_recent_modeling_reports_orders_by_modified_time(
 def test_list_recent_modeling_reports_rejects_invalid_limit() -> None:
     with pytest.raises(InvalidDatasetNameError, match="greater than 0"):
         list_recent_modeling_reports(limit=0)
+
+
+def test_summarize_modeling_report_catalog_returns_counts_and_recent_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("aa", encoding="utf-8")
+    newer.write_text("bbbb", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    summary = summarize_modeling_report_catalog(limit=1)
+
+    assert summary.report_count == 2
+    assert summary.total_size_bytes == 6
+    assert [report.output_name for report in summary.most_recent_reports] == ["newer.md"]
