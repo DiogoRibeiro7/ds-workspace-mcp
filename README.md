@@ -300,6 +300,12 @@ List saved modeling reports:
 poetry run ds-workspace-mcp list-modeling-reports
 ```
 
+Read one saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp read-modeling-report clinic-usage-report.md
+```
+
 Generate a synthetic dataset through the main CLI:
 
 ```bash
@@ -465,6 +471,18 @@ Arguments:
 #### `list_modeling_reports`
 
 Return markdown modeling reports saved inside the local `reports/` directory.
+
+#### `read_modeling_report`
+
+Read one saved markdown modeling report from the local `reports/` directory.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md"
+}
+```
 
 #### `preview_csv`
 

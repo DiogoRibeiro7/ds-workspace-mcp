@@ -147,6 +147,23 @@ def test_cli_list_modeling_reports(
     assert output == ["a-report.md", "b-report.md"]
 
 
+def test_cli_read_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "sample-report.md").write_text("# Sample\n\nBody", encoding="utf-8")
+
+    exit_code = cli.main(["read-modeling-report", "sample-report.md"])
+    output = capsys.readouterr().out
+
+    assert exit_code == 0
+    assert "# Sample" in output
+
+
 def test_cli_generate_sample_healthcare_data(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

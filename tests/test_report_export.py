@@ -8,6 +8,7 @@ import pytest
 from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalError
 from ds_workspace_mcp.report_export import (
     list_saved_modeling_reports,
+    read_saved_modeling_report,
     resolve_report_output_path,
     save_modeling_report_dataset,
 )
@@ -79,3 +80,25 @@ def test_list_saved_modeling_reports_returns_sorted_reports(
 
     assert [report.output_name for report in reports] == ["a-report.md", "b-report.md"]
     assert reports[0].size_bytes == 2
+
+
+def test_read_saved_modeling_report_returns_markdown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    report_path = reports_dir / "a-report.md"
+    report_path.write_text("# Example\n\nBody", encoding="utf-8")
+
+    report = read_saved_modeling_report("a-report.md")
+
+    assert report.output_name == "a-report.md"
+    assert report.output_path == str(report_path.resolve())
+    assert "# Example" in report.markdown
+
+
+def test_read_saved_modeling_report_rejects_traversal() -> None:
+    with pytest.raises(PathTraversalError, match="inside the reports directory"):
+        read_saved_modeling_report("../escape.md")

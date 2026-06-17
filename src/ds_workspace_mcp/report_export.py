@@ -27,6 +27,14 @@ class StoredModelingReport(BaseModel):
     size_bytes: int
 
 
+class ReadModelingReport(BaseModel):
+    """A saved modeling report loaded from the reports directory."""
+
+    output_name: str
+    output_path: str
+    markdown: str
+
+
 def save_modeling_report_dataset(
     file_name: str,
     target_column: str | None = None,
@@ -73,6 +81,17 @@ def list_saved_modeling_reports() -> list[StoredModelingReport]:
     return reports
 
 
+def read_saved_modeling_report(output_name: str) -> ReadModelingReport:
+    """Read one saved markdown modeling report from the local reports directory."""
+
+    path = resolve_existing_report_path(output_name)
+    return ReadModelingReport(
+        output_name=path.name,
+        output_path=str(path),
+        markdown=path.read_text(encoding="utf-8"),
+    )
+
+
 def resolve_report_output_path(
     file_name: str,
     target_column: str,
@@ -94,6 +113,27 @@ def resolve_report_output_path(
     resolved = (reports_root / candidate_name).resolve()
     if resolved.parent != reports_root:
         raise PathTraversalError("Report output must stay inside the reports directory.")
+    return resolved
+
+
+def resolve_existing_report_path(output_name: str) -> Path:
+    """Resolve one existing markdown report inside the reports directory."""
+
+    reports_root = REPORTS_DIR.resolve()
+    reports_root.mkdir(parents=True, exist_ok=True)
+
+    if not isinstance(output_name, str) or not output_name.strip():
+        raise InvalidDatasetNameError("output_name must be a non-empty string.")
+    if Path(output_name).name != output_name:
+        raise PathTraversalError("Report output must stay inside the reports directory.")
+    if not output_name.lower().endswith(".md"):
+        raise InvalidDatasetNameError("Report output_name must end with .md.")
+
+    resolved = (reports_root / output_name).resolve()
+    if resolved.parent != reports_root:
+        raise PathTraversalError("Report output must stay inside the reports directory.")
+    if not resolved.exists():
+        raise InvalidDatasetNameError(f"Modeling report not found: {output_name}")
     return resolved
 
 

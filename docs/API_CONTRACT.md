@@ -209,6 +209,18 @@ The following are considered non-breaking:
   - `output_path: str`
   - `size_bytes: int`
 
+#### `read_modeling_report(output_name: str)`
+
+- Stable name: `read_modeling_report`
+- Purpose: load one markdown modeling report saved in the local `reports/` directory
+- Stable result fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `markdown: str`
+- Stable behavior:
+  - `output_name` must be a single markdown file name inside `reports/`
+  - traversal-style paths are rejected
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`
@@ -451,6 +463,8 @@ The `ds-workspace-mcp` console script is public.
   - writes the `save_modeling_report` artifact and prints the saved path
 - `ds-workspace-mcp list-modeling-reports`
   - prints saved modeling report file names, one per line
+- `ds-workspace-mcp read-modeling-report <output_name>`
+  - prints one saved modeling report as markdown
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`
   - writes a synthetic healthcare CSV and prints the output path
 

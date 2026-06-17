@@ -44,9 +44,11 @@ from ds_workspace_mcp.modeling_report import (
 from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.report_export import (
+    ReadModelingReport,
     SavedModelingReport,
     StoredModelingReport,
     list_saved_modeling_reports,
+    read_saved_modeling_report,
     save_modeling_report_dataset,
 )
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
@@ -424,6 +426,18 @@ def list_modeling_reports() -> list[StoredModelingReport]:
     with traced_operation("tool.list_modeling_reports", {"tool.name": "list_modeling_reports"}):
         logger.info("Tool list_modeling_reports invoked")
         return list_saved_modeling_reports()
+
+
+@mcp.tool()
+def read_modeling_report(output_name: str) -> ReadModelingReport:
+    """Read one saved markdown modeling report from the local reports directory."""
+
+    with traced_operation(
+        "tool.read_modeling_report",
+        {"tool.name": "read_modeling_report", "tool.output_name": output_name},
+    ):
+        logger.info("Tool read_modeling_report invoked output_name=%s", output_name)
+        return read_saved_modeling_report(output_name=output_name)
 
 
 @mcp.tool()
