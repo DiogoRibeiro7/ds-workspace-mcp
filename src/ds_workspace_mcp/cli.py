@@ -9,6 +9,7 @@ from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
 from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.report_export import (
+    delete_saved_modeling_report,
     list_saved_modeling_reports,
     read_saved_modeling_report,
     save_modeling_report_dataset,
@@ -84,6 +85,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print one saved markdown modeling report from the local reports directory.",
     )
     read_report_parser.add_argument(
+        "output_name",
+        help="Markdown report file name inside reports/.",
+    )
+
+    delete_report_parser = subparsers.add_parser(
+        "delete-modeling-report",
+        help="Delete one saved markdown modeling report from the local reports directory.",
+    )
+    delete_report_parser.add_argument(
         "output_name",
         help="Markdown report file name inside reports/.",
     )
@@ -179,6 +189,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "read-modeling-report":
         read_report = read_saved_modeling_report(args.output_name)
         print(read_report.markdown)
+        return 0
+
+    if command == "delete-modeling-report":
+        deleted_report = delete_saved_modeling_report(args.output_name)
+        print(deleted_report.output_path)
         return 0
 
     if command == "generate-sample-healthcare-data":

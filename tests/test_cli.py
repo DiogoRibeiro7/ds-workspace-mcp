@@ -164,6 +164,25 @@ def test_cli_read_modeling_report(
     assert "# Sample" in output
 
 
+def test_cli_delete_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    report_path = reports_dir / "sample-report.md"
+    report_path.write_text("# Sample\n\nBody", encoding="utf-8")
+
+    exit_code = cli.main(["delete-modeling-report", "sample-report.md"])
+    output = Path(capsys.readouterr().out.strip())
+
+    assert exit_code == 0
+    assert output == report_path.resolve()
+    assert not report_path.exists()
+
+
 def test_cli_generate_sample_healthcare_data(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

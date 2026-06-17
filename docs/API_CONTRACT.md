@@ -221,6 +221,17 @@ The following are considered non-breaking:
   - `output_name` must be a single markdown file name inside `reports/`
   - traversal-style paths are rejected
 
+#### `delete_modeling_report(output_name: str)`
+
+- Stable name: `delete_modeling_report`
+- Purpose: remove one markdown modeling report saved in the local `reports/` directory
+- Stable result fields:
+  - `output_name: str`
+  - `output_path: str`
+- Stable behavior:
+  - `output_name` must be a single markdown file name inside `reports/`
+  - traversal-style paths are rejected
+
 #### `preview_csv(file_name: str, rows: int = 5)`
 
 - Stable name: `preview_csv`
@@ -465,6 +476,8 @@ The `ds-workspace-mcp` console script is public.
   - prints saved modeling report file names, one per line
 - `ds-workspace-mcp read-modeling-report <output_name>`
   - prints one saved modeling report as markdown
+- `ds-workspace-mcp delete-modeling-report <output_name>`
+  - deletes one saved modeling report and prints the deleted path
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`
   - writes a synthetic healthcare CSV and prints the output path
 

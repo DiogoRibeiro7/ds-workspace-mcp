@@ -306,6 +306,12 @@ Read one saved modeling report:
 poetry run ds-workspace-mcp read-modeling-report clinic-usage-report.md
 ```
 
+Delete one saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp delete-modeling-report clinic-usage-report.md
+```
+
 Generate a synthetic dataset through the main CLI:
 
 ```bash
@@ -475,6 +481,18 @@ Return markdown modeling reports saved inside the local `reports/` directory.
 #### `read_modeling_report`
 
 Read one saved markdown modeling report from the local `reports/` directory.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md"
+}
+```
+
+#### `delete_modeling_report`
+
+Delete one saved markdown modeling report from the local `reports/` directory.
 
 Arguments:
 

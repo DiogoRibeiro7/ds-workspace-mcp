@@ -35,6 +35,13 @@ class ReadModelingReport(BaseModel):
     markdown: str
 
 
+class DeletedModelingReport(BaseModel):
+    """Metadata for a deleted modeling report artifact."""
+
+    output_name: str
+    output_path: str
+
+
 def save_modeling_report_dataset(
     file_name: str,
     target_column: str | None = None,
@@ -89,6 +96,17 @@ def read_saved_modeling_report(output_name: str) -> ReadModelingReport:
         output_name=path.name,
         output_path=str(path),
         markdown=path.read_text(encoding="utf-8"),
+    )
+
+
+def delete_saved_modeling_report(output_name: str) -> DeletedModelingReport:
+    """Delete one saved markdown modeling report from the local reports directory."""
+
+    path = resolve_existing_report_path(output_name)
+    path.unlink()
+    return DeletedModelingReport(
+        output_name=path.name,
+        output_path=str(path),
     )
 
 

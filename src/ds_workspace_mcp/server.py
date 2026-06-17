@@ -44,9 +44,11 @@ from ds_workspace_mcp.modeling_report import (
 from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.report_export import (
+    DeletedModelingReport,
     ReadModelingReport,
     SavedModelingReport,
     StoredModelingReport,
+    delete_saved_modeling_report,
     list_saved_modeling_reports,
     read_saved_modeling_report,
     save_modeling_report_dataset,
@@ -438,6 +440,18 @@ def read_modeling_report(output_name: str) -> ReadModelingReport:
     ):
         logger.info("Tool read_modeling_report invoked output_name=%s", output_name)
         return read_saved_modeling_report(output_name=output_name)
+
+
+@mcp.tool()
+def delete_modeling_report(output_name: str) -> DeletedModelingReport:
+    """Delete one saved markdown modeling report from the local reports directory."""
+
+    with traced_operation(
+        "tool.delete_modeling_report",
+        {"tool.name": "delete_modeling_report", "tool.output_name": output_name},
+    ):
+        logger.info("Tool delete_modeling_report invoked output_name=%s", output_name)
+        return delete_saved_modeling_report(output_name=output_name)
 
 
 @mcp.tool()
