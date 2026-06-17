@@ -14,6 +14,7 @@ from ds_workspace_mcp.report_export import (
     read_saved_modeling_report,
     resolve_report_output_path,
     save_modeling_report_dataset,
+    search_saved_modeling_reports,
 )
 
 
@@ -196,3 +197,27 @@ def test_preview_saved_modeling_report_returns_bounded_preview(
 def test_preview_saved_modeling_report_rejects_traversal() -> None:
     with pytest.raises(PathTraversalError, match="inside the reports directory"):
         preview_saved_modeling_report("../escape.md")
+
+
+def test_search_saved_modeling_reports_matches_case_insensitively(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "clinic-usage-report.md").write_text("a", encoding="utf-8")
+    (reports_dir / "finance-overview.md").write_text("b", encoding="utf-8")
+    (reports_dir / "Clinic-wait-times.md").write_text("c", encoding="utf-8")
+
+    matches = search_saved_modeling_reports("CLINIC")
+
+    assert [report.output_name for report in matches] == [
+        "clinic-usage-report.md",
+        "Clinic-wait-times.md",
+    ]
+
+
+def test_search_saved_modeling_reports_rejects_blank_query() -> None:
+    with pytest.raises(InvalidDatasetNameError, match="non-empty string"):
+        search_saved_modeling_reports("   ")

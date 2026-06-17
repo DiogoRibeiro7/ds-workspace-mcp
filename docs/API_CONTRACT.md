@@ -209,6 +209,18 @@ The following are considered non-breaking:
   - `output_path: str`
   - `size_bytes: int`
 
+#### `search_modeling_reports(query: str)`
+
+- Stable name: `search_modeling_reports`
+- Purpose: list markdown modeling reports in the local `reports/` directory whose file names match a case-insensitive substring
+- Stable result shape: `list[StoredModelingReport]`
+- Stable item fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `size_bytes: int`
+- Stable behavior:
+  - `query` must be a non-empty string
+
 #### `read_modeling_report(output_name: str)`
 
 - Stable name: `read_modeling_report`
@@ -503,6 +515,8 @@ The `ds-workspace-mcp` console script is public.
   - writes the `save_modeling_report` artifact and prints the saved path
 - `ds-workspace-mcp list-modeling-reports`
   - prints saved modeling report file names, one per line
+- `ds-workspace-mcp search-modeling-reports <query>`
+  - prints matching saved modeling report file names, one per line
 - `ds-workspace-mcp read-modeling-report <output_name>`
   - prints one saved modeling report as markdown
 - `ds-workspace-mcp delete-modeling-report <output_name>`

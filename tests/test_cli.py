@@ -147,6 +147,25 @@ def test_cli_list_modeling_reports(
     assert output == ["a-report.md", "b-report.md"]
 
 
+def test_cli_search_modeling_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "clinic-usage-report.md").write_text("a", encoding="utf-8")
+    (reports_dir / "finance-overview.md").write_text("b", encoding="utf-8")
+    (reports_dir / "Clinic-wait-times.md").write_text("c", encoding="utf-8")
+
+    exit_code = cli.main(["search-modeling-reports", "clinic"])
+    output = capsys.readouterr().out.strip().splitlines()
+
+    assert exit_code == 0
+    assert output == ["clinic-usage-report.md", "Clinic-wait-times.md"]
+
+
 def test_cli_read_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

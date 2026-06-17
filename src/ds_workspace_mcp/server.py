@@ -56,6 +56,7 @@ from ds_workspace_mcp.report_export import (
     preview_saved_modeling_report,
     read_saved_modeling_report,
     save_modeling_report_dataset,
+    search_saved_modeling_reports,
 )
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
 from ds_workspace_mcp.sql.sqlite_engine import (
@@ -432,6 +433,18 @@ def list_modeling_reports() -> list[StoredModelingReport]:
     with traced_operation("tool.list_modeling_reports", {"tool.name": "list_modeling_reports"}):
         logger.info("Tool list_modeling_reports invoked")
         return list_saved_modeling_reports()
+
+
+@mcp.tool()
+def search_modeling_reports(query: str) -> list[StoredModelingReport]:
+    """Return saved markdown modeling reports whose file names match the query."""
+
+    with traced_operation(
+        "tool.search_modeling_reports",
+        {"tool.name": "search_modeling_reports", "tool.query": query},
+    ):
+        logger.info("Tool search_modeling_reports invoked query=%s", query)
+        return search_saved_modeling_reports(query=query)
 
 
 @mcp.tool()

@@ -15,6 +15,7 @@ from ds_workspace_mcp.report_export import (
     preview_saved_modeling_report,
     read_saved_modeling_report,
     save_modeling_report_dataset,
+    search_saved_modeling_reports,
 )
 from ds_workspace_mcp.server import main as serve_main
 from ds_workspace_mcp.synthetic.healthcare import (
@@ -81,6 +82,12 @@ def build_parser() -> argparse.ArgumentParser:
         "list-modeling-reports",
         help="List markdown modeling reports saved inside the local reports directory.",
     )
+
+    search_report_parser = subparsers.add_parser(
+        "search-modeling-reports",
+        help="Search saved markdown modeling reports by file name substring.",
+    )
+    search_report_parser.add_argument("query", help="Case-insensitive substring to match.")
 
     read_report_parser = subparsers.add_parser(
         "read-modeling-report",
@@ -204,6 +211,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "list-modeling-reports":
         for listed_report in list_saved_modeling_reports():
             print(listed_report.output_name)
+        return 0
+
+    if command == "search-modeling-reports":
+        for matched_report in search_saved_modeling_reports(args.query):
+            print(matched_report.output_name)
         return 0
 
     if command == "read-modeling-report":

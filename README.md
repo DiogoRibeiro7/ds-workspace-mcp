@@ -300,6 +300,12 @@ List saved modeling reports:
 poetry run ds-workspace-mcp list-modeling-reports
 ```
 
+Search saved modeling reports:
+
+```bash
+poetry run ds-workspace-mcp search-modeling-reports clinic
+```
+
 Read one saved modeling report:
 
 ```bash
@@ -489,6 +495,18 @@ Arguments:
 #### `list_modeling_reports`
 
 Return markdown modeling reports saved inside the local `reports/` directory.
+
+#### `search_modeling_reports`
+
+Return saved markdown modeling reports whose file names match a case-insensitive substring.
+
+Arguments:
+
+```json
+{
+  "query": "clinic"
+}
+```
 
 #### `read_modeling_report`
 

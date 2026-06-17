@@ -66,6 +66,21 @@ class PreviewModelingReport(BaseModel):
 MAX_REPORT_PREVIEW_LINES = 12
 
 
+def search_saved_modeling_reports(query: str) -> list[StoredModelingReport]:
+    """Return saved markdown modeling reports whose names match the query."""
+
+    if not isinstance(query, str) or not query.strip():
+        raise InvalidDatasetNameError("query must be a non-empty string.")
+
+    normalized_query = query.strip().lower()
+    matches = [
+        report
+        for report in list_saved_modeling_reports()
+        if normalized_query in report.output_name.lower()
+    ]
+    return sorted(matches, key=lambda report: (report.output_name.lower(), report.output_name))
+
+
 def save_modeling_report_dataset(
     file_name: str,
     target_column: str | None = None,
