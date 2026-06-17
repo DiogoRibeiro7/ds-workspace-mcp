@@ -15,6 +15,7 @@ from ds_workspace_mcp.report_export import (
     list_saved_modeling_reports,
     preview_saved_modeling_report,
     read_saved_modeling_report,
+    rename_saved_modeling_report,
     save_modeling_report_dataset,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
@@ -129,6 +130,19 @@ def build_parser() -> argparse.ArgumentParser:
     delete_report_parser.add_argument(
         "output_name",
         help="Markdown report file name inside reports/.",
+    )
+
+    rename_report_parser = subparsers.add_parser(
+        "rename-modeling-report",
+        help="Rename one saved markdown modeling report inside the local reports directory.",
+    )
+    rename_report_parser.add_argument(
+        "output_name",
+        help="Current markdown report file name inside reports/.",
+    )
+    rename_report_parser.add_argument(
+        "new_output_name",
+        help="New markdown report file name inside reports/.",
     )
 
     inspect_report_parser = subparsers.add_parser(
@@ -260,6 +274,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "delete-modeling-report":
         deleted_report = delete_saved_modeling_report(args.output_name)
         print(deleted_report.output_path)
+        return 0
+
+    if command == "rename-modeling-report":
+        renamed_report = rename_saved_modeling_report(
+            output_name=args.output_name,
+            new_output_name=args.new_output_name,
+        )
+        print(renamed_report.new_output_path)
         return 0
 
     if command == "inspect-modeling-report":

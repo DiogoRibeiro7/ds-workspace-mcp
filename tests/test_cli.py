@@ -249,6 +249,26 @@ def test_cli_delete_modeling_report(
     assert not report_path.exists()
 
 
+def test_cli_rename_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    source = reports_dir / "old-name.md"
+    source.write_text("# Sample\n\nBody", encoding="utf-8")
+
+    exit_code = cli.main(["rename-modeling-report", "old-name.md", "new-name.md"])
+    output = Path(capsys.readouterr().out.strip())
+
+    assert exit_code == 0
+    assert output == (reports_dir / "new-name.md").resolve()
+    assert not source.exists()
+    assert (reports_dir / "new-name.md").exists()
+
+
 def test_cli_inspect_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

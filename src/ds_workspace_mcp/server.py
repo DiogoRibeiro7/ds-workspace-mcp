@@ -49,6 +49,7 @@ from ds_workspace_mcp.report_export import (
     ModelingReportMetadata,
     PreviewModelingReport,
     ReadModelingReport,
+    RenamedModelingReport,
     SavedModelingReport,
     StoredModelingReport,
     delete_saved_modeling_report,
@@ -57,6 +58,7 @@ from ds_workspace_mcp.report_export import (
     list_saved_modeling_reports,
     preview_saved_modeling_report,
     read_saved_modeling_report,
+    rename_saved_modeling_report,
     save_modeling_report_dataset,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
@@ -496,6 +498,32 @@ def delete_modeling_report(output_name: str) -> DeletedModelingReport:
     ):
         logger.info("Tool delete_modeling_report invoked output_name=%s", output_name)
         return delete_saved_modeling_report(output_name=output_name)
+
+
+@mcp.tool()
+def rename_modeling_report(
+    output_name: str,
+    new_output_name: str,
+) -> RenamedModelingReport:
+    """Rename one saved markdown modeling report inside the local reports directory."""
+
+    with traced_operation(
+        "tool.rename_modeling_report",
+        {
+            "tool.name": "rename_modeling_report",
+            "tool.output_name": output_name,
+            "tool.new_output_name": new_output_name,
+        },
+    ):
+        logger.info(
+            "Tool rename_modeling_report invoked output_name=%s new_output_name=%s",
+            output_name,
+            new_output_name,
+        )
+        return rename_saved_modeling_report(
+            output_name=output_name,
+            new_output_name=new_output_name,
+        )
 
 
 @mcp.tool()

@@ -270,6 +270,19 @@ The following are considered non-breaking:
   - `output_name` must be a single markdown file name inside `reports/`
   - traversal-style paths are rejected
 
+#### `rename_modeling_report(output_name: str, new_output_name: str)`
+
+- Stable name: `rename_modeling_report`
+- Purpose: rename one markdown modeling report saved in the local `reports/` directory
+- Stable result fields:
+  - `old_output_name: str`
+  - `new_output_name: str`
+  - `old_output_path: str`
+  - `new_output_path: str`
+- Stable behavior:
+  - `output_name` and `new_output_name` must be single markdown file names inside `reports/`
+  - traversal-style paths are rejected
+
 #### `inspect_modeling_report(output_name: str)`
 
 - Stable name: `inspect_modeling_report`
@@ -551,6 +564,8 @@ The `ds-workspace-mcp` console script is public.
   - prints one saved modeling report as markdown
 - `ds-workspace-mcp delete-modeling-report <output_name>`
   - deletes one saved modeling report and prints the deleted path
+- `ds-workspace-mcp rename-modeling-report <output_name> <new_output_name>`
+  - renames one saved modeling report and prints the new path
 - `ds-workspace-mcp inspect-modeling-report <output_name>`
   - prints metadata for one saved modeling report as JSON
 - `ds-workspace-mcp preview-modeling-report <output_name>`

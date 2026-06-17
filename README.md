@@ -330,6 +330,12 @@ Delete one saved modeling report:
 poetry run ds-workspace-mcp delete-modeling-report clinic-usage-report.md
 ```
 
+Rename one saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp rename-modeling-report clinic-usage-report.md clinic-usage-v2.md
+```
+
 Inspect one saved modeling report:
 
 ```bash
@@ -565,6 +571,19 @@ Arguments:
 ```json
 {
   "output_name": "clinic-usage-report.md"
+}
+```
+
+#### `rename_modeling_report`
+
+Rename one saved markdown modeling report inside the local `reports/` directory.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md",
+  "new_output_name": "clinic-usage-v2.md"
 }
 ```
 

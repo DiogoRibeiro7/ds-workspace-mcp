@@ -14,6 +14,7 @@ from ds_workspace_mcp.report_export import (
     list_saved_modeling_reports,
     preview_saved_modeling_report,
     read_saved_modeling_report,
+    rename_saved_modeling_report,
     resolve_report_output_path,
     save_modeling_report_dataset,
     search_saved_modeling_reports,
@@ -131,6 +132,52 @@ def test_delete_saved_modeling_report_removes_file(
 def test_delete_saved_modeling_report_rejects_traversal() -> None:
     with pytest.raises(PathTraversalError, match="inside the reports directory"):
         delete_saved_modeling_report("../escape.md")
+
+
+def test_rename_saved_modeling_report_renames_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    source = reports_dir / "old-name.md"
+    source.write_text("body", encoding="utf-8")
+
+    renamed = rename_saved_modeling_report("old-name.md", "new-name.md")
+
+    assert renamed.old_output_name == "old-name.md"
+    assert renamed.new_output_name == "new-name.md"
+    assert renamed.new_output_path == str((reports_dir / "new-name.md").resolve())
+    assert not source.exists()
+    assert (reports_dir / "new-name.md").exists()
+
+
+def test_rename_saved_modeling_report_rejects_existing_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "source.md").write_text("a", encoding="utf-8")
+    (reports_dir / "target.md").write_text("b", encoding="utf-8")
+
+    with pytest.raises(InvalidDatasetNameError, match="already exists"):
+        rename_saved_modeling_report("source.md", "target.md")
+
+
+def test_rename_saved_modeling_report_rejects_traversal(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "source.md").write_text("a", encoding="utf-8")
+
+    with pytest.raises(PathTraversalError, match="inside the reports directory"):
+        rename_saved_modeling_report("source.md", "../escape.md")
 
 
 def test_inspect_saved_modeling_report_returns_metadata(

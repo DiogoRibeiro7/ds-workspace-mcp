@@ -44,6 +44,15 @@ class DeletedModelingReport(BaseModel):
     output_path: str
 
 
+class RenamedModelingReport(BaseModel):
+    """Metadata for a renamed modeling report artifact."""
+
+    old_output_name: str
+    new_output_name: str
+    old_output_path: str
+    new_output_path: str
+
+
 class ModelingReportMetadata(BaseModel):
     """Metadata summary for one saved modeling report artifact."""
 
@@ -187,6 +196,26 @@ def delete_saved_modeling_report(output_name: str) -> DeletedModelingReport:
     )
 
 
+def rename_saved_modeling_report(
+    output_name: str,
+    new_output_name: str,
+) -> RenamedModelingReport:
+    """Rename one saved markdown modeling report inside the local reports directory."""
+
+    source_path = resolve_existing_report_path(output_name)
+    target_path = resolve_report_target_path(new_output_name)
+    if target_path.exists():
+        raise InvalidDatasetNameError(f"Modeling report already exists: {new_output_name}")
+
+    source_path.rename(target_path)
+    return RenamedModelingReport(
+        old_output_name=source_path.name,
+        new_output_name=target_path.name,
+        old_output_path=str(source_path),
+        new_output_path=str(target_path),
+    )
+
+
 def inspect_saved_modeling_report(output_name: str) -> ModelingReportMetadata:
     """Return metadata for one saved markdown modeling report."""
 
@@ -261,6 +290,25 @@ def resolve_existing_report_path(output_name: str) -> Path:
         raise PathTraversalError("Report output must stay inside the reports directory.")
     if not resolved.exists():
         raise InvalidDatasetNameError(f"Modeling report not found: {output_name}")
+    return resolved
+
+
+def resolve_report_target_path(output_name: str) -> Path:
+    """Resolve a target markdown report path inside the reports directory."""
+
+    reports_root = REPORTS_DIR.resolve()
+    reports_root.mkdir(parents=True, exist_ok=True)
+
+    if not isinstance(output_name, str) or not output_name.strip():
+        raise InvalidDatasetNameError("output_name must be a non-empty string.")
+    if Path(output_name).name != output_name:
+        raise PathTraversalError("Report output must stay inside the reports directory.")
+    if not output_name.lower().endswith(".md"):
+        raise InvalidDatasetNameError("Report output_name must end with .md.")
+
+    resolved = (reports_root / output_name).resolve()
+    if resolved.parent != reports_root:
+        raise PathTraversalError("Report output must stay inside the reports directory.")
     return resolved
 
 
