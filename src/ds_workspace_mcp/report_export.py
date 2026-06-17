@@ -26,6 +26,7 @@ class StoredModelingReport(BaseModel):
     output_name: str
     output_path: str
     size_bytes: int
+    modified_at: str
 
 
 class ReadModelingReport(BaseModel):
@@ -63,6 +64,14 @@ class PreviewModelingReport(BaseModel):
     line_count: int
 
 
+class ModelingReportCatalogSummary(BaseModel):
+    """Summary of the local modeling report catalog."""
+
+    report_count: int
+    total_size_bytes: int
+    most_recent_reports: list[StoredModelingReport]
+
+
 MAX_REPORT_PREVIEW_LINES = 12
 
 
@@ -79,6 +88,34 @@ def search_saved_modeling_reports(query: str) -> list[StoredModelingReport]:
         if normalized_query in report.output_name.lower()
     ]
     return sorted(matches, key=lambda report: (report.output_name.lower(), report.output_name))
+
+
+def list_recent_modeling_reports(limit: int = 5) -> list[StoredModelingReport]:
+    """Return the most recently modified saved modeling reports."""
+
+    if limit < 1:
+        raise InvalidDatasetNameError("limit must be greater than 0.")
+
+    reports = list_saved_modeling_reports()
+    return sorted(
+        reports,
+        key=lambda report: (report.modified_at, report.output_name),
+        reverse=True,
+    )[:limit]
+
+
+def summarize_modeling_report_catalog(limit: int = 5) -> ModelingReportCatalogSummary:
+    """Return a compact summary of saved markdown modeling reports."""
+
+    if limit < 1:
+        raise InvalidDatasetNameError("limit must be greater than 0.")
+
+    reports = list_saved_modeling_reports()
+    return ModelingReportCatalogSummary(
+        report_count=len(reports),
+        total_size_bytes=sum(report.size_bytes for report in reports),
+        most_recent_reports=list_recent_modeling_reports(limit=limit),
+    )
 
 
 def save_modeling_report_dataset(
@@ -122,6 +159,7 @@ def list_saved_modeling_reports() -> list[StoredModelingReport]:
                 output_name=path.name,
                 output_path=str(path.resolve()),
                 size_bytes=stat.st_size,
+                modified_at=_format_timestamp(stat.st_mtime),
             )
         )
     return reports

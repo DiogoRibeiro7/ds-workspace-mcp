@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -9,6 +10,7 @@ from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalEr
 from ds_workspace_mcp.report_export import (
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
+    list_recent_modeling_reports,
     list_saved_modeling_reports,
     preview_saved_modeling_report,
     read_saved_modeling_report,
@@ -221,3 +223,28 @@ def test_search_saved_modeling_reports_matches_case_insensitively(
 def test_search_saved_modeling_reports_rejects_blank_query() -> None:
     with pytest.raises(InvalidDatasetNameError, match="non-empty string"):
         search_saved_modeling_reports("   ")
+
+
+def test_list_recent_modeling_reports_orders_by_modified_time(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("a", encoding="utf-8")
+    newer.write_text("b", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    reports = list_recent_modeling_reports(limit=2)
+
+    assert [report.output_name for report in reports] == ["newer.md", "older.md"]
+    assert all(report.modified_at.endswith("+00:00") for report in reports)
+
+
+def test_list_recent_modeling_reports_rejects_invalid_limit() -> None:
+    with pytest.raises(InvalidDatasetNameError, match="greater than 0"):
+        list_recent_modeling_reports(limit=0)

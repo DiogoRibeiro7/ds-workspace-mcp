@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -164,6 +165,28 @@ def test_cli_search_modeling_reports(
 
     assert exit_code == 0
     assert output == ["clinic-usage-report.md", "Clinic-wait-times.md"]
+
+
+def test_cli_list_recent_modeling_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("a", encoding="utf-8")
+    newer.write_text("b", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["list-recent-modeling-reports", "--limit", "2"])
+    output = capsys.readouterr().out.strip().splitlines()
+
+    assert exit_code == 0
+    assert output == ["newer.md", "older.md"]
 
 
 def test_cli_read_modeling_report(

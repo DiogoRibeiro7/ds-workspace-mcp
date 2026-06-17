@@ -45,6 +45,7 @@ from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overvie
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.report_export import (
     DeletedModelingReport,
+    ModelingReportCatalogSummary,
     ModelingReportMetadata,
     PreviewModelingReport,
     ReadModelingReport,
@@ -52,11 +53,13 @@ from ds_workspace_mcp.report_export import (
     StoredModelingReport,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
+    list_recent_modeling_reports,
     list_saved_modeling_reports,
     preview_saved_modeling_report,
     read_saved_modeling_report,
     save_modeling_report_dataset,
     search_saved_modeling_reports,
+    summarize_modeling_report_catalog,
 )
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
 from ds_workspace_mcp.sql.sqlite_engine import (
@@ -445,6 +448,30 @@ def search_modeling_reports(query: str) -> list[StoredModelingReport]:
     ):
         logger.info("Tool search_modeling_reports invoked query=%s", query)
         return search_saved_modeling_reports(query=query)
+
+
+@mcp.tool()
+def list_recent_modeling_reports_tool(limit: int = 5) -> list[StoredModelingReport]:
+    """Return the most recently modified saved modeling reports."""
+
+    with traced_operation(
+        "tool.list_recent_modeling_reports",
+        {"tool.name": "list_recent_modeling_reports", "tool.limit": limit},
+    ):
+        logger.info("Tool list_recent_modeling_reports_tool invoked limit=%s", limit)
+        return list_recent_modeling_reports(limit=limit)
+
+
+@mcp.tool()
+def summarize_modeling_report_catalog_tool(limit: int = 5) -> ModelingReportCatalogSummary:
+    """Return a compact summary of saved modeling report artifacts."""
+
+    with traced_operation(
+        "tool.summarize_modeling_report_catalog",
+        {"tool.name": "summarize_modeling_report_catalog", "tool.limit": limit},
+    ):
+        logger.info("Tool summarize_modeling_report_catalog_tool invoked limit=%s", limit)
+        return summarize_modeling_report_catalog(limit=limit)
 
 
 @mcp.tool()

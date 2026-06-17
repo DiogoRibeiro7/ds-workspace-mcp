@@ -306,6 +306,12 @@ Search saved modeling reports:
 poetry run ds-workspace-mcp search-modeling-reports clinic
 ```
 
+List the most recent modeling reports:
+
+```bash
+poetry run ds-workspace-mcp list-recent-modeling-reports --limit 3
+```
+
 Read one saved modeling report:
 
 ```bash
@@ -505,6 +511,18 @@ Arguments:
 ```json
 {
   "query": "clinic"
+}
+```
+
+#### `list_recent_modeling_reports`
+
+Return the most recently modified saved markdown modeling reports.
+
+Arguments:
+
+```json
+{
+  "limit": 5
 }
 ```
 

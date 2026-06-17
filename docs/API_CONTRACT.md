@@ -221,6 +221,20 @@ The following are considered non-breaking:
 - Stable behavior:
   - `query` must be a non-empty string
 
+#### `list_recent_modeling_reports(limit: int = 5)`
+
+- Stable name: `list_recent_modeling_reports`
+- Implementation note: the Python function is named `list_recent_modeling_reports_tool`
+- Purpose: list the most recently modified markdown modeling reports in the local `reports/` directory
+- Stable result shape: `list[StoredModelingReport]`
+- Stable item fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `size_bytes: int`
+  - `modified_at: str`
+- Stable behavior:
+  - `limit` must be greater than 0
+
 #### `read_modeling_report(output_name: str)`
 
 - Stable name: `read_modeling_report`
@@ -517,6 +531,8 @@ The `ds-workspace-mcp` console script is public.
   - prints saved modeling report file names, one per line
 - `ds-workspace-mcp search-modeling-reports <query>`
   - prints matching saved modeling report file names, one per line
+- `ds-workspace-mcp list-recent-modeling-reports [--limit]`
+  - prints the most recently modified saved modeling report file names, one per line
 - `ds-workspace-mcp read-modeling-report <output_name>`
   - prints one saved modeling report as markdown
 - `ds-workspace-mcp delete-modeling-report <output_name>`

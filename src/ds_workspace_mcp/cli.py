@@ -11,6 +11,7 @@ from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.report_export import (
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
+    list_recent_modeling_reports,
     list_saved_modeling_reports,
     preview_saved_modeling_report,
     read_saved_modeling_report,
@@ -88,6 +89,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Search saved markdown modeling reports by file name substring.",
     )
     search_report_parser.add_argument("query", help="Case-insensitive substring to match.")
+
+    recent_report_parser = subparsers.add_parser(
+        "list-recent-modeling-reports",
+        help="List the most recently modified saved modeling reports.",
+    )
+    recent_report_parser.add_argument(
+        "--limit",
+        type=int,
+        default=5,
+        help="Maximum number of reports to print.",
+    )
 
     read_report_parser = subparsers.add_parser(
         "read-modeling-report",
@@ -216,6 +228,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "search-modeling-reports":
         for matched_report in search_saved_modeling_reports(args.query):
             print(matched_report.output_name)
+        return 0
+
+    if command == "list-recent-modeling-reports":
+        for recent_report in list_recent_modeling_reports(limit=args.limit):
+            print(recent_report.output_name)
         return 0
 
     if command == "read-modeling-report":
