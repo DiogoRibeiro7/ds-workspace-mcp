@@ -369,6 +369,12 @@ Compare one section across two saved modeling reports:
 poetry run ds-workspace-mcp compare-modeling-report-sections clinic-usage-report.md clinic-usage-v2.md "Risks"
 ```
 
+Compare one section across the two most recent saved modeling reports:
+
+```bash
+poetry run ds-workspace-mcp compare-latest-modeling-report-sections "Risks"
+```
+
 Read the latest saved modeling report:
 
 ```bash
@@ -708,6 +714,18 @@ Arguments:
 {
   "output_name": "clinic-usage-report.md",
   "other_output_name": "clinic-usage-v2.md",
+  "section_heading": "Risks"
+}
+```
+
+#### `compare_latest_modeling_report_sections`
+
+Return a bounded diff summary for one section across the two most recently modified saved modeling reports.
+
+Arguments:
+
+```json
+{
   "section_heading": "Risks"
 }
 ```

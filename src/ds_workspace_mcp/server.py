@@ -60,6 +60,7 @@ from ds_workspace_mcp.report_export import (
     SavedModelingReport,
     SavedModelingReportSection,
     StoredModelingReport,
+    compare_latest_modeling_report_sections,
     compare_latest_modeling_reports,
     compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
@@ -641,6 +642,26 @@ def compare_modeling_report_sections(
             other_output_name=other_output_name,
             section_heading=section_heading,
         )
+
+
+@mcp.tool()
+def compare_latest_modeling_report_sections_tool(
+    section_heading: str,
+) -> ComparedModelingReportSection:
+    """Return a bounded diff summary for one section across the two newest reports."""
+
+    with traced_operation(
+        "tool.compare_latest_modeling_report_sections",
+        {
+            "tool.name": "compare_latest_modeling_report_sections",
+            "tool.section_heading": section_heading,
+        },
+    ):
+        logger.info(
+            "Tool compare_latest_modeling_report_sections_tool invoked section_heading=%s",
+            section_heading,
+        )
+        return compare_latest_modeling_report_sections(section_heading=section_heading)
 
 
 @mcp.tool()

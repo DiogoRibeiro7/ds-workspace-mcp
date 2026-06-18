@@ -362,6 +362,25 @@ The following are considered non-breaking:
   - fails clearly when the requested section is not present in either report
   - `diff_preview` is intentionally bounded and does not guarantee a full diff
 
+#### `compare_latest_modeling_report_sections(section_heading: str)`
+
+- Stable name: `compare_latest_modeling_report_sections`
+- Implementation note: the Python function is named `compare_latest_modeling_report_sections_tool`
+- Purpose: return a bounded diff summary for one section across the two most recently modified saved modeling reports
+- Stable result fields:
+  - `output_name: str`
+  - `other_output_name: str`
+  - `section_heading: str`
+  - `changed: bool`
+  - `added_line_count: int`
+  - `removed_line_count: int`
+  - `diff_preview: str`
+- Stable behavior:
+  - `section_heading` must be a non-empty string
+  - fails clearly when fewer than two saved modeling reports exist
+  - fails clearly when the requested section is not present in either report
+  - `diff_preview` is intentionally bounded and does not guarantee a full diff
+
 #### `read_latest_modeling_report()`
 
 - Stable name: `read_latest_modeling_report`
@@ -738,6 +757,8 @@ The `ds-workspace-mcp` console script is public.
   - saves one markdown section from a saved modeling report and prints the saved path
 - `ds-workspace-mcp compare-modeling-report-sections <output_name> <other_output_name> <section_heading>`
   - prints a bounded diff summary between matching report sections as JSON
+- `ds-workspace-mcp compare-latest-modeling-report-sections <section_heading>`
+  - prints a bounded diff summary for one section across the two most recently modified reports as JSON
 - `ds-workspace-mcp read-latest-modeling-report`
   - prints the most recently modified saved modeling report as markdown
 - `ds-workspace-mcp delete-modeling-report <output_name>`

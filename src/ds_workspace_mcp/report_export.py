@@ -451,6 +451,21 @@ def compare_saved_modeling_report_sections(
     )
 
 
+def compare_latest_modeling_report_sections(section_heading: str) -> ComparedModelingReportSection:
+    """Return a bounded diff summary for one section across the two newest reports."""
+
+    recent_reports = list_recent_modeling_reports(limit=2)
+    if len(recent_reports) < 2:
+        raise InvalidDatasetNameError(
+            "At least two modeling reports are required in the local reports directory."
+        )
+    return compare_saved_modeling_report_sections(
+        output_name=recent_reports[1].output_name,
+        other_output_name=recent_reports[0].output_name,
+        section_heading=section_heading,
+    )
+
+
 def summarize_saved_modeling_report_sections() -> list[ModelingReportSectionSummary]:
     """Summarize recurring section headings across saved modeling reports."""
 

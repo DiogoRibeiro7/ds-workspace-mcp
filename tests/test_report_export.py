@@ -8,6 +8,7 @@ import pytest
 
 from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalError
 from ds_workspace_mcp.report_export import (
+    compare_latest_modeling_report_sections,
     compare_latest_modeling_reports,
     compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
@@ -316,6 +317,46 @@ def test_compare_saved_modeling_report_sections_marks_identical_section_unchange
     assert comparison.added_line_count == 0
     assert comparison.removed_line_count == 0
     assert comparison.diff_preview == ""
+
+
+def test_compare_latest_modeling_report_sections_uses_two_most_recent_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    oldest = reports_dir / "oldest.md"
+    older = reports_dir / "older.md"
+    newest = reports_dir / "newest.md"
+    oldest.write_text("# Report\n\n## Risks\n- Oldest", encoding="utf-8")
+    older.write_text("# Report\n\n## Risks\n- Older", encoding="utf-8")
+    newest.write_text("# Report\n\n## Risks\n- Newest", encoding="utf-8")
+    os.utime(oldest, (1_600_000_000, 1_600_000_000))
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newest, (1_800_000_000, 1_800_000_000))
+
+    comparison = compare_latest_modeling_report_sections("risks")
+
+    assert comparison.output_name == "older.md"
+    assert comparison.other_output_name == "newest.md"
+    assert comparison.section_heading == "Risks"
+    assert comparison.changed is True
+    assert "--- older.md:Risks" in comparison.diff_preview
+    assert "+++ newest.md:Risks" in comparison.diff_preview
+
+
+def test_compare_latest_modeling_report_sections_rejects_too_few_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "only.md").write_text("# Report\n\n## Risks\n- Only", encoding="utf-8")
+
+    with pytest.raises(InvalidDatasetNameError, match="At least two modeling reports"):
+        compare_latest_modeling_report_sections("risks")
 
 
 def test_search_saved_modeling_report_sections_matches_headings_across_reports(

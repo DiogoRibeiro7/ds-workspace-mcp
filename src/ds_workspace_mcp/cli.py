@@ -9,6 +9,7 @@ from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
 from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.report_export import (
+    compare_latest_modeling_report_sections,
     compare_latest_modeling_reports,
     compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
@@ -212,6 +213,15 @@ def build_parser() -> argparse.ArgumentParser:
     compare_report_sections_parser.add_argument(
         "section_heading",
         help="Markdown heading to compare, case-insensitively.",
+    )
+
+    compare_latest_report_sections_parser = subparsers.add_parser(
+        "compare-latest-modeling-report-sections",
+        help="Print a bounded diff summary for one section across the two newest reports as JSON.",
+    )
+    compare_latest_report_sections_parser.add_argument(
+        "section_heading",
+        help="Markdown heading to compare across the two newest reports.",
     )
 
     subparsers.add_parser(
@@ -439,6 +449,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             section_heading=args.section_heading,
         )
         print(json.dumps(section_comparison.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "compare-latest-modeling-report-sections":
+        latest_section_comparison = compare_latest_modeling_report_sections(args.section_heading)
+        print(json.dumps(latest_section_comparison.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "read-latest-modeling-report":

@@ -409,6 +409,31 @@ def test_cli_compare_modeling_report_sections(
     assert payload["removed_line_count"] == 1
 
 
+def test_cli_compare_latest_modeling_report_sections(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Report\n\n## Risks\n- Older", encoding="utf-8")
+    newer.write_text("# Report\n\n## Risks\n- Newer", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["compare-latest-modeling-report-sections", "risks"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["output_name"] == "older.md"
+    assert payload["other_output_name"] == "newer.md"
+    assert payload["section_heading"] == "Risks"
+    assert payload["changed"] is True
+
+
 def test_cli_read_latest_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
