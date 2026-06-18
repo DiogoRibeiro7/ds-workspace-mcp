@@ -8,10 +8,20 @@ It lets an MCP-compatible assistant safely inspect local CSV datasets through:
 
 - **Resources** for dataset discovery.
 - **Overview tools** for fast first-pass dataset understanding.
-- **Tools** for CSV preview, profiling, and simple data-quality checks.
+- **Tools** for CSV preview, profiling, SQL access, diagnostics, and baseline evaluation.
+- **Report artifact tools** for saving, searching, comparing, extracting, and reusing modeling reports.
 - **Prompts** for reusable dataset analysis instructions.
 
 This project is designed as a clean portfolio-ready starter repo. It is intentionally focused, typed, tested, and safe by default.
+
+## Current scope
+
+Today the repository covers four practical workflows:
+
+- Safe local dataset access for CSV and SQLite sources.
+- Lightweight analytical diagnostics, including leakage review, correlations, and time-series checks.
+- Baseline modeling planning and markdown report generation.
+- Saved report lifecycle management, including cataloging, search, section extraction, section export, and section-aware diffs.
 
 ---
 
@@ -34,40 +44,33 @@ Good use cases:
 
 ```text
 ds-workspace-mcp/
-├── docs/
-│   ├── IMPLEMENTATION_PLAN.md
-│   └── RELEASE_CHECKLIST.md
-├── examples/
-│   ├── http_client.py
-│   └── stdio_client.py
 ├── data/
-│   └── sample_clinic_usage.csv
+├── docs/
+├── examples/
+├── notebooks/
 ├── src/
 │   └── ds_workspace_mcp/
 │       ├── cli.py
+│       ├── config.py
 │       ├── core.py
 │       ├── diagnostics.py
+│       ├── experiment_plan.py
+│       ├── feature_selection.py
+│       ├── modeling_readiness.py
+│       ├── modeling_report.py
+│       ├── overview.py
 │       ├── profiling.py
+│       ├── report_export.py
 │       ├── server.py
 │       ├── timeseries.py
 │       ├── ml/
 │       ├── sql/
 │       └── synthetic/
 ├── tests/
-│   ├── test_core.py
-│   ├── test_cli.py
-│   ├── test_diagnostics.py
-│   ├── test_synthetic_healthcare.py
-│   └── test_timeseries.py
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── LICENSE
-├── SECURITY.md
-├── .env.example
-├── .gitignore
+├── .github/
+├── docker-compose.yml
 ├── Dockerfile
 ├── README.md
-├── ROADMAP.md
 └── pyproject.toml
 ```
 
@@ -1049,6 +1052,14 @@ poetry run pytest
 ```
 
 GitHub Actions runs those checks on pushes to `main` and `develop`, and on pull requests, across Python 3.11 and 3.12.
+
+## Documentation Rule
+
+README maintenance is part of the definition of done for this repository.
+
+- Any user-facing capability change should update `README.md` in the same change.
+- CLI, MCP tool, workflow, and setup documentation should stay aligned with the implemented repo state.
+- We use the same rule as a default for other repositories unless there is a stronger repo-specific convention.
 
 ## Security
 
