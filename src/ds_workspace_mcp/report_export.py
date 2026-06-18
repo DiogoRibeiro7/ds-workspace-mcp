@@ -127,6 +127,20 @@ def summarize_modeling_report_catalog(limit: int = 5) -> ModelingReportCatalogSu
     )
 
 
+def read_latest_modeling_report() -> ReadModelingReport:
+    """Read the most recently modified saved markdown modeling report."""
+
+    latest_report = _get_latest_saved_report()
+    return read_saved_modeling_report(latest_report.output_name)
+
+
+def preview_latest_modeling_report() -> PreviewModelingReport:
+    """Return a bounded preview of the most recently modified modeling report."""
+
+    latest_report = _get_latest_saved_report()
+    return preview_saved_modeling_report(latest_report.output_name)
+
+
 def save_modeling_report_dataset(
     file_name: str,
     target_column: str | None = None,
@@ -343,3 +357,12 @@ def _extract_headline(lines: list[str]) -> str:
         if stripped.startswith("# "):
             return stripped.removeprefix("# ").strip()
     return "Untitled modeling report"
+
+
+def _get_latest_saved_report() -> StoredModelingReport:
+    """Return the newest saved modeling report or fail when none exist."""
+
+    reports = list_recent_modeling_reports(limit=1)
+    if not reports:
+        raise InvalidDatasetNameError("No modeling reports found in the local reports directory.")
+    return reports[0]

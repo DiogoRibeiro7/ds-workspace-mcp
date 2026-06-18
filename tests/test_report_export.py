@@ -12,7 +12,9 @@ from ds_workspace_mcp.report_export import (
     inspect_saved_modeling_report,
     list_recent_modeling_reports,
     list_saved_modeling_reports,
+    preview_latest_modeling_report,
     preview_saved_modeling_report,
+    read_latest_modeling_report,
     read_saved_modeling_report,
     rename_saved_modeling_report,
     resolve_report_output_path,
@@ -110,6 +112,36 @@ def test_read_saved_modeling_report_returns_markdown(
 def test_read_saved_modeling_report_rejects_traversal() -> None:
     with pytest.raises(PathTraversalError, match="inside the reports directory"):
         read_saved_modeling_report("../escape.md")
+
+
+def test_read_latest_modeling_report_returns_newest_markdown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nBody", encoding="utf-8")
+    newer.write_text("# Newer\n\nLatest body", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    report = read_latest_modeling_report()
+
+    assert report.output_name == "newer.md"
+    assert "Latest body" in report.markdown
+
+
+def test_read_latest_modeling_report_rejects_empty_catalog(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(InvalidDatasetNameError, match="No modeling reports found"):
+        read_latest_modeling_report()
 
 
 def test_delete_saved_modeling_report_removes_file(
@@ -247,6 +279,37 @@ def test_preview_saved_modeling_report_returns_bounded_preview(
 def test_preview_saved_modeling_report_rejects_traversal() -> None:
     with pytest.raises(PathTraversalError, match="inside the reports directory"):
         preview_saved_modeling_report("../escape.md")
+
+
+def test_preview_latest_modeling_report_returns_newest_preview(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nBody", encoding="utf-8")
+    newer.write_text("# Newest Headline\n\n## Summary\nLine", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    preview = preview_latest_modeling_report()
+
+    assert preview.output_name == "newer.md"
+    assert preview.headline == "Newest Headline"
+    assert "## Summary" in preview.preview_markdown
+
+
+def test_preview_latest_modeling_report_rejects_empty_catalog(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(InvalidDatasetNameError, match="No modeling reports found"):
+        preview_latest_modeling_report()
 
 
 def test_search_saved_modeling_reports_matches_case_insensitively(

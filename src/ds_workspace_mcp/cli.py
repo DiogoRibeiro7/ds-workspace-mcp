@@ -13,7 +13,9 @@ from ds_workspace_mcp.report_export import (
     inspect_saved_modeling_report,
     list_recent_modeling_reports,
     list_saved_modeling_reports,
+    preview_latest_modeling_report,
     preview_saved_modeling_report,
+    read_latest_modeling_report,
     read_saved_modeling_report,
     rename_saved_modeling_report,
     save_modeling_report_dataset,
@@ -123,6 +125,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Markdown report file name inside reports/.",
     )
 
+    subparsers.add_parser(
+        "read-latest-modeling-report",
+        help="Print the most recently modified saved markdown modeling report.",
+    )
+
     delete_report_parser = subparsers.add_parser(
         "delete-modeling-report",
         help="Delete one saved markdown modeling report from the local reports directory.",
@@ -161,6 +168,11 @@ def build_parser() -> argparse.ArgumentParser:
     preview_report_parser.add_argument(
         "output_name",
         help="Markdown report file name inside reports/.",
+    )
+
+    subparsers.add_parser(
+        "preview-latest-modeling-report",
+        help="Print a bounded preview of the most recently modified modeling report.",
     )
 
     generate_parser = subparsers.add_parser(
@@ -271,6 +283,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(read_report.markdown)
         return 0
 
+    if command == "read-latest-modeling-report":
+        read_report = read_latest_modeling_report()
+        print(read_report.markdown)
+        return 0
+
     if command == "delete-modeling-report":
         deleted_report = delete_saved_modeling_report(args.output_name)
         print(deleted_report.output_path)
@@ -291,6 +308,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if command == "preview-modeling-report":
         preview = preview_saved_modeling_report(args.output_name)
+        print(json.dumps(preview.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "preview-latest-modeling-report":
+        preview = preview_latest_modeling_report()
         print(json.dumps(preview.model_dump(mode="json"), indent=2))
         return 0
 

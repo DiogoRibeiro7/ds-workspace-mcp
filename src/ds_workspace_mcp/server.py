@@ -56,7 +56,9 @@ from ds_workspace_mcp.report_export import (
     inspect_saved_modeling_report,
     list_recent_modeling_reports,
     list_saved_modeling_reports,
+    preview_latest_modeling_report,
     preview_saved_modeling_report,
+    read_latest_modeling_report,
     read_saved_modeling_report,
     rename_saved_modeling_report,
     save_modeling_report_dataset,
@@ -489,6 +491,18 @@ def read_modeling_report(output_name: str) -> ReadModelingReport:
 
 
 @mcp.tool()
+def read_latest_modeling_report_tool() -> ReadModelingReport:
+    """Read the most recently modified saved markdown modeling report."""
+
+    with traced_operation(
+        "tool.read_latest_modeling_report",
+        {"tool.name": "read_latest_modeling_report"},
+    ):
+        logger.info("Tool read_latest_modeling_report_tool invoked")
+        return read_latest_modeling_report()
+
+
+@mcp.tool()
 def delete_modeling_report(output_name: str) -> DeletedModelingReport:
     """Delete one saved markdown modeling report from the local reports directory."""
 
@@ -548,6 +562,18 @@ def preview_modeling_report(output_name: str) -> PreviewModelingReport:
     ):
         logger.info("Tool preview_modeling_report invoked output_name=%s", output_name)
         return preview_saved_modeling_report(output_name=output_name)
+
+
+@mcp.tool()
+def preview_latest_modeling_report_tool() -> PreviewModelingReport:
+    """Return a bounded preview of the most recently modified modeling report."""
+
+    with traced_operation(
+        "tool.preview_latest_modeling_report",
+        {"tool.name": "preview_latest_modeling_report"},
+    ):
+        logger.info("Tool preview_latest_modeling_report_tool invoked")
+        return preview_latest_modeling_report()
 
 
 @mcp.tool()

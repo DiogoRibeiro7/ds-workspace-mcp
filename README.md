@@ -324,6 +324,12 @@ Read one saved modeling report:
 poetry run ds-workspace-mcp read-modeling-report clinic-usage-report.md
 ```
 
+Read the latest saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp read-latest-modeling-report
+```
+
 Delete one saved modeling report:
 
 ```bash
@@ -346,6 +352,12 @@ Preview one saved modeling report:
 
 ```bash
 poetry run ds-workspace-mcp preview-modeling-report clinic-usage-report.md
+```
+
+Preview the latest saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp preview-latest-modeling-report
 ```
 
 Generate a synthetic dataset through the main CLI:
@@ -562,6 +574,10 @@ Arguments:
 }
 ```
 
+#### `read_latest_modeling_report`
+
+Read the most recently modified saved markdown modeling report from the local `reports/` directory.
+
 #### `delete_modeling_report`
 
 Delete one saved markdown modeling report from the local `reports/` directory.
@@ -610,6 +626,10 @@ Arguments:
   "output_name": "clinic-usage-report.md"
 }
 ```
+
+#### `preview_latest_modeling_report`
+
+Return a bounded preview of the most recently modified modeling report from the local `reports/` directory.
 
 #### `preview_csv`
 

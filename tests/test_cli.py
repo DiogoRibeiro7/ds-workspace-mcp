@@ -230,6 +230,29 @@ def test_cli_read_modeling_report(
     assert "# Sample" in output
 
 
+def test_cli_read_latest_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nBody", encoding="utf-8")
+    newer.write_text("# Newer\n\nLatest body", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["read-latest-modeling-report"])
+    output = capsys.readouterr().out
+
+    assert exit_code == 0
+    assert "# Newer" in output
+    assert "Latest body" in output
+
+
 def test_cli_delete_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -307,6 +330,30 @@ def test_cli_preview_modeling_report(
     assert payload["output_name"] == "sample-report.md"
     assert payload["headline"] == "Sample"
     assert payload["output_path"] == str(report_path.resolve())
+    assert "## Summary" in payload["preview_markdown"]
+
+
+def test_cli_preview_latest_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nBody", encoding="utf-8")
+    newer.write_text("# Newest\n\n## Summary\nBody", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["preview-latest-modeling-report"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["output_name"] == "newer.md"
+    assert payload["headline"] == "Newest"
     assert "## Summary" in payload["preview_markdown"]
 
 
