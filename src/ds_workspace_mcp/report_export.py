@@ -724,6 +724,16 @@ def rename_saved_modeling_report(
     )
 
 
+def rename_latest_modeling_report(new_output_name: str) -> RenamedModelingReport:
+    """Rename the most recently modified saved markdown modeling report."""
+
+    latest_report = _get_latest_saved_report()
+    return rename_saved_modeling_report(
+        output_name=latest_report.output_name,
+        new_output_name=new_output_name,
+    )
+
+
 def copy_saved_modeling_report(
     output_name: str,
     new_output_name: str,

@@ -493,6 +493,21 @@ The following are considered non-breaking:
   - `output_name` and `new_output_name` must be single markdown file names inside `reports/`
   - traversal-style paths are rejected
 
+#### `rename_latest_modeling_report(new_output_name: str)`
+
+- Stable name: `rename_latest_modeling_report`
+- Implementation note: the Python function is named `rename_latest_modeling_report_tool`
+- Purpose: rename the most recently modified markdown modeling report saved in the local `reports/` directory
+- Stable result fields:
+  - `old_output_name: str`
+  - `new_output_name: str`
+  - `old_output_path: str`
+  - `new_output_path: str`
+- Stable behavior:
+  - `new_output_name` must be a single markdown file name inside `reports/`
+  - fails clearly when no saved modeling reports exist
+  - fails clearly when the target output already exists
+
 #### `copy_modeling_report(output_name: str, new_output_name: str)`
 
 - Stable name: `copy_modeling_report`
@@ -894,6 +909,8 @@ The `ds-workspace-mcp` console script is public.
   - deletes one saved modeling report and prints the deleted path
 - `ds-workspace-mcp rename-modeling-report <output_name> <new_output_name>`
   - renames one saved modeling report and prints the new path
+- `ds-workspace-mcp rename-latest-modeling-report <new_output_name>`
+  - renames the most recently modified saved modeling report and prints the new path
 - `ds-workspace-mcp copy-modeling-report <output_name> <new_output_name>`
   - copies one saved modeling report and prints the new path
 - `ds-workspace-mcp copy-latest-modeling-report <new_output_name>`

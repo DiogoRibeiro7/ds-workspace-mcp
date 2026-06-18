@@ -28,6 +28,7 @@ from ds_workspace_mcp.report_export import (
     read_latest_modeling_report_section,
     read_saved_modeling_report,
     read_saved_modeling_report_section,
+    rename_latest_modeling_report,
     rename_saved_modeling_report,
     save_latest_modeling_report_section,
     save_modeling_report_dataset,
@@ -307,6 +308,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Current markdown report file name inside reports/.",
     )
     rename_report_parser.add_argument(
+        "new_output_name",
+        help="New markdown report file name inside reports/.",
+    )
+
+    rename_latest_report_parser = subparsers.add_parser(
+        "rename-latest-modeling-report",
+        help="Rename the most recently modified saved markdown modeling report.",
+    )
+    rename_latest_report_parser.add_argument(
         "new_output_name",
         help="New markdown report file name inside reports/.",
     )
@@ -601,6 +611,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_name=args.output_name,
             new_output_name=args.new_output_name,
         )
+        print(renamed_report.new_output_path)
+        return 0
+
+    if command == "rename-latest-modeling-report":
+        renamed_report = rename_latest_modeling_report(args.new_output_name)
         print(renamed_report.new_output_path)
         return 0
 

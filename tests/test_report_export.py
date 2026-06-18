@@ -27,6 +27,7 @@ from ds_workspace_mcp.report_export import (
     read_latest_modeling_report_section,
     read_saved_modeling_report,
     read_saved_modeling_report_section,
+    rename_latest_modeling_report,
     rename_saved_modeling_report,
     resolve_report_output_path,
     save_latest_modeling_report_section,
@@ -672,6 +673,40 @@ def test_rename_saved_modeling_report_rejects_traversal(
 
     with pytest.raises(PathTraversalError, match="inside the reports directory"):
         rename_saved_modeling_report("source.md", "../escape.md")
+
+
+def test_rename_latest_modeling_report_uses_newest_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nBody", encoding="utf-8")
+    newer.write_text("# Newer\n\nLatest body", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    renamed = rename_latest_modeling_report("promoted.md")
+
+    promoted = reports_dir / "promoted.md"
+    assert renamed.old_output_name == "newer.md"
+    assert renamed.new_output_name == "promoted.md"
+    assert renamed.new_output_path == str(promoted.resolve())
+    assert not newer.exists()
+    assert promoted.read_text(encoding="utf-8") == "# Newer\n\nLatest body"
+
+
+def test_rename_latest_modeling_report_rejects_empty_catalog(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(InvalidDatasetNameError, match="No modeling reports found"):
+        rename_latest_modeling_report("promoted.md")
 
 
 def test_copy_saved_modeling_report_creates_new_artifact(

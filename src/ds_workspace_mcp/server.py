@@ -80,6 +80,7 @@ from ds_workspace_mcp.report_export import (
     read_latest_modeling_report_section,
     read_saved_modeling_report,
     read_saved_modeling_report_section,
+    rename_latest_modeling_report,
     rename_saved_modeling_report,
     save_latest_modeling_report_section,
     save_modeling_report_dataset,
@@ -804,6 +805,24 @@ def rename_modeling_report(
             output_name=output_name,
             new_output_name=new_output_name,
         )
+
+
+@mcp.tool()
+def rename_latest_modeling_report_tool(new_output_name: str) -> RenamedModelingReport:
+    """Rename the most recently modified saved markdown modeling report."""
+
+    with traced_operation(
+        "tool.rename_latest_modeling_report",
+        {
+            "tool.name": "rename_latest_modeling_report",
+            "tool.new_output_name": new_output_name,
+        },
+    ):
+        logger.info(
+            "Tool rename_latest_modeling_report_tool invoked new_output_name=%s",
+            new_output_name,
+        )
+        return rename_latest_modeling_report(new_output_name=new_output_name)
 
 
 @mcp.tool()
