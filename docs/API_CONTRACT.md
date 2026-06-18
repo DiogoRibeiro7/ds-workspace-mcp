@@ -324,6 +324,22 @@ The following are considered non-breaking:
   - traversal-style paths are rejected
   - `preview_markdown` is intentionally bounded and does not contain the full report
 
+#### `compare_modeling_reports(output_name: str, other_output_name: str)`
+
+- Stable name: `compare_modeling_reports`
+- Purpose: return a bounded unified diff summary between two markdown modeling reports saved in the local `reports/` directory
+- Stable result fields:
+  - `output_name: str`
+  - `other_output_name: str`
+  - `changed: bool`
+  - `added_line_count: int`
+  - `removed_line_count: int`
+  - `diff_preview: str`
+- Stable behavior:
+  - `output_name` and `other_output_name` must be single markdown file names inside `reports/`
+  - traversal-style paths are rejected
+  - `diff_preview` is intentionally bounded and does not guarantee a full diff
+
 #### `preview_latest_modeling_report()`
 
 - Stable name: `preview_latest_modeling_report`
@@ -599,6 +615,8 @@ The `ds-workspace-mcp` console script is public.
   - prints metadata for one saved modeling report as JSON
 - `ds-workspace-mcp preview-modeling-report <output_name>`
   - prints a bounded preview of one saved modeling report as JSON
+- `ds-workspace-mcp compare-modeling-reports <output_name> <other_output_name>`
+  - prints a bounded diff summary between two saved modeling reports as JSON
 - `ds-workspace-mcp preview-latest-modeling-report`
   - prints a bounded preview of the most recently modified saved modeling report as JSON
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`

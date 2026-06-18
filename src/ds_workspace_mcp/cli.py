@@ -9,6 +9,7 @@ from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
 from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.report_export import (
+    compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
     list_recent_modeling_reports,
@@ -170,6 +171,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Markdown report file name inside reports/.",
     )
 
+    compare_report_parser = subparsers.add_parser(
+        "compare-modeling-reports",
+        help="Print a bounded diff summary between two saved modeling reports as JSON.",
+    )
+    compare_report_parser.add_argument(
+        "output_name",
+        help="Primary markdown report file name inside reports/.",
+    )
+    compare_report_parser.add_argument(
+        "other_output_name",
+        help="Comparison markdown report file name inside reports/.",
+    )
+
     subparsers.add_parser(
         "preview-latest-modeling-report",
         help="Print a bounded preview of the most recently modified modeling report.",
@@ -309,6 +323,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "preview-modeling-report":
         preview = preview_saved_modeling_report(args.output_name)
         print(json.dumps(preview.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "compare-modeling-reports":
+        comparison = compare_saved_modeling_reports(
+            output_name=args.output_name,
+            other_output_name=args.other_output_name,
+        )
+        print(json.dumps(comparison.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "preview-latest-modeling-report":

@@ -354,6 +354,12 @@ Preview one saved modeling report:
 poetry run ds-workspace-mcp preview-modeling-report clinic-usage-report.md
 ```
 
+Compare two saved modeling reports:
+
+```bash
+poetry run ds-workspace-mcp compare-modeling-reports clinic-usage-report.md clinic-usage-v2.md
+```
+
 Preview the latest saved modeling report:
 
 ```bash
@@ -624,6 +630,19 @@ Arguments:
 ```json
 {
   "output_name": "clinic-usage-report.md"
+}
+```
+
+#### `compare_modeling_reports`
+
+Return a bounded unified diff summary between two saved markdown modeling reports.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md",
+  "other_output_name": "clinic-usage-v2.md"
 }
 ```
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from difflib import unified_diff
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -81,7 +82,19 @@ class ModelingReportCatalogSummary(BaseModel):
     most_recent_reports: list[StoredModelingReport]
 
 
+class ComparedModelingReport(BaseModel):
+    """A bounded diff summary between two saved modeling reports."""
+
+    output_name: str
+    other_output_name: str
+    changed: bool
+    added_line_count: int
+    removed_line_count: int
+    diff_preview: str
+
+
 MAX_REPORT_PREVIEW_LINES = 12
+MAX_REPORT_DIFF_PREVIEW_LINES = 40
 
 
 def search_saved_modeling_reports(query: str) -> list[StoredModelingReport]:
@@ -139,6 +152,46 @@ def preview_latest_modeling_report() -> PreviewModelingReport:
 
     latest_report = _get_latest_saved_report()
     return preview_saved_modeling_report(latest_report.output_name)
+
+
+def compare_saved_modeling_reports(
+    output_name: str,
+    other_output_name: str,
+) -> ComparedModelingReport:
+    """Return a bounded unified diff summary between two saved modeling reports."""
+
+    primary_path = resolve_existing_report_path(output_name)
+    other_path = resolve_existing_report_path(other_output_name)
+    primary_lines = primary_path.read_text(encoding="utf-8").splitlines()
+    other_lines = other_path.read_text(encoding="utf-8").splitlines()
+    diff_lines = list(
+        unified_diff(
+            primary_lines,
+            other_lines,
+            fromfile=primary_path.name,
+            tofile=other_path.name,
+            lineterm="",
+        )
+    )
+    added_line_count = sum(
+        1
+        for line in diff_lines
+        if line.startswith("+") and not line.startswith("+++")
+    )
+    removed_line_count = sum(
+        1
+        for line in diff_lines
+        if line.startswith("-") and not line.startswith("---")
+    )
+    preview_lines = diff_lines[:MAX_REPORT_DIFF_PREVIEW_LINES]
+    return ComparedModelingReport(
+        output_name=primary_path.name,
+        other_output_name=other_path.name,
+        changed=bool(diff_lines),
+        added_line_count=added_line_count,
+        removed_line_count=removed_line_count,
+        diff_preview="\n".join(preview_lines),
+    )
 
 
 def save_modeling_report_dataset(

@@ -44,6 +44,7 @@ from ds_workspace_mcp.modeling_report import (
 from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.report_export import (
+    ComparedModelingReport,
     DeletedModelingReport,
     ModelingReportCatalogSummary,
     ModelingReportMetadata,
@@ -52,6 +53,7 @@ from ds_workspace_mcp.report_export import (
     RenamedModelingReport,
     SavedModelingReport,
     StoredModelingReport,
+    compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
     list_recent_modeling_reports,
@@ -562,6 +564,32 @@ def preview_modeling_report(output_name: str) -> PreviewModelingReport:
     ):
         logger.info("Tool preview_modeling_report invoked output_name=%s", output_name)
         return preview_saved_modeling_report(output_name=output_name)
+
+
+@mcp.tool()
+def compare_modeling_reports(
+    output_name: str,
+    other_output_name: str,
+) -> ComparedModelingReport:
+    """Return a bounded unified diff summary between two saved modeling reports."""
+
+    with traced_operation(
+        "tool.compare_modeling_reports",
+        {
+            "tool.name": "compare_modeling_reports",
+            "tool.output_name": output_name,
+            "tool.other_output_name": other_output_name,
+        },
+    ):
+        logger.info(
+            "Tool compare_modeling_reports invoked output_name=%s other_output_name=%s",
+            output_name,
+            other_output_name,
+        )
+        return compare_saved_modeling_reports(
+            output_name=output_name,
+            other_output_name=other_output_name,
+        )
 
 
 @mcp.tool()

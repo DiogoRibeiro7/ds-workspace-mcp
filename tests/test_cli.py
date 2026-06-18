@@ -333,6 +333,28 @@ def test_cli_preview_modeling_report(
     assert "## Summary" in payload["preview_markdown"]
 
 
+def test_cli_compare_modeling_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "before.md").write_text("# Report\n\nLine A", encoding="utf-8")
+    (reports_dir / "after.md").write_text("# Report\n\nLine B", encoding="utf-8")
+
+    exit_code = cli.main(["compare-modeling-reports", "before.md", "after.md"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["output_name"] == "before.md"
+    assert payload["other_output_name"] == "after.md"
+    assert payload["changed"] is True
+    assert payload["added_line_count"] == 1
+    assert payload["removed_line_count"] == 1
+
+
 def test_cli_preview_latest_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
