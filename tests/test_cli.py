@@ -622,6 +622,49 @@ def test_cli_rename_modeling_report(
     assert (reports_dir / "new-name.md").exists()
 
 
+def test_cli_copy_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    source = reports_dir / "source.md"
+    source.write_text("# Sample\n\nBody", encoding="utf-8")
+
+    exit_code = cli.main(["copy-modeling-report", "source.md", "copy.md"])
+    output = Path(capsys.readouterr().out.strip())
+
+    assert exit_code == 0
+    assert output == (reports_dir / "copy.md").resolve()
+    assert source.exists()
+    assert output.read_text(encoding="utf-8") == "# Sample\n\nBody"
+
+
+def test_cli_copy_latest_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nBody", encoding="utf-8")
+    newer.write_text("# Newer\n\nLatest body", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["copy-latest-modeling-report", "latest-copy.md"])
+    output = Path(capsys.readouterr().out.strip())
+
+    assert exit_code == 0
+    assert output == (reports_dir / "latest-copy.md").resolve()
+    assert output.read_text(encoding="utf-8") == "# Newer\n\nLatest body"
+
+
 def test_cli_inspect_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

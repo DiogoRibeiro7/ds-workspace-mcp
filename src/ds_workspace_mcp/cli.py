@@ -13,6 +13,8 @@ from ds_workspace_mcp.report_export import (
     compare_latest_modeling_reports,
     compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
+    copy_latest_modeling_report,
+    copy_saved_modeling_report,
     delete_saved_modeling_report,
     inspect_latest_modeling_report,
     inspect_saved_modeling_report,
@@ -309,6 +311,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="New markdown report file name inside reports/.",
     )
 
+    copy_report_parser = subparsers.add_parser(
+        "copy-modeling-report",
+        help="Copy one saved markdown modeling report into a new markdown artifact.",
+    )
+    copy_report_parser.add_argument(
+        "output_name",
+        help="Source markdown report file name inside reports/.",
+    )
+    copy_report_parser.add_argument(
+        "new_output_name",
+        help="New markdown report file name inside reports/.",
+    )
+
+    copy_latest_report_parser = subparsers.add_parser(
+        "copy-latest-modeling-report",
+        help="Copy the most recently modified saved modeling report into a new markdown artifact.",
+    )
+    copy_latest_report_parser.add_argument(
+        "new_output_name",
+        help="New markdown report file name inside reports/.",
+    )
+
     inspect_report_parser = subparsers.add_parser(
         "inspect-modeling-report",
         help="Print metadata for one saved markdown modeling report.",
@@ -578,6 +602,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             new_output_name=args.new_output_name,
         )
         print(renamed_report.new_output_path)
+        return 0
+
+    if command == "copy-modeling-report":
+        copied_report = copy_saved_modeling_report(
+            output_name=args.output_name,
+            new_output_name=args.new_output_name,
+        )
+        print(copied_report.new_output_path)
+        return 0
+
+    if command == "copy-latest-modeling-report":
+        copied_report = copy_latest_modeling_report(args.new_output_name)
+        print(copied_report.new_output_path)
         return 0
 
     if command == "inspect-modeling-report":

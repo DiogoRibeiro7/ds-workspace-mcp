@@ -46,6 +46,7 @@ from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.report_export import (
     ComparedModelingReport,
     ComparedModelingReportSection,
+    CopiedModelingReport,
     DeletedModelingReport,
     ModelingReportCatalogSummary,
     ModelingReportMetadata,
@@ -64,6 +65,8 @@ from ds_workspace_mcp.report_export import (
     compare_latest_modeling_reports,
     compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
+    copy_latest_modeling_report,
+    copy_saved_modeling_report,
     delete_saved_modeling_report,
     inspect_latest_modeling_report,
     inspect_saved_modeling_report,
@@ -801,6 +804,50 @@ def rename_modeling_report(
             output_name=output_name,
             new_output_name=new_output_name,
         )
+
+
+@mcp.tool()
+def copy_modeling_report(
+    output_name: str,
+    new_output_name: str,
+) -> CopiedModelingReport:
+    """Copy one saved markdown modeling report inside the local reports directory."""
+
+    with traced_operation(
+        "tool.copy_modeling_report",
+        {
+            "tool.name": "copy_modeling_report",
+            "tool.output_name": output_name,
+            "tool.new_output_name": new_output_name,
+        },
+    ):
+        logger.info(
+            "Tool copy_modeling_report invoked output_name=%s new_output_name=%s",
+            output_name,
+            new_output_name,
+        )
+        return copy_saved_modeling_report(
+            output_name=output_name,
+            new_output_name=new_output_name,
+        )
+
+
+@mcp.tool()
+def copy_latest_modeling_report_tool(new_output_name: str) -> CopiedModelingReport:
+    """Copy the most recently modified saved markdown modeling report."""
+
+    with traced_operation(
+        "tool.copy_latest_modeling_report",
+        {
+            "tool.name": "copy_latest_modeling_report",
+            "tool.new_output_name": new_output_name,
+        },
+    ):
+        logger.info(
+            "Tool copy_latest_modeling_report_tool invoked new_output_name=%s",
+            new_output_name,
+        )
+        return copy_latest_modeling_report(new_output_name=new_output_name)
 
 
 @mcp.tool()

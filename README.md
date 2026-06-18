@@ -423,6 +423,18 @@ Rename one saved modeling report:
 poetry run ds-workspace-mcp rename-modeling-report clinic-usage-report.md clinic-usage-v2.md
 ```
 
+Copy one saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp copy-modeling-report clinic-usage-report.md clinic-usage-snapshot.md
+```
+
+Copy the latest saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp copy-latest-modeling-report latest-clinic-snapshot.md
+```
+
 Inspect one saved modeling report:
 
 ```bash
@@ -845,6 +857,31 @@ Arguments:
 {
   "output_name": "clinic-usage-report.md",
   "new_output_name": "clinic-usage-v2.md"
+}
+```
+
+#### `copy_modeling_report`
+
+Copy one saved markdown modeling report into a new artifact inside the local `reports/` directory.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md",
+  "new_output_name": "clinic-usage-snapshot.md"
+}
+```
+
+#### `copy_latest_modeling_report`
+
+Copy the most recently modified saved modeling report into a new artifact inside the local `reports/` directory.
+
+Arguments:
+
+```json
+{
+  "new_output_name": "latest-clinic-snapshot.md"
 }
 ```
 

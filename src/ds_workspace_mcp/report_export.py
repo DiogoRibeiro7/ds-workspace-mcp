@@ -54,6 +54,15 @@ class RenamedModelingReport(BaseModel):
     new_output_path: str
 
 
+class CopiedModelingReport(BaseModel):
+    """Metadata for a copied modeling report artifact."""
+
+    source_output_name: str
+    new_output_name: str
+    source_output_path: str
+    new_output_path: str
+
+
 class ModelingReportMetadata(BaseModel):
     """Metadata summary for one saved modeling report artifact."""
 
@@ -712,6 +721,36 @@ def rename_saved_modeling_report(
         new_output_name=target_path.name,
         old_output_path=str(source_path),
         new_output_path=str(target_path),
+    )
+
+
+def copy_saved_modeling_report(
+    output_name: str,
+    new_output_name: str,
+) -> CopiedModelingReport:
+    """Copy one saved markdown modeling report inside the local reports directory."""
+
+    source_path = resolve_existing_report_path(output_name)
+    target_path = resolve_report_target_path(new_output_name)
+    if target_path.exists():
+        raise InvalidDatasetNameError(f"Modeling report already exists: {new_output_name}")
+
+    target_path.write_text(source_path.read_text(encoding="utf-8"), encoding="utf-8")
+    return CopiedModelingReport(
+        source_output_name=source_path.name,
+        new_output_name=target_path.name,
+        source_output_path=str(source_path),
+        new_output_path=str(target_path),
+    )
+
+
+def copy_latest_modeling_report(new_output_name: str) -> CopiedModelingReport:
+    """Copy the most recently modified saved markdown modeling report."""
+
+    latest_report = _get_latest_saved_report()
+    return copy_saved_modeling_report(
+        output_name=latest_report.output_name,
+        new_output_name=new_output_name,
     )
 
 

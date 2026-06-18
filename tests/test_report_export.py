@@ -12,6 +12,8 @@ from ds_workspace_mcp.report_export import (
     compare_latest_modeling_reports,
     compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
+    copy_latest_modeling_report,
+    copy_saved_modeling_report,
     delete_saved_modeling_report,
     inspect_latest_modeling_report,
     inspect_saved_modeling_report,
@@ -670,6 +672,64 @@ def test_rename_saved_modeling_report_rejects_traversal(
 
     with pytest.raises(PathTraversalError, match="inside the reports directory"):
         rename_saved_modeling_report("source.md", "../escape.md")
+
+
+def test_copy_saved_modeling_report_creates_new_artifact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    source = reports_dir / "source.md"
+    source.write_text("# Sample\n\nBody", encoding="utf-8")
+
+    copied = copy_saved_modeling_report("source.md", "copy.md")
+
+    copied_path = reports_dir / "copy.md"
+    assert copied.source_output_name == "source.md"
+    assert copied.new_output_name == "copy.md"
+    assert copied.source_output_path == str(source.resolve())
+    assert copied.new_output_path == str(copied_path.resolve())
+    assert source.exists()
+    assert copied_path.read_text(encoding="utf-8") == "# Sample\n\nBody"
+
+
+def test_copy_saved_modeling_report_rejects_existing_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "source.md").write_text("a", encoding="utf-8")
+    (reports_dir / "copy.md").write_text("b", encoding="utf-8")
+
+    with pytest.raises(InvalidDatasetNameError, match="already exists"):
+        copy_saved_modeling_report("source.md", "copy.md")
+
+
+def test_copy_latest_modeling_report_uses_newest_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nBody", encoding="utf-8")
+    newer.write_text("# Newer\n\nLatest body", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    copied = copy_latest_modeling_report("latest-copy.md")
+
+    copied_path = reports_dir / "latest-copy.md"
+    assert copied.source_output_name == "newer.md"
+    assert copied.new_output_name == "latest-copy.md"
+    assert copied.new_output_path == str(copied_path.resolve())
+    assert copied_path.read_text(encoding="utf-8") == "# Newer\n\nLatest body"
 
 
 def test_inspect_saved_modeling_report_returns_metadata(
