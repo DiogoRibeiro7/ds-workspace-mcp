@@ -102,9 +102,37 @@ class ReportSearchMatch(BaseModel):
     snippet: str
 
 
+class ModelingReportSection(BaseModel):
+    """One markdown section discovered inside a saved modeling report."""
+
+    heading: str
+    level: int
+
+
+class ReadModelingReportSection(BaseModel):
+    """One extracted markdown section from a saved modeling report."""
+
+    output_name: str
+    output_path: str
+    heading: str
+    level: int
+    markdown: str
+
+
+class ModelingReportSectionMatch(BaseModel):
+    """One saved report section that matches a heading query."""
+
+    output_name: str
+    output_path: str
+    heading: str
+    level: int
+    snippet: str
+
+
 MAX_REPORT_PREVIEW_LINES = 12
 MAX_REPORT_DIFF_PREVIEW_LINES = 40
 MAX_REPORT_SEARCH_SNIPPET_LENGTH = 200
+MAX_REPORT_SECTION_SNIPPET_LINES = 4
 
 
 def search_saved_modeling_reports(query: str) -> list[StoredModelingReport]:
@@ -243,6 +271,78 @@ def compare_latest_modeling_reports() -> ComparedModelingReport:
     return compare_saved_modeling_reports(
         output_name=recent_reports[1].output_name,
         other_output_name=recent_reports[0].output_name,
+    )
+
+
+def list_saved_modeling_report_sections(output_name: str) -> list[ModelingReportSection]:
+    """List markdown sections discovered inside one saved modeling report."""
+
+    path = resolve_existing_report_path(output_name)
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [
+        ModelingReportSection(heading=section.heading, level=section.level)
+        for section in _extract_markdown_sections(lines)
+    ]
+
+
+def read_saved_modeling_report_section(
+    output_name: str,
+    section_heading: str,
+) -> ReadModelingReportSection:
+    """Read one markdown section from a saved modeling report."""
+
+    if not isinstance(section_heading, str) or not section_heading.strip():
+        raise InvalidDatasetNameError("section_heading must be a non-empty string.")
+
+    path = resolve_existing_report_path(output_name)
+    lines = path.read_text(encoding="utf-8").splitlines()
+    normalized_heading = section_heading.strip().lower()
+    for section in _extract_markdown_sections(lines):
+        if section.heading.lower() == normalized_heading:
+            return ReadModelingReportSection(
+                output_name=path.name,
+                output_path=str(path),
+                heading=section.heading,
+                level=section.level,
+                markdown="\n".join(section.lines),
+            )
+
+    raise InvalidDatasetNameError(
+        f"Modeling report section not found: {section_heading}"
+    )
+
+
+def search_saved_modeling_report_sections(query: str) -> list[ModelingReportSectionMatch]:
+    """Search section headings across saved modeling reports."""
+
+    if not isinstance(query, str) or not query.strip():
+        raise InvalidDatasetNameError("query must be a non-empty string.")
+
+    normalized_query = query.strip().lower()
+    matches: list[ModelingReportSectionMatch] = []
+    for report in list_saved_modeling_reports():
+        path = Path(report.output_path)
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for section in _extract_markdown_sections(lines):
+            if normalized_query not in section.heading.lower():
+                continue
+            matches.append(
+                ModelingReportSectionMatch(
+                    output_name=report.output_name,
+                    output_path=report.output_path,
+                    heading=section.heading,
+                    level=section.level,
+                    snippet=_build_section_snippet(section.lines),
+                )
+            )
+
+    return sorted(
+        matches,
+        key=lambda match: (
+            match.heading.lower(),
+            match.output_name.lower(),
+            match.output_name,
+        ),
     )
 
 
@@ -485,3 +585,70 @@ def _build_search_snippet(markdown: str, match_index: int, query_length: int) ->
     if end < len(markdown):
         snippet = f"{snippet}..."
     return snippet
+
+
+def _build_section_snippet(lines: list[str]) -> str:
+    """Build a bounded markdown snippet for one parsed section."""
+
+    return "\n".join(lines[:MAX_REPORT_SECTION_SNIPPET_LINES])
+
+
+class _ParsedMarkdownSection(BaseModel):
+    """Internal markdown section representation with captured lines."""
+
+    heading: str
+    level: int
+    lines: list[str]
+
+
+def _extract_markdown_sections(lines: list[str]) -> list[_ParsedMarkdownSection]:
+    """Parse markdown heading sections from a saved report."""
+
+    sections: list[_ParsedMarkdownSection] = []
+    current_heading: str | None = None
+    current_level: int | None = None
+    current_lines: list[str] = []
+
+    for line in lines:
+        heading = _parse_markdown_heading(line)
+        if heading is None:
+            if current_heading is not None:
+                current_lines.append(line)
+            continue
+
+        level, title = heading
+        if current_heading is not None:
+            sections.append(
+                _ParsedMarkdownSection(
+                    heading=current_heading,
+                    level=current_level or 1,
+                    lines=current_lines,
+                )
+            )
+        current_heading = title
+        current_level = level
+        current_lines = [line]
+
+    if current_heading is not None:
+        sections.append(
+            _ParsedMarkdownSection(
+                heading=current_heading,
+                level=current_level or 1,
+                lines=current_lines,
+            )
+        )
+
+    return sections
+
+
+def _parse_markdown_heading(line: str) -> tuple[int, str] | None:
+    """Return heading level and title for markdown heading lines."""
+
+    stripped = line.strip()
+    if not stripped.startswith("#"):
+        return None
+
+    marker, _, title = stripped.partition(" ")
+    if not title.strip() or any(character != "#" for character in marker):
+        return None
+    return len(marker), title.strip()

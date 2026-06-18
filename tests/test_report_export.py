@@ -13,15 +13,18 @@ from ds_workspace_mcp.report_export import (
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
     list_recent_modeling_reports,
+    list_saved_modeling_report_sections,
     list_saved_modeling_reports,
     preview_latest_modeling_report,
     preview_saved_modeling_report,
     read_latest_modeling_report,
     read_saved_modeling_report,
+    read_saved_modeling_report_section,
     rename_saved_modeling_report,
     resolve_report_output_path,
     save_modeling_report_dataset,
     search_saved_modeling_report_content,
+    search_saved_modeling_report_sections,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
 )
@@ -115,6 +118,117 @@ def test_read_saved_modeling_report_returns_markdown(
 def test_read_saved_modeling_report_rejects_traversal() -> None:
     with pytest.raises(PathTraversalError, match="inside the reports directory"):
         read_saved_modeling_report("../escape.md")
+
+
+def test_list_saved_modeling_report_sections_discovers_headings(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    report_path = reports_dir / "sections.md"
+    report_path.write_text(
+        "\n".join(
+            [
+                "# Headline",
+                "",
+                "## Summary",
+                "Body 1",
+                "",
+                "## Risks",
+                "- Risk A",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    sections = list_saved_modeling_report_sections("sections.md")
+
+    assert [(section.heading, section.level) for section in sections] == [
+        ("Headline", 1),
+        ("Summary", 2),
+        ("Risks", 2),
+    ]
+
+
+def test_read_saved_modeling_report_section_returns_requested_heading(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    report_path = reports_dir / "sections.md"
+    report_path.write_text(
+        "\n".join(
+            [
+                "# Headline",
+                "",
+                "## Summary",
+                "Summary body",
+                "",
+                "## Risks",
+                "- Risk A",
+                "- Risk B",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    section = read_saved_modeling_report_section("sections.md", "risks")
+
+    assert section.output_name == "sections.md"
+    assert section.output_path == str(report_path.resolve())
+    assert section.heading == "Risks"
+    assert section.level == 2
+    assert "## Risks" in section.markdown
+    assert "- Risk B" in section.markdown
+    assert "## Summary" not in section.markdown
+
+
+def test_read_saved_modeling_report_section_rejects_unknown_heading(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "sections.md").write_text("# Headline\n\n## Summary\nBody", encoding="utf-8")
+
+    with pytest.raises(InvalidDatasetNameError, match="section not found"):
+        read_saved_modeling_report_section("sections.md", "missing")
+
+
+def test_search_saved_modeling_report_sections_matches_headings_across_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "alpha.md").write_text(
+        "# Alpha\n\n## Summary\nAlpha body\n\n## Risks\n- Risk A",
+        encoding="utf-8",
+    )
+    (reports_dir / "beta.md").write_text(
+        "# Beta\n\n## Setup\nSetup body\n\n## Risk Review\n- Risk B",
+        encoding="utf-8",
+    )
+
+    matches = search_saved_modeling_report_sections("risk")
+
+    assert [(match.heading, match.output_name) for match in matches] == [
+        ("Risk Review", "beta.md"),
+        ("Risks", "alpha.md"),
+    ]
+    assert matches[0].level == 2
+    assert "## Risk Review" in matches[0].snippet
+
+
+def test_search_saved_modeling_report_sections_rejects_blank_query() -> None:
+    with pytest.raises(InvalidDatasetNameError, match="non-empty string"):
+        search_saved_modeling_report_sections("   ")
 
 
 def test_read_latest_modeling_report_returns_newest_markdown(

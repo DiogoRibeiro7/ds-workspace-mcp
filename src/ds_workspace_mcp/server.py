@@ -48,8 +48,11 @@ from ds_workspace_mcp.report_export import (
     DeletedModelingReport,
     ModelingReportCatalogSummary,
     ModelingReportMetadata,
+    ModelingReportSection,
+    ModelingReportSectionMatch,
     PreviewModelingReport,
     ReadModelingReport,
+    ReadModelingReportSection,
     RenamedModelingReport,
     ReportSearchMatch,
     SavedModelingReport,
@@ -59,14 +62,17 @@ from ds_workspace_mcp.report_export import (
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
     list_recent_modeling_reports,
+    list_saved_modeling_report_sections,
     list_saved_modeling_reports,
     preview_latest_modeling_report,
     preview_saved_modeling_report,
     read_latest_modeling_report,
     read_saved_modeling_report,
+    read_saved_modeling_report_section,
     rename_saved_modeling_report,
     save_modeling_report_dataset,
     search_saved_modeling_report_content,
+    search_saved_modeling_report_sections,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
 )
@@ -472,6 +478,18 @@ def search_modeling_report_content(query: str) -> list[ReportSearchMatch]:
 
 
 @mcp.tool()
+def search_modeling_report_sections(query: str) -> list[ModelingReportSectionMatch]:
+    """Search section headings across saved modeling reports."""
+
+    with traced_operation(
+        "tool.search_modeling_report_sections",
+        {"tool.name": "search_modeling_report_sections", "tool.query": query},
+    ):
+        logger.info("Tool search_modeling_report_sections invoked query=%s", query)
+        return search_saved_modeling_report_sections(query=query)
+
+
+@mcp.tool()
 def list_recent_modeling_reports_tool(limit: int = 5) -> list[StoredModelingReport]:
     """Return the most recently modified saved modeling reports."""
 
@@ -505,6 +523,44 @@ def read_modeling_report(output_name: str) -> ReadModelingReport:
     ):
         logger.info("Tool read_modeling_report invoked output_name=%s", output_name)
         return read_saved_modeling_report(output_name=output_name)
+
+
+@mcp.tool()
+def list_modeling_report_sections(output_name: str) -> list[ModelingReportSection]:
+    """List markdown sections discovered inside one saved modeling report."""
+
+    with traced_operation(
+        "tool.list_modeling_report_sections",
+        {"tool.name": "list_modeling_report_sections", "tool.output_name": output_name},
+    ):
+        logger.info("Tool list_modeling_report_sections invoked output_name=%s", output_name)
+        return list_saved_modeling_report_sections(output_name=output_name)
+
+
+@mcp.tool()
+def read_modeling_report_section(
+    output_name: str,
+    section_heading: str,
+) -> ReadModelingReportSection:
+    """Read one markdown section from a saved modeling report."""
+
+    with traced_operation(
+        "tool.read_modeling_report_section",
+        {
+            "tool.name": "read_modeling_report_section",
+            "tool.output_name": output_name,
+            "tool.section_heading": section_heading,
+        },
+    ):
+        logger.info(
+            "Tool read_modeling_report_section invoked output_name=%s section_heading=%s",
+            output_name,
+            section_heading,
+        )
+        return read_saved_modeling_report_section(
+            output_name=output_name,
+            section_heading=section_heading,
+        )
 
 
 @mcp.tool()

@@ -312,6 +312,12 @@ Search saved modeling report content:
 poetry run ds-workspace-mcp search-modeling-report-content elevated
 ```
 
+Search saved modeling report sections:
+
+```bash
+poetry run ds-workspace-mcp search-modeling-report-sections risk
+```
+
 List the most recent modeling reports:
 
 ```bash
@@ -328,6 +334,18 @@ Read one saved modeling report:
 
 ```bash
 poetry run ds-workspace-mcp read-modeling-report clinic-usage-report.md
+```
+
+List section headings from one saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp list-modeling-report-sections clinic-usage-report.md
+```
+
+Read one section from a saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp read-modeling-report-section clinic-usage-report.md "Summary"
 ```
 
 Read the latest saved modeling report:
@@ -568,6 +586,18 @@ Arguments:
 }
 ```
 
+#### `search_modeling_report_sections`
+
+Return saved modeling report sections whose headings match a case-insensitive text query.
+
+Arguments:
+
+```json
+{
+  "query": "risk"
+}
+```
+
 #### `list_recent_modeling_reports`
 
 Return the most recently modified saved markdown modeling reports.
@@ -601,6 +631,31 @@ Arguments:
 ```json
 {
   "output_name": "clinic-usage-report.md"
+}
+```
+
+#### `list_modeling_report_sections`
+
+List markdown section headings discovered inside one saved modeling report.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md"
+}
+```
+
+#### `read_modeling_report_section`
+
+Read one markdown section from a saved modeling report.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md",
+  "section_heading": "Summary"
 }
 ```
 

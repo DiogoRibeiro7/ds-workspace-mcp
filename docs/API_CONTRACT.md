@@ -235,6 +235,21 @@ The following are considered non-breaking:
   - `query` must be a non-empty string
   - `snippet` is intentionally bounded and does not guarantee the full matching paragraph
 
+#### `search_modeling_report_sections(query: str)`
+
+- Stable name: `search_modeling_report_sections`
+- Purpose: list saved modeling report sections whose headings match a case-insensitive text query
+- Stable result shape: `list[ModelingReportSectionMatch]`
+- Stable item fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `heading: str`
+  - `level: int`
+  - `snippet: str`
+- Stable behavior:
+  - `query` must be a non-empty string
+  - `snippet` is intentionally bounded and does not guarantee the full section
+
 #### `list_recent_modeling_reports(limit: int = 5)`
 
 - Stable name: `list_recent_modeling_reports`
@@ -272,6 +287,34 @@ The following are considered non-breaking:
 - Stable behavior:
   - `output_name` must be a single markdown file name inside `reports/`
   - traversal-style paths are rejected
+
+#### `list_modeling_report_sections(output_name: str)`
+
+- Stable name: `list_modeling_report_sections`
+- Purpose: list markdown headings discovered inside one saved modeling report
+- Stable result shape: `list[ModelingReportSection]`
+- Stable item fields:
+  - `heading: str`
+  - `level: int`
+- Stable behavior:
+  - `output_name` must be a single markdown file name inside `reports/`
+  - traversal-style paths are rejected
+
+#### `read_modeling_report_section(output_name: str, section_heading: str)`
+
+- Stable name: `read_modeling_report_section`
+- Purpose: load one markdown section from a saved modeling report
+- Stable result fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `heading: str`
+  - `level: int`
+  - `markdown: str`
+- Stable behavior:
+  - `output_name` must be a single markdown file name inside `reports/`
+  - `section_heading` must be a non-empty string
+  - traversal-style paths are rejected
+  - fails clearly when the requested section is not present
 
 #### `read_latest_modeling_report()`
 
@@ -631,12 +674,18 @@ The `ds-workspace-mcp` console script is public.
   - prints matching saved modeling report file names, one per line
 - `ds-workspace-mcp search-modeling-report-content <query>`
   - prints bounded saved modeling report content matches as JSON
+- `ds-workspace-mcp search-modeling-report-sections <query>`
+  - prints bounded saved modeling report section matches as JSON
 - `ds-workspace-mcp list-recent-modeling-reports [--limit]`
   - prints the most recently modified saved modeling report file names, one per line
 - `ds-workspace-mcp summarize-modeling-reports [--limit]`
   - prints a compact summary of saved modeling reports as JSON
 - `ds-workspace-mcp read-modeling-report <output_name>`
   - prints one saved modeling report as markdown
+- `ds-workspace-mcp list-modeling-report-sections <output_name>`
+  - prints markdown section headings from one saved modeling report as JSON
+- `ds-workspace-mcp read-modeling-report-section <output_name> <section_heading>`
+  - prints one markdown section from a saved modeling report as JSON
 - `ds-workspace-mcp read-latest-modeling-report`
   - prints the most recently modified saved modeling report as markdown
 - `ds-workspace-mcp delete-modeling-report <output_name>`

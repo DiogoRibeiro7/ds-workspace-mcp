@@ -14,14 +14,17 @@ from ds_workspace_mcp.report_export import (
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
     list_recent_modeling_reports,
+    list_saved_modeling_report_sections,
     list_saved_modeling_reports,
     preview_latest_modeling_report,
     preview_saved_modeling_report,
     read_latest_modeling_report,
     read_saved_modeling_report,
+    read_saved_modeling_report_section,
     rename_saved_modeling_report,
     save_modeling_report_dataset,
     search_saved_modeling_report_content,
+    search_saved_modeling_report_sections,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
 )
@@ -106,6 +109,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Case-insensitive text to match inside report content.",
     )
 
+    search_report_sections_parser = subparsers.add_parser(
+        "search-modeling-report-sections",
+        help="Search saved markdown report section headings and print bounded matches as JSON.",
+    )
+    search_report_sections_parser.add_argument(
+        "query",
+        help="Case-insensitive text to match inside section headings.",
+    )
+
     recent_report_parser = subparsers.add_parser(
         "list-recent-modeling-reports",
         help="List the most recently modified saved modeling reports.",
@@ -135,6 +147,28 @@ def build_parser() -> argparse.ArgumentParser:
     read_report_parser.add_argument(
         "output_name",
         help="Markdown report file name inside reports/.",
+    )
+
+    list_report_sections_parser = subparsers.add_parser(
+        "list-modeling-report-sections",
+        help="List markdown section headings from one saved modeling report as JSON.",
+    )
+    list_report_sections_parser.add_argument(
+        "output_name",
+        help="Markdown report file name inside reports/.",
+    )
+
+    read_report_section_parser = subparsers.add_parser(
+        "read-modeling-report-section",
+        help="Print one markdown section from a saved modeling report as JSON.",
+    )
+    read_report_section_parser.add_argument(
+        "output_name",
+        help="Markdown report file name inside reports/.",
+    )
+    read_report_section_parser.add_argument(
+        "section_heading",
+        help="Markdown heading to extract, case-insensitively.",
     )
 
     subparsers.add_parser(
@@ -299,8 +333,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if command == "search-modeling-report-content":
-        matches = search_saved_modeling_report_content(args.query)
-        print(json.dumps([match.model_dump(mode="json") for match in matches], indent=2))
+        content_matches = search_saved_modeling_report_content(args.query)
+        print(json.dumps([match.model_dump(mode="json") for match in content_matches], indent=2))
+        return 0
+
+    if command == "search-modeling-report-sections":
+        section_matches = search_saved_modeling_report_sections(args.query)
+        print(json.dumps([match.model_dump(mode="json") for match in section_matches], indent=2))
         return 0
 
     if command == "list-recent-modeling-reports":
@@ -316,6 +355,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "read-modeling-report":
         read_report = read_saved_modeling_report(args.output_name)
         print(read_report.markdown)
+        return 0
+
+    if command == "list-modeling-report-sections":
+        sections = list_saved_modeling_report_sections(args.output_name)
+        print(json.dumps([section.model_dump(mode="json") for section in sections], indent=2))
+        return 0
+
+    if command == "read-modeling-report-section":
+        section = read_saved_modeling_report_section(
+            output_name=args.output_name,
+            section_heading=args.section_heading,
+        )
+        print(json.dumps(section.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "read-latest-modeling-report":

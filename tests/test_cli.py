@@ -193,6 +193,34 @@ def test_cli_search_modeling_report_content(
     assert "elevated" in payload[0]["snippet"].lower()
 
 
+def test_cli_search_modeling_report_sections(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "alpha.md").write_text(
+        "# Alpha\n\n## Summary\nBody\n\n## Risks\n- Risk A",
+        encoding="utf-8",
+    )
+    (reports_dir / "beta.md").write_text(
+        "# Beta\n\n## Risk Review\n- Risk B",
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(["search-modeling-report-sections", "risk"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert [(match["heading"], match["output_name"]) for match in payload] == [
+        ("Risk Review", "beta.md"),
+        ("Risks", "alpha.md"),
+    ]
+    assert "## Risk Review" in payload[0]["snippet"]
+
+
 def test_cli_list_recent_modeling_reports(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -254,6 +282,53 @@ def test_cli_read_modeling_report(
 
     assert exit_code == 0
     assert "# Sample" in output
+
+
+def test_cli_list_modeling_report_sections(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "sample-report.md").write_text(
+        "# Sample\n\n## Summary\nBody\n\n## Risks\n- Risk",
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(["list-modeling-report-sections", "sample-report.md"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert [(section["heading"], section["level"]) for section in payload] == [
+        ("Sample", 1),
+        ("Summary", 2),
+        ("Risks", 2),
+    ]
+
+
+def test_cli_read_modeling_report_section(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "sample-report.md").write_text(
+        "# Sample\n\n## Summary\nBody\n\n## Risks\n- Risk",
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(["read-modeling-report-section", "sample-report.md", "summary"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["heading"] == "Summary"
+    assert payload["level"] == 2
+    assert "## Summary" in payload["markdown"]
+    assert "## Risks" not in payload["markdown"]
 
 
 def test_cli_read_latest_modeling_report(
