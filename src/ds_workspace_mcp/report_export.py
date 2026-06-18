@@ -304,6 +304,13 @@ def compare_latest_modeling_reports() -> ComparedModelingReport:
     )
 
 
+def list_latest_modeling_report_sections() -> list[ModelingReportSection]:
+    """List markdown sections discovered inside the newest saved modeling report."""
+
+    latest_report = _get_latest_saved_report()
+    return list_saved_modeling_report_sections(latest_report.output_name)
+
+
 def list_saved_modeling_report_sections(output_name: str) -> list[ModelingReportSection]:
     """List markdown sections discovered inside one saved modeling report."""
 
@@ -339,6 +346,16 @@ def read_saved_modeling_report_section(
 
     raise InvalidDatasetNameError(
         f"Modeling report section not found: {section_heading}"
+    )
+
+
+def read_latest_modeling_report_section(section_heading: str) -> ReadModelingReportSection:
+    """Read one markdown section from the newest saved modeling report."""
+
+    latest_report = _get_latest_saved_report()
+    return read_saved_modeling_report_section(
+        output_name=latest_report.output_name,
+        section_heading=section_heading,
     )
 
 

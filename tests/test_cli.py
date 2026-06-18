@@ -336,6 +336,32 @@ def test_cli_list_modeling_report_sections(
     ]
 
 
+def test_cli_list_latest_modeling_report_sections(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\n## Summary\nOld", encoding="utf-8")
+    newer.write_text("# Newer\n\n## Summary\nNew\n\n## Risks\n- Risk", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["list-latest-modeling-report-sections"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert [(section["heading"], section["level"]) for section in payload] == [
+        ("Newer", 1),
+        ("Summary", 2),
+        ("Risks", 2),
+    ]
+
+
 def test_cli_read_modeling_report_section(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -355,6 +381,31 @@ def test_cli_read_modeling_report_section(
     assert exit_code == 0
     assert payload["heading"] == "Summary"
     assert payload["level"] == 2
+    assert "## Summary" in payload["markdown"]
+    assert "## Risks" not in payload["markdown"]
+
+
+def test_cli_read_latest_modeling_report_section(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\n## Summary\nOld", encoding="utf-8")
+    newer.write_text("# Newer\n\n## Summary\nNew\n\n## Risks\n- Risk", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["read-latest-modeling-report-section", "summary"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["output_name"] == "newer.md"
+    assert payload["heading"] == "Summary"
     assert "## Summary" in payload["markdown"]
     assert "## Risks" not in payload["markdown"]
 

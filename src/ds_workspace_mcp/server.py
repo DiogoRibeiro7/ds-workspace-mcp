@@ -66,12 +66,14 @@ from ds_workspace_mcp.report_export import (
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
+    list_latest_modeling_report_sections,
     list_recent_modeling_reports,
     list_saved_modeling_report_sections,
     list_saved_modeling_reports,
     preview_latest_modeling_report,
     preview_saved_modeling_report,
     read_latest_modeling_report,
+    read_latest_modeling_report_section,
     read_saved_modeling_report,
     read_saved_modeling_report_section,
     rename_saved_modeling_report,
@@ -557,6 +559,18 @@ def list_modeling_report_sections(output_name: str) -> list[ModelingReportSectio
 
 
 @mcp.tool()
+def list_latest_modeling_report_sections_tool() -> list[ModelingReportSection]:
+    """List markdown sections discovered inside the newest saved modeling report."""
+
+    with traced_operation(
+        "tool.list_latest_modeling_report_sections",
+        {"tool.name": "list_latest_modeling_report_sections"},
+    ):
+        logger.info("Tool list_latest_modeling_report_sections_tool invoked")
+        return list_latest_modeling_report_sections()
+
+
+@mcp.tool()
 def read_modeling_report_section(
     output_name: str,
     section_heading: str,
@@ -580,6 +594,26 @@ def read_modeling_report_section(
             output_name=output_name,
             section_heading=section_heading,
         )
+
+
+@mcp.tool()
+def read_latest_modeling_report_section_tool(
+    section_heading: str,
+) -> ReadModelingReportSection:
+    """Read one markdown section from the newest saved modeling report."""
+
+    with traced_operation(
+        "tool.read_latest_modeling_report_section",
+        {
+            "tool.name": "read_latest_modeling_report_section",
+            "tool.section_heading": section_heading,
+        },
+    ):
+        logger.info(
+            "Tool read_latest_modeling_report_section_tool invoked section_heading=%s",
+            section_heading,
+        )
+        return read_latest_modeling_report_section(section_heading=section_heading)
 
 
 @mcp.tool()

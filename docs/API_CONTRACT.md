@@ -313,6 +313,18 @@ The following are considered non-breaking:
   - `output_name` must be a single markdown file name inside `reports/`
   - traversal-style paths are rejected
 
+#### `list_latest_modeling_report_sections()`
+
+- Stable name: `list_latest_modeling_report_sections`
+- Implementation note: the Python function is named `list_latest_modeling_report_sections_tool`
+- Purpose: list markdown headings discovered inside the most recently modified saved modeling report
+- Stable result shape: `list[ModelingReportSection]`
+- Stable item fields:
+  - `heading: str`
+  - `level: int`
+- Stable behavior:
+  - fails clearly when no saved modeling reports exist
+
 #### `read_modeling_report_section(output_name: str, section_heading: str)`
 
 - Stable name: `read_modeling_report_section`
@@ -327,6 +339,22 @@ The following are considered non-breaking:
   - `output_name` must be a single markdown file name inside `reports/`
   - `section_heading` must be a non-empty string
   - traversal-style paths are rejected
+  - fails clearly when the requested section is not present
+
+#### `read_latest_modeling_report_section(section_heading: str)`
+
+- Stable name: `read_latest_modeling_report_section`
+- Implementation note: the Python function is named `read_latest_modeling_report_section_tool`
+- Purpose: load one markdown section from the most recently modified saved modeling report
+- Stable result fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `heading: str`
+  - `level: int`
+  - `markdown: str`
+- Stable behavior:
+  - `section_heading` must be a non-empty string
+  - fails clearly when no saved modeling reports exist
   - fails clearly when the requested section is not present
 
 #### `save_modeling_report_section(output_name: str, section_heading: str, new_output_name: str | None = None)`
@@ -751,8 +779,12 @@ The `ds-workspace-mcp` console script is public.
   - prints one saved modeling report as markdown
 - `ds-workspace-mcp list-modeling-report-sections <output_name>`
   - prints markdown section headings from one saved modeling report as JSON
+- `ds-workspace-mcp list-latest-modeling-report-sections`
+  - prints markdown section headings from the most recently modified saved modeling report as JSON
 - `ds-workspace-mcp read-modeling-report-section <output_name> <section_heading>`
   - prints one markdown section from a saved modeling report as JSON
+- `ds-workspace-mcp read-latest-modeling-report-section <section_heading>`
+  - prints one markdown section from the most recently modified saved modeling report as JSON
 - `ds-workspace-mcp save-modeling-report-section <output_name> <section_heading> [--output-name]`
   - saves one markdown section from a saved modeling report and prints the saved path
 - `ds-workspace-mcp compare-modeling-report-sections <output_name> <other_output_name> <section_heading>`

@@ -14,12 +14,14 @@ from ds_workspace_mcp.report_export import (
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
+    list_latest_modeling_report_sections,
     list_recent_modeling_reports,
     list_saved_modeling_report_sections,
     list_saved_modeling_reports,
     preview_latest_modeling_report,
     preview_saved_modeling_report,
     read_latest_modeling_report,
+    read_latest_modeling_report_section,
     read_saved_modeling_report,
     read_saved_modeling_report_section,
     rename_saved_modeling_report,
@@ -156,6 +158,29 @@ def test_list_saved_modeling_report_sections_discovers_headings(
     ]
 
 
+def test_list_latest_modeling_report_sections_reads_newest_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\n## Summary\nOld", encoding="utf-8")
+    newer.write_text("# Newer\n\n## Summary\nNew\n\n## Risks\n- Risk", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    sections = list_latest_modeling_report_sections()
+
+    assert [(section.heading, section.level) for section in sections] == [
+        ("Newer", 1),
+        ("Summary", 2),
+        ("Risks", 2),
+    ]
+
+
 def test_read_saved_modeling_report_section_returns_requested_heading(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -189,6 +214,32 @@ def test_read_saved_modeling_report_section_returns_requested_heading(
     assert "## Risks" in section.markdown
     assert "- Risk B" in section.markdown
     assert "## Summary" not in section.markdown
+
+
+def test_read_latest_modeling_report_section_returns_requested_heading(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\n## Summary\nOld summary", encoding="utf-8")
+    newer.write_text(
+        "# Newer\n\n## Summary\nNewest summary\n\n## Risks\n- Risk A",
+        encoding="utf-8",
+    )
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    section = read_latest_modeling_report_section("summary")
+
+    assert section.output_name == "newer.md"
+    assert section.heading == "Summary"
+    assert section.level == 2
+    assert "Newest summary" in section.markdown
+    assert "## Risks" not in section.markdown
 
 
 def test_read_saved_modeling_report_section_rejects_unknown_heading(

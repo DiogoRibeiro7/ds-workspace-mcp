@@ -351,10 +351,22 @@ List section headings from one saved modeling report:
 poetry run ds-workspace-mcp list-modeling-report-sections clinic-usage-report.md
 ```
 
+List section headings from the latest saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp list-latest-modeling-report-sections
+```
+
 Read one section from a saved modeling report:
 
 ```bash
 poetry run ds-workspace-mcp read-modeling-report-section clinic-usage-report.md "Summary"
+```
+
+Read one section from the latest saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp read-latest-modeling-report-section "Summary"
 ```
 
 Save one section from a saved modeling report:
@@ -677,6 +689,10 @@ Arguments:
 }
 ```
 
+#### `list_latest_modeling_report_sections`
+
+List markdown section headings discovered inside the most recently modified saved modeling report.
+
 #### `read_modeling_report_section`
 
 Read one markdown section from a saved modeling report.
@@ -686,6 +702,18 @@ Arguments:
 ```json
 {
   "output_name": "clinic-usage-report.md",
+  "section_heading": "Summary"
+}
+```
+
+#### `read_latest_modeling_report_section`
+
+Read one markdown section from the most recently modified saved modeling report.
+
+Arguments:
+
+```json
+{
   "section_heading": "Summary"
 }
 ```

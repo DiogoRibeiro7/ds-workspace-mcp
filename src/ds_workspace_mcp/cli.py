@@ -15,12 +15,14 @@ from ds_workspace_mcp.report_export import (
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
+    list_latest_modeling_report_sections,
     list_recent_modeling_reports,
     list_saved_modeling_report_sections,
     list_saved_modeling_reports,
     preview_latest_modeling_report,
     preview_saved_modeling_report,
     read_latest_modeling_report,
+    read_latest_modeling_report_section,
     read_saved_modeling_report,
     read_saved_modeling_report_section,
     rename_saved_modeling_report,
@@ -167,6 +169,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Markdown report file name inside reports/.",
     )
 
+    subparsers.add_parser(
+        "list-latest-modeling-report-sections",
+        help="List markdown section headings from the newest saved modeling report as JSON.",
+    )
+
     read_report_section_parser = subparsers.add_parser(
         "read-modeling-report-section",
         help="Print one markdown section from a saved modeling report as JSON.",
@@ -178,6 +185,15 @@ def build_parser() -> argparse.ArgumentParser:
     read_report_section_parser.add_argument(
         "section_heading",
         help="Markdown heading to extract, case-insensitively.",
+    )
+
+    read_latest_report_section_parser = subparsers.add_parser(
+        "read-latest-modeling-report-section",
+        help="Print one markdown section from the newest saved modeling report as JSON.",
+    )
+    read_latest_report_section_parser.add_argument(
+        "section_heading",
+        help="Markdown heading to extract from the newest report.",
     )
 
     save_report_section_parser = subparsers.add_parser(
@@ -425,12 +441,27 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps([section.model_dump(mode="json") for section in sections], indent=2))
         return 0
 
+    if command == "list-latest-modeling-report-sections":
+        latest_sections = list_latest_modeling_report_sections()
+        print(
+            json.dumps(
+                [section.model_dump(mode="json") for section in latest_sections],
+                indent=2,
+            )
+        )
+        return 0
+
     if command == "read-modeling-report-section":
         section = read_saved_modeling_report_section(
             output_name=args.output_name,
             section_heading=args.section_heading,
         )
         print(json.dumps(section.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "read-latest-modeling-report-section":
+        latest_section = read_latest_modeling_report_section(args.section_heading)
+        print(json.dumps(latest_section.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "save-modeling-report-section":
