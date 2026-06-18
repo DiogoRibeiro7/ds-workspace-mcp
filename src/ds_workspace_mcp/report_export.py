@@ -119,6 +119,14 @@ class ReadModelingReportSection(BaseModel):
     markdown: str
 
 
+class SavedModelingReportSection(BaseModel):
+    """Metadata for one extracted section saved as a markdown artifact."""
+
+    source_output_name: str
+    section_heading: str
+    output_path: str
+
+
 class ModelingReportSectionMatch(BaseModel):
     """One saved report section that matches a heading query."""
 
@@ -356,6 +364,33 @@ def search_saved_modeling_report_sections(query: str) -> list[ModelingReportSect
     )
 
 
+def save_modeling_report_section(
+    output_name: str,
+    section_heading: str,
+    new_output_name: str | None = None,
+) -> SavedModelingReportSection:
+    """Persist one extracted report section as a new markdown artifact."""
+
+    section = read_saved_modeling_report_section(
+        output_name=output_name,
+        section_heading=section_heading,
+    )
+    target_output_name = new_output_name or _default_section_output_name(
+        output_name=output_name,
+        section_heading=section.heading,
+    )
+    target_path = resolve_report_target_path(target_output_name)
+    if target_path.exists():
+        raise InvalidDatasetNameError(f"Modeling report already exists: {target_output_name}")
+
+    target_path.write_text(section.markdown, encoding="utf-8")
+    return SavedModelingReportSection(
+        source_output_name=section.output_name,
+        section_heading=section.heading,
+        output_path=str(target_path),
+    )
+
+
 def summarize_saved_modeling_report_sections() -> list[ModelingReportSectionSummary]:
     """Summarize recurring section headings across saved modeling reports."""
 
@@ -580,6 +615,15 @@ def _default_output_name(file_name: str, target_column: str) -> str:
     safe_dataset = _slugify(dataset_stem)
     safe_target = _slugify(target_column)
     return f"{safe_dataset}--{safe_target}--modeling-report.md"
+
+
+def _default_section_output_name(output_name: str, section_heading: str) -> str:
+    """Build a stable default markdown file name for an extracted section artifact."""
+
+    base_name = Path(output_name).stem
+    safe_base_name = _slugify(base_name)
+    safe_heading = _slugify(section_heading)
+    return f"{safe_base_name}--{safe_heading}--section.md"
 
 
 def _slugify(value: str) -> str:

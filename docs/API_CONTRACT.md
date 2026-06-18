@@ -329,6 +329,21 @@ The following are considered non-breaking:
   - traversal-style paths are rejected
   - fails clearly when the requested section is not present
 
+#### `save_modeling_report_section(output_name: str, section_heading: str, new_output_name: str | None = None)`
+
+- Stable name: `save_modeling_report_section`
+- Implementation note: the Python function is named `save_modeling_report_section_tool`
+- Purpose: save one markdown section from a saved modeling report as a new markdown artifact inside `reports/`
+- Stable result fields:
+  - `source_output_name: str`
+  - `section_heading: str`
+  - `output_path: str`
+- Stable behavior:
+  - `output_name` must be a single markdown file name inside `reports/`
+  - `section_heading` must be a non-empty string
+  - `new_output_name`, when provided, must be a single markdown file name inside `reports/`
+  - fails clearly when the requested section is not present or the target output already exists
+
 #### `read_latest_modeling_report()`
 
 - Stable name: `read_latest_modeling_report`
@@ -701,6 +716,8 @@ The `ds-workspace-mcp` console script is public.
   - prints markdown section headings from one saved modeling report as JSON
 - `ds-workspace-mcp read-modeling-report-section <output_name> <section_heading>`
   - prints one markdown section from a saved modeling report as JSON
+- `ds-workspace-mcp save-modeling-report-section <output_name> <section_heading> [--output-name]`
+  - saves one markdown section from a saved modeling report and prints the saved path
 - `ds-workspace-mcp read-latest-modeling-report`
   - prints the most recently modified saved modeling report as markdown
 - `ds-workspace-mcp delete-modeling-report <output_name>`

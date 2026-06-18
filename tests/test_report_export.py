@@ -23,6 +23,7 @@ from ds_workspace_mcp.report_export import (
     rename_saved_modeling_report,
     resolve_report_output_path,
     save_modeling_report_dataset,
+    save_modeling_report_section,
     search_saved_modeling_report_content,
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
@@ -199,6 +200,71 @@ def test_read_saved_modeling_report_section_rejects_unknown_heading(
 
     with pytest.raises(InvalidDatasetNameError, match="section not found"):
         read_saved_modeling_report_section("sections.md", "missing")
+
+
+def test_save_modeling_report_section_writes_new_markdown_artifact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    source_path = reports_dir / "source-report.md"
+    source_path.write_text(
+        "# Source\n\n## Summary\nSummary body\n\n## Risks\n- Risk A\n- Risk B",
+        encoding="utf-8",
+    )
+
+    saved_section = save_modeling_report_section("source-report.md", "risks")
+
+    saved_path = Path(saved_section.output_path)
+    assert saved_section.source_output_name == "source-report.md"
+    assert saved_section.section_heading == "Risks"
+    assert saved_path.exists()
+    assert saved_path.name == "source-report--risks--section.md"
+    assert saved_path.read_text(encoding="utf-8") == "## Risks\n- Risk A\n- Risk B"
+
+
+def test_save_modeling_report_section_supports_explicit_output_name(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "source-report.md").write_text(
+        "# Source\n\n## Summary\nSummary body",
+        encoding="utf-8",
+    )
+
+    saved_section = save_modeling_report_section(
+        "source-report.md",
+        "summary",
+        new_output_name="summary-only.md",
+    )
+
+    assert Path(saved_section.output_path).name == "summary-only.md"
+
+
+def test_save_modeling_report_section_rejects_existing_output_name(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "source-report.md").write_text(
+        "# Source\n\n## Summary\nSummary body",
+        encoding="utf-8",
+    )
+    (reports_dir / "summary-only.md").write_text("existing", encoding="utf-8")
+
+    with pytest.raises(InvalidDatasetNameError, match="already exists"):
+        save_modeling_report_section(
+            "source-report.md",
+            "summary",
+            new_output_name="summary-only.md",
+        )
 
 
 def test_search_saved_modeling_report_sections_matches_headings_across_reports(

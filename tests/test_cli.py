@@ -359,6 +359,27 @@ def test_cli_read_modeling_report_section(
     assert "## Risks" not in payload["markdown"]
 
 
+def test_cli_save_modeling_report_section(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "sample-report.md").write_text(
+        "# Sample\n\n## Summary\nBody\n\n## Risks\n- Risk",
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(["save-modeling-report-section", "sample-report.md", "risks"])
+    output = Path(capsys.readouterr().out.strip())
+
+    assert exit_code == 0
+    assert output == (reports_dir / "sample-report--risks--section.md").resolve()
+    assert output.read_text(encoding="utf-8") == "## Risks\n- Risk"
+
+
 def test_cli_read_latest_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

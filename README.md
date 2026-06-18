@@ -354,6 +354,12 @@ Read one section from a saved modeling report:
 poetry run ds-workspace-mcp read-modeling-report-section clinic-usage-report.md "Summary"
 ```
 
+Save one section from a saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp save-modeling-report-section clinic-usage-report.md "Risks"
+```
+
 Read the latest saved modeling report:
 
 ```bash
@@ -666,6 +672,20 @@ Arguments:
 {
   "output_name": "clinic-usage-report.md",
   "section_heading": "Summary"
+}
+```
+
+#### `save_modeling_report_section`
+
+Save one markdown section from a saved modeling report as a new markdown artifact.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md",
+  "section_heading": "Risks",
+  "new_output_name": "clinic-risks.md"
 }
 ```
 

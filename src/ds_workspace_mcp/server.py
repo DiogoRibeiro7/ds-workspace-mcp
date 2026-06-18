@@ -57,6 +57,7 @@ from ds_workspace_mcp.report_export import (
     RenamedModelingReport,
     ReportSearchMatch,
     SavedModelingReport,
+    SavedModelingReportSection,
     StoredModelingReport,
     compare_latest_modeling_reports,
     compare_saved_modeling_reports,
@@ -72,6 +73,7 @@ from ds_workspace_mcp.report_export import (
     read_saved_modeling_report_section,
     rename_saved_modeling_report,
     save_modeling_report_dataset,
+    save_modeling_report_section,
     search_saved_modeling_report_content,
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
@@ -574,6 +576,37 @@ def read_modeling_report_section(
         return read_saved_modeling_report_section(
             output_name=output_name,
             section_heading=section_heading,
+        )
+
+
+@mcp.tool()
+def save_modeling_report_section_tool(
+    output_name: str,
+    section_heading: str,
+    new_output_name: str | None = None,
+) -> SavedModelingReportSection:
+    """Save one markdown section from a report as a new markdown artifact."""
+
+    with traced_operation(
+        "tool.save_modeling_report_section",
+        {
+            "tool.name": "save_modeling_report_section",
+            "tool.output_name": output_name,
+            "tool.section_heading": section_heading,
+            "tool.new_output_name": new_output_name,
+        },
+    ):
+        logger.info(
+            "Tool save_modeling_report_section_tool invoked "
+            "output_name=%s section_heading=%s new_output_name=%s",
+            output_name,
+            section_heading,
+            new_output_name,
+        )
+        return save_modeling_report_section(
+            output_name=output_name,
+            section_heading=section_heading,
+            new_output_name=new_output_name,
         )
 
 

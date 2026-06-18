@@ -23,6 +23,7 @@ from ds_workspace_mcp.report_export import (
     read_saved_modeling_report_section,
     rename_saved_modeling_report,
     save_modeling_report_dataset,
+    save_modeling_report_section,
     search_saved_modeling_report_content,
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
@@ -175,6 +176,24 @@ def build_parser() -> argparse.ArgumentParser:
     read_report_section_parser.add_argument(
         "section_heading",
         help="Markdown heading to extract, case-insensitively.",
+    )
+
+    save_report_section_parser = subparsers.add_parser(
+        "save-modeling-report-section",
+        help="Save one markdown section from a report as a new markdown artifact.",
+    )
+    save_report_section_parser.add_argument(
+        "output_name",
+        help="Markdown report file name inside reports/.",
+    )
+    save_report_section_parser.add_argument(
+        "section_heading",
+        help="Markdown heading to extract and save, case-insensitively.",
+    )
+    save_report_section_parser.add_argument(
+        "--output-name",
+        dest="new_output_name",
+        help="Optional markdown file name for the extracted section inside reports/.",
     )
 
     subparsers.add_parser(
@@ -384,6 +403,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             section_heading=args.section_heading,
         )
         print(json.dumps(section.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "save-modeling-report-section":
+        saved_section = save_modeling_report_section(
+            output_name=args.output_name,
+            section_heading=args.section_heading,
+            new_output_name=args.new_output_name,
+        )
+        print(saved_section.output_path)
         return 0
 
     if command == "read-latest-modeling-report":
