@@ -9,6 +9,7 @@ from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
 from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.report_export import (
+    compare_latest_modeling_reports,
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
@@ -20,6 +21,7 @@ from ds_workspace_mcp.report_export import (
     read_saved_modeling_report,
     rename_saved_modeling_report,
     save_modeling_report_dataset,
+    search_saved_modeling_report_content,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
 )
@@ -94,6 +96,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Search saved markdown modeling reports by file name substring.",
     )
     search_report_parser.add_argument("query", help="Case-insensitive substring to match.")
+
+    search_report_content_parser = subparsers.add_parser(
+        "search-modeling-report-content",
+        help="Search saved markdown modeling reports by content and print bounded matches as JSON.",
+    )
+    search_report_content_parser.add_argument(
+        "query",
+        help="Case-insensitive text to match inside report content.",
+    )
 
     recent_report_parser = subparsers.add_parser(
         "list-recent-modeling-reports",
@@ -182,6 +193,11 @@ def build_parser() -> argparse.ArgumentParser:
     compare_report_parser.add_argument(
         "other_output_name",
         help="Comparison markdown report file name inside reports/.",
+    )
+
+    subparsers.add_parser(
+        "compare-latest-modeling-reports",
+        help="Print a bounded diff summary between the two most recent reports as JSON.",
     )
 
     subparsers.add_parser(
@@ -282,6 +298,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(matched_report.output_name)
         return 0
 
+    if command == "search-modeling-report-content":
+        matches = search_saved_modeling_report_content(args.query)
+        print(json.dumps([match.model_dump(mode="json") for match in matches], indent=2))
+        return 0
+
     if command == "list-recent-modeling-reports":
         for recent_report in list_recent_modeling_reports(limit=args.limit):
             print(recent_report.output_name)
@@ -330,6 +351,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_name=args.output_name,
             other_output_name=args.other_output_name,
         )
+        print(json.dumps(comparison.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "compare-latest-modeling-reports":
+        comparison = compare_latest_modeling_reports()
         print(json.dumps(comparison.model_dump(mode="json"), indent=2))
         return 0
 

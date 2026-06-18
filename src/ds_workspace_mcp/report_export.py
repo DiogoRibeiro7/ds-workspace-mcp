@@ -93,8 +93,18 @@ class ComparedModelingReport(BaseModel):
     diff_preview: str
 
 
+class ReportSearchMatch(BaseModel):
+    """A bounded full-text search match inside one saved modeling report."""
+
+    output_name: str
+    output_path: str
+    headline: str
+    snippet: str
+
+
 MAX_REPORT_PREVIEW_LINES = 12
 MAX_REPORT_DIFF_PREVIEW_LINES = 40
+MAX_REPORT_SEARCH_SNIPPET_LENGTH = 200
 
 
 def search_saved_modeling_reports(query: str) -> list[StoredModelingReport]:
@@ -110,6 +120,34 @@ def search_saved_modeling_reports(query: str) -> list[StoredModelingReport]:
         if normalized_query in report.output_name.lower()
     ]
     return sorted(matches, key=lambda report: (report.output_name.lower(), report.output_name))
+
+
+def search_saved_modeling_report_content(query: str) -> list[ReportSearchMatch]:
+    """Return saved modeling reports whose markdown body matches the query."""
+
+    if not isinstance(query, str) or not query.strip():
+        raise InvalidDatasetNameError("query must be a non-empty string.")
+
+    normalized_query = query.strip().lower()
+    matches: list[ReportSearchMatch] = []
+    for report in list_saved_modeling_reports():
+        path = Path(report.output_path)
+        markdown = path.read_text(encoding="utf-8")
+        normalized_markdown = markdown.lower()
+        query_index = normalized_markdown.find(normalized_query)
+        if query_index < 0:
+            continue
+        lines = markdown.splitlines()
+        matches.append(
+            ReportSearchMatch(
+                output_name=report.output_name,
+                output_path=report.output_path,
+                headline=_extract_headline(lines),
+                snippet=_build_search_snippet(markdown, query_index, len(normalized_query)),
+            )
+        )
+
+    return sorted(matches, key=lambda match: (match.output_name.lower(), match.output_name))
 
 
 def list_recent_modeling_reports(limit: int = 5) -> list[StoredModelingReport]:
@@ -191,6 +229,20 @@ def compare_saved_modeling_reports(
         added_line_count=added_line_count,
         removed_line_count=removed_line_count,
         diff_preview="\n".join(preview_lines),
+    )
+
+
+def compare_latest_modeling_reports() -> ComparedModelingReport:
+    """Return a bounded unified diff summary between the two newest saved reports."""
+
+    recent_reports = list_recent_modeling_reports(limit=2)
+    if len(recent_reports) < 2:
+        raise InvalidDatasetNameError(
+            "At least two modeling reports are required in the local reports directory."
+        )
+    return compare_saved_modeling_reports(
+        output_name=recent_reports[1].output_name,
+        other_output_name=recent_reports[0].output_name,
     )
 
 
@@ -419,3 +471,17 @@ def _get_latest_saved_report() -> StoredModelingReport:
     if not reports:
         raise InvalidDatasetNameError("No modeling reports found in the local reports directory.")
     return reports[0]
+
+
+def _build_search_snippet(markdown: str, match_index: int, query_length: int) -> str:
+    """Build a bounded single-line snippet around a search hit."""
+
+    snippet_radius = MAX_REPORT_SEARCH_SNIPPET_LENGTH // 2
+    start = max(0, match_index - snippet_radius)
+    end = min(len(markdown), match_index + query_length + snippet_radius)
+    snippet = markdown[start:end].replace("\r", " ").replace("\n", " ").strip()
+    if start > 0:
+        snippet = f"...{snippet}"
+    if end < len(markdown):
+        snippet = f"{snippet}..."
+    return snippet

@@ -306,6 +306,12 @@ Search saved modeling reports:
 poetry run ds-workspace-mcp search-modeling-reports clinic
 ```
 
+Search saved modeling report content:
+
+```bash
+poetry run ds-workspace-mcp search-modeling-report-content elevated
+```
+
 List the most recent modeling reports:
 
 ```bash
@@ -358,6 +364,12 @@ Compare two saved modeling reports:
 
 ```bash
 poetry run ds-workspace-mcp compare-modeling-reports clinic-usage-report.md clinic-usage-v2.md
+```
+
+Compare the two most recent modeling reports:
+
+```bash
+poetry run ds-workspace-mcp compare-latest-modeling-reports
 ```
 
 Preview the latest saved modeling report:
@@ -544,6 +556,18 @@ Arguments:
 }
 ```
 
+#### `search_modeling_report_content`
+
+Return saved markdown modeling reports whose content matches a case-insensitive text query.
+
+Arguments:
+
+```json
+{
+  "query": "elevated"
+}
+```
+
 #### `list_recent_modeling_reports`
 
 Return the most recently modified saved markdown modeling reports.
@@ -645,6 +669,10 @@ Arguments:
   "other_output_name": "clinic-usage-v2.md"
 }
 ```
+
+#### `compare_latest_modeling_reports`
+
+Return a bounded unified diff summary between the two most recently modified saved modeling reports.
 
 #### `preview_latest_modeling_report`
 

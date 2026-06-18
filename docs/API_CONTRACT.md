@@ -221,6 +221,20 @@ The following are considered non-breaking:
 - Stable behavior:
   - `query` must be a non-empty string
 
+#### `search_modeling_report_content(query: str)`
+
+- Stable name: `search_modeling_report_content`
+- Purpose: list markdown modeling reports in the local `reports/` directory whose markdown content matches a case-insensitive text query
+- Stable result shape: `list[ReportSearchMatch]`
+- Stable item fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `headline: str`
+  - `snippet: str`
+- Stable behavior:
+  - `query` must be a non-empty string
+  - `snippet` is intentionally bounded and does not guarantee the full matching paragraph
+
 #### `list_recent_modeling_reports(limit: int = 5)`
 
 - Stable name: `list_recent_modeling_reports`
@@ -338,6 +352,22 @@ The following are considered non-breaking:
 - Stable behavior:
   - `output_name` and `other_output_name` must be single markdown file names inside `reports/`
   - traversal-style paths are rejected
+  - `diff_preview` is intentionally bounded and does not guarantee a full diff
+
+#### `compare_latest_modeling_reports()`
+
+- Stable name: `compare_latest_modeling_reports`
+- Implementation note: the Python function is named `compare_latest_modeling_reports_tool`
+- Purpose: return a bounded unified diff summary between the two most recently modified markdown modeling reports saved in the local `reports/` directory
+- Stable result fields:
+  - `output_name: str`
+  - `other_output_name: str`
+  - `changed: bool`
+  - `added_line_count: int`
+  - `removed_line_count: int`
+  - `diff_preview: str`
+- Stable behavior:
+  - fails clearly when fewer than two saved modeling reports exist
   - `diff_preview` is intentionally bounded and does not guarantee a full diff
 
 #### `preview_latest_modeling_report()`
@@ -599,6 +629,8 @@ The `ds-workspace-mcp` console script is public.
   - prints saved modeling report file names, one per line
 - `ds-workspace-mcp search-modeling-reports <query>`
   - prints matching saved modeling report file names, one per line
+- `ds-workspace-mcp search-modeling-report-content <query>`
+  - prints bounded saved modeling report content matches as JSON
 - `ds-workspace-mcp list-recent-modeling-reports [--limit]`
   - prints the most recently modified saved modeling report file names, one per line
 - `ds-workspace-mcp summarize-modeling-reports [--limit]`
@@ -617,6 +649,8 @@ The `ds-workspace-mcp` console script is public.
   - prints a bounded preview of one saved modeling report as JSON
 - `ds-workspace-mcp compare-modeling-reports <output_name> <other_output_name>`
   - prints a bounded diff summary between two saved modeling reports as JSON
+- `ds-workspace-mcp compare-latest-modeling-reports`
+  - prints a bounded diff summary between the two most recently modified saved modeling reports as JSON
 - `ds-workspace-mcp preview-latest-modeling-report`
   - prints a bounded preview of the most recently modified saved modeling report as JSON
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`

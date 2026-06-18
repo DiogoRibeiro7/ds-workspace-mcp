@@ -51,8 +51,10 @@ from ds_workspace_mcp.report_export import (
     PreviewModelingReport,
     ReadModelingReport,
     RenamedModelingReport,
+    ReportSearchMatch,
     SavedModelingReport,
     StoredModelingReport,
+    compare_latest_modeling_reports,
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
@@ -64,6 +66,7 @@ from ds_workspace_mcp.report_export import (
     read_saved_modeling_report,
     rename_saved_modeling_report,
     save_modeling_report_dataset,
+    search_saved_modeling_report_content,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
 )
@@ -457,6 +460,18 @@ def search_modeling_reports(query: str) -> list[StoredModelingReport]:
 
 
 @mcp.tool()
+def search_modeling_report_content(query: str) -> list[ReportSearchMatch]:
+    """Return saved modeling reports whose markdown content matches the query."""
+
+    with traced_operation(
+        "tool.search_modeling_report_content",
+        {"tool.name": "search_modeling_report_content", "tool.query": query},
+    ):
+        logger.info("Tool search_modeling_report_content invoked query=%s", query)
+        return search_saved_modeling_report_content(query=query)
+
+
+@mcp.tool()
 def list_recent_modeling_reports_tool(limit: int = 5) -> list[StoredModelingReport]:
     """Return the most recently modified saved modeling reports."""
 
@@ -590,6 +605,18 @@ def compare_modeling_reports(
             output_name=output_name,
             other_output_name=other_output_name,
         )
+
+
+@mcp.tool()
+def compare_latest_modeling_reports_tool() -> ComparedModelingReport:
+    """Return a bounded diff summary between the two most recent reports."""
+
+    with traced_operation(
+        "tool.compare_latest_modeling_reports",
+        {"tool.name": "compare_latest_modeling_reports"},
+    ):
+        logger.info("Tool compare_latest_modeling_reports_tool invoked")
+        return compare_latest_modeling_reports()
 
 
 @mcp.tool()

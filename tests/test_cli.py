@@ -167,6 +167,32 @@ def test_cli_search_modeling_reports(
     assert output == ["clinic-usage-report.md", "Clinic-wait-times.md"]
 
 
+def test_cli_search_modeling_report_content(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "clinic-usage-report.md").write_text(
+        "# Clinic Usage\n\nStaffing risk is elevated on Mondays.",
+        encoding="utf-8",
+    )
+    (reports_dir / "finance-overview.md").write_text(
+        "# Finance\n\nBudget variance remains stable.",
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(["search-modeling-report-content", "elevated"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert [match["output_name"] for match in payload] == ["clinic-usage-report.md"]
+    assert payload[0]["headline"] == "Clinic Usage"
+    assert "elevated" in payload[0]["snippet"].lower()
+
+
 def test_cli_list_recent_modeling_reports(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -353,6 +379,30 @@ def test_cli_compare_modeling_reports(
     assert payload["changed"] is True
     assert payload["added_line_count"] == 1
     assert payload["removed_line_count"] == 1
+
+
+def test_cli_compare_latest_modeling_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Report\n\nOlder", encoding="utf-8")
+    newer.write_text("# Report\n\nNewer", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["compare-latest-modeling-reports"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["output_name"] == "older.md"
+    assert payload["other_output_name"] == "newer.md"
+    assert payload["changed"] is True
 
 
 def test_cli_preview_latest_modeling_report(

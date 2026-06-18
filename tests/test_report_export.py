@@ -8,6 +8,7 @@ import pytest
 
 from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalError
 from ds_workspace_mcp.report_export import (
+    compare_latest_modeling_reports,
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
@@ -20,6 +21,7 @@ from ds_workspace_mcp.report_export import (
     rename_saved_modeling_report,
     resolve_report_output_path,
     save_modeling_report_dataset,
+    search_saved_modeling_report_content,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
 )
@@ -359,6 +361,45 @@ def test_compare_saved_modeling_reports_marks_identical_reports_unchanged(
     assert comparison.diff_preview == ""
 
 
+def test_compare_latest_modeling_reports_uses_two_most_recent_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    oldest = reports_dir / "oldest.md"
+    older = reports_dir / "older.md"
+    newest = reports_dir / "newest.md"
+    oldest.write_text("# Report\n\nOldest", encoding="utf-8")
+    older.write_text("# Report\n\nOlder", encoding="utf-8")
+    newest.write_text("# Report\n\nNewest", encoding="utf-8")
+    os.utime(oldest, (1_600_000_000, 1_600_000_000))
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newest, (1_800_000_000, 1_800_000_000))
+
+    comparison = compare_latest_modeling_reports()
+
+    assert comparison.output_name == "older.md"
+    assert comparison.other_output_name == "newest.md"
+    assert comparison.changed is True
+    assert "--- older.md" in comparison.diff_preview
+    assert "+++ newest.md" in comparison.diff_preview
+
+
+def test_compare_latest_modeling_reports_rejects_too_few_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "only.md").write_text("# Report\n\nOnly", encoding="utf-8")
+
+    with pytest.raises(InvalidDatasetNameError, match="At least two modeling reports"):
+        compare_latest_modeling_reports()
+
+
 def test_search_saved_modeling_reports_matches_case_insensitively(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -381,6 +422,41 @@ def test_search_saved_modeling_reports_matches_case_insensitively(
 def test_search_saved_modeling_reports_rejects_blank_query() -> None:
     with pytest.raises(InvalidDatasetNameError, match="non-empty string"):
         search_saved_modeling_reports("   ")
+
+
+def test_search_saved_modeling_report_content_matches_markdown_body(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "clinic-usage-report.md").write_text(
+        "# Clinic Usage\n\nThe staffing risk is elevated on Mondays.",
+        encoding="utf-8",
+    )
+    (reports_dir / "finance-overview.md").write_text(
+        "# Finance\n\nBudget variance remains stable.",
+        encoding="utf-8",
+    )
+    (reports_dir / "wait-times.md").write_text(
+        "# Wait Times\n\nElevated queue pressure during late afternoons.",
+        encoding="utf-8",
+    )
+
+    matches = search_saved_modeling_report_content("elevated")
+
+    assert [match.output_name for match in matches] == [
+        "clinic-usage-report.md",
+        "wait-times.md",
+    ]
+    assert matches[0].headline == "Clinic Usage"
+    assert "staffing risk is elevated" in matches[0].snippet.lower()
+
+
+def test_search_saved_modeling_report_content_rejects_blank_query() -> None:
+    with pytest.raises(InvalidDatasetNameError, match="non-empty string"):
+        search_saved_modeling_report_content("   ")
 
 
 def test_list_recent_modeling_reports_orders_by_modified_time(
