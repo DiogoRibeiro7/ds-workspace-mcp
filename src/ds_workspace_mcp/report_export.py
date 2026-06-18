@@ -420,6 +420,20 @@ def save_modeling_report_section(
     )
 
 
+def save_latest_modeling_report_section(
+    section_heading: str,
+    new_output_name: str | None = None,
+) -> SavedModelingReportSection:
+    """Persist one section from the newest saved report as a markdown artifact."""
+
+    latest_report = _get_latest_saved_report()
+    return save_modeling_report_section(
+        output_name=latest_report.output_name,
+        section_heading=section_heading,
+        new_output_name=new_output_name,
+    )
+
+
 def compare_saved_modeling_report_sections(
     output_name: str,
     other_output_name: str,

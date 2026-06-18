@@ -431,6 +431,29 @@ def test_cli_save_modeling_report_section(
     assert output.read_text(encoding="utf-8") == "## Risks\n- Risk"
 
 
+def test_cli_save_latest_modeling_report_section(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\n## Risks\n- Old", encoding="utf-8")
+    newer.write_text("# Newer\n\n## Risks\n- New", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["save-latest-modeling-report-section", "risks"])
+    output = Path(capsys.readouterr().out.strip())
+
+    assert exit_code == 0
+    assert output == (reports_dir / "newer--risks--section.md").resolve()
+    assert output.read_text(encoding="utf-8") == "## Risks\n- New"
+
+
 def test_cli_compare_modeling_report_sections(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

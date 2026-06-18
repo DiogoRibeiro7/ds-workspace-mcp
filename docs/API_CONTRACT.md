@@ -372,6 +372,21 @@ The following are considered non-breaking:
   - `new_output_name`, when provided, must be a single markdown file name inside `reports/`
   - fails clearly when the requested section is not present or the target output already exists
 
+#### `save_latest_modeling_report_section(section_heading: str, new_output_name: str | None = None)`
+
+- Stable name: `save_latest_modeling_report_section`
+- Implementation note: the Python function is named `save_latest_modeling_report_section_tool`
+- Purpose: save one markdown section from the most recently modified saved modeling report as a new markdown artifact inside `reports/`
+- Stable result fields:
+  - `source_output_name: str`
+  - `section_heading: str`
+  - `output_path: str`
+- Stable behavior:
+  - `section_heading` must be a non-empty string
+  - `new_output_name`, when provided, must be a single markdown file name inside `reports/`
+  - fails clearly when no saved modeling reports exist
+  - fails clearly when the requested section is not present or the target output already exists
+
 #### `compare_modeling_report_sections(output_name: str, other_output_name: str, section_heading: str)`
 
 - Stable name: `compare_modeling_report_sections`
@@ -787,6 +802,8 @@ The `ds-workspace-mcp` console script is public.
   - prints one markdown section from the most recently modified saved modeling report as JSON
 - `ds-workspace-mcp save-modeling-report-section <output_name> <section_heading> [--output-name]`
   - saves one markdown section from a saved modeling report and prints the saved path
+- `ds-workspace-mcp save-latest-modeling-report-section <section_heading> [--output-name]`
+  - saves one markdown section from the most recently modified saved modeling report and prints the saved path
 - `ds-workspace-mcp compare-modeling-report-sections <output_name> <other_output_name> <section_heading>`
   - prints a bounded diff summary between matching report sections as JSON
 - `ds-workspace-mcp compare-latest-modeling-report-sections <section_heading>`

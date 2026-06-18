@@ -26,6 +26,7 @@ from ds_workspace_mcp.report_export import (
     read_saved_modeling_report,
     read_saved_modeling_report_section,
     rename_saved_modeling_report,
+    save_latest_modeling_report_section,
     save_modeling_report_dataset,
     save_modeling_report_section,
     search_saved_modeling_report_content,
@@ -209,6 +210,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Markdown heading to extract and save, case-insensitively.",
     )
     save_report_section_parser.add_argument(
+        "--output-name",
+        dest="new_output_name",
+        help="Optional markdown file name for the extracted section inside reports/.",
+    )
+
+    save_latest_report_section_parser = subparsers.add_parser(
+        "save-latest-modeling-report-section",
+        help="Save one markdown section from the newest report as a new markdown artifact.",
+    )
+    save_latest_report_section_parser.add_argument(
+        "section_heading",
+        help="Markdown heading to extract and save from the newest report.",
+    )
+    save_latest_report_section_parser.add_argument(
         "--output-name",
         dest="new_output_name",
         help="Optional markdown file name for the extracted section inside reports/.",
@@ -471,6 +486,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             new_output_name=args.new_output_name,
         )
         print(saved_section.output_path)
+        return 0
+
+    if command == "save-latest-modeling-report-section":
+        latest_saved_section = save_latest_modeling_report_section(
+            section_heading=args.section_heading,
+            new_output_name=args.new_output_name,
+        )
+        print(latest_saved_section.output_path)
         return 0
 
     if command == "compare-modeling-report-sections":

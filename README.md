@@ -375,6 +375,12 @@ Save one section from a saved modeling report:
 poetry run ds-workspace-mcp save-modeling-report-section clinic-usage-report.md "Risks"
 ```
 
+Save one section from the latest saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp save-latest-modeling-report-section "Risks"
+```
+
 Compare one section across two saved modeling reports:
 
 ```bash
@@ -729,6 +735,19 @@ Arguments:
   "output_name": "clinic-usage-report.md",
   "section_heading": "Risks",
   "new_output_name": "clinic-risks.md"
+}
+```
+
+#### `save_latest_modeling_report_section`
+
+Save one markdown section from the most recently modified saved modeling report as a new markdown artifact.
+
+Arguments:
+
+```json
+{
+  "section_heading": "Risks",
+  "new_output_name": "latest-risks.md"
 }
 ```
 

@@ -26,6 +26,7 @@ from ds_workspace_mcp.report_export import (
     read_saved_modeling_report_section,
     rename_saved_modeling_report,
     resolve_report_output_path,
+    save_latest_modeling_report_section,
     save_modeling_report_dataset,
     save_modeling_report_section,
     search_saved_modeling_report_content,
@@ -318,6 +319,47 @@ def test_save_modeling_report_section_rejects_existing_output_name(
             "summary",
             new_output_name="summary-only.md",
         )
+
+
+def test_save_latest_modeling_report_section_uses_newest_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\n## Risks\n- Old", encoding="utf-8")
+    newer.write_text("# Newer\n\n## Risks\n- New", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    saved_section = save_latest_modeling_report_section("risks")
+
+    saved_path = Path(saved_section.output_path)
+    assert saved_section.source_output_name == "newer.md"
+    assert saved_section.section_heading == "Risks"
+    assert saved_path.name == "newer--risks--section.md"
+    assert saved_path.read_text(encoding="utf-8") == "## Risks\n- New"
+
+
+def test_save_latest_modeling_report_section_supports_explicit_output_name(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    report_path = reports_dir / "newer.md"
+    report_path.write_text("# Newer\n\n## Summary\nBody", encoding="utf-8")
+
+    saved_section = save_latest_modeling_report_section(
+        "summary",
+        new_output_name="latest-summary.md",
+    )
+
+    assert Path(saved_section.output_path).name == "latest-summary.md"
 
 
 def test_compare_saved_modeling_report_sections_returns_bounded_diff_summary(
