@@ -27,6 +27,7 @@ from ds_workspace_mcp.report_export import (
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
+    summarize_saved_modeling_report_sections,
 )
 from ds_workspace_mcp.server import main as serve_main
 from ds_workspace_mcp.synthetic.healthcare import (
@@ -116,6 +117,11 @@ def build_parser() -> argparse.ArgumentParser:
     search_report_sections_parser.add_argument(
         "query",
         help="Case-insensitive text to match inside section headings.",
+    )
+
+    subparsers.add_parser(
+        "summarize-modeling-report-sections",
+        help="Print a compact summary of recurring saved report section headings as JSON.",
     )
 
     recent_report_parser = subparsers.add_parser(
@@ -340,6 +346,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "search-modeling-report-sections":
         section_matches = search_saved_modeling_report_sections(args.query)
         print(json.dumps([match.model_dump(mode="json") for match in section_matches], indent=2))
+        return 0
+
+    if command == "summarize-modeling-report-sections":
+        section_summaries = summarize_saved_modeling_report_sections()
+        print(
+            json.dumps(
+                [summary.model_dump(mode="json") for summary in section_summaries],
+                indent=2,
+            )
+        )
         return 0
 
     if command == "list-recent-modeling-reports":

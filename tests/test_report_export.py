@@ -27,6 +27,7 @@ from ds_workspace_mcp.report_export import (
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
+    summarize_saved_modeling_report_sections,
 )
 
 
@@ -229,6 +230,37 @@ def test_search_saved_modeling_report_sections_matches_headings_across_reports(
 def test_search_saved_modeling_report_sections_rejects_blank_query() -> None:
     with pytest.raises(InvalidDatasetNameError, match="non-empty string"):
         search_saved_modeling_report_sections("   ")
+
+
+def test_summarize_saved_modeling_report_sections_counts_recurring_headings(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "alpha.md").write_text(
+        "# Alpha\n\n## Summary\nAlpha body\n\n## Risks\n- Risk A",
+        encoding="utf-8",
+    )
+    (reports_dir / "beta.md").write_text(
+        "# Beta\n\n## Summary\nBeta body\n\n## Next Steps\n- Step B",
+        encoding="utf-8",
+    )
+    (reports_dir / "gamma.md").write_text(
+        "# Gamma\n\n## Risks\n- Risk G\n\n## Next Steps\n- Step G",
+        encoding="utf-8",
+    )
+
+    summaries = summarize_saved_modeling_report_sections()
+
+    assert [(summary.heading, summary.report_count) for summary in summaries[:2]] == [
+        ("Next Steps", 2),
+        ("Risks", 2),
+    ]
+    summary_lookup = {summary.heading: summary for summary in summaries}
+    assert summary_lookup["Summary"].example_reports == ["alpha.md", "beta.md"]
+    assert summary_lookup["Alpha"].report_count == 1
 
 
 def test_read_latest_modeling_report_returns_newest_markdown(

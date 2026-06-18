@@ -318,6 +318,12 @@ Search saved modeling report sections:
 poetry run ds-workspace-mcp search-modeling-report-sections risk
 ```
 
+Summarize recurring modeling report sections:
+
+```bash
+poetry run ds-workspace-mcp summarize-modeling-report-sections
+```
+
 List the most recent modeling reports:
 
 ```bash
@@ -597,6 +603,10 @@ Arguments:
   "query": "risk"
 }
 ```
+
+#### `summarize_modeling_report_sections`
+
+Return a compact summary of recurring section headings across saved modeling reports.
 
 #### `list_recent_modeling_reports`
 

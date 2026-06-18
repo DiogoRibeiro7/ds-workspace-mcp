@@ -221,6 +221,34 @@ def test_cli_search_modeling_report_sections(
     assert "## Risk Review" in payload[0]["snippet"]
 
 
+def test_cli_summarize_modeling_report_sections(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "alpha.md").write_text(
+        "# Alpha\n\n## Summary\nBody\n\n## Risks\n- Risk A",
+        encoding="utf-8",
+    )
+    (reports_dir / "beta.md").write_text(
+        "# Beta\n\n## Summary\nBody\n\n## Next Steps\n- Step B",
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(["summarize-modeling-report-sections"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert [(summary["heading"], summary["report_count"]) for summary in payload[:2]] == [
+        ("Summary", 2),
+        ("Alpha", 1),
+    ]
+    assert payload[0]["example_reports"] == ["alpha.md", "beta.md"]
+
+
 def test_cli_list_recent_modeling_reports(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

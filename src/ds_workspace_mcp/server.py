@@ -50,6 +50,7 @@ from ds_workspace_mcp.report_export import (
     ModelingReportMetadata,
     ModelingReportSection,
     ModelingReportSectionMatch,
+    ModelingReportSectionSummary,
     PreviewModelingReport,
     ReadModelingReport,
     ReadModelingReportSection,
@@ -75,6 +76,7 @@ from ds_workspace_mcp.report_export import (
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
     summarize_modeling_report_catalog,
+    summarize_saved_modeling_report_sections,
 )
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
 from ds_workspace_mcp.sql.sqlite_engine import (
@@ -487,6 +489,18 @@ def search_modeling_report_sections(query: str) -> list[ModelingReportSectionMat
     ):
         logger.info("Tool search_modeling_report_sections invoked query=%s", query)
         return search_saved_modeling_report_sections(query=query)
+
+
+@mcp.tool()
+def summarize_modeling_report_sections() -> list[ModelingReportSectionSummary]:
+    """Summarize recurring section headings across saved modeling reports."""
+
+    with traced_operation(
+        "tool.summarize_modeling_report_sections",
+        {"tool.name": "summarize_modeling_report_sections"},
+    ):
+        logger.info("Tool summarize_modeling_report_sections invoked")
+        return summarize_saved_modeling_report_sections()
 
 
 @mcp.tool()

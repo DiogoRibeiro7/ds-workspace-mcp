@@ -250,6 +250,19 @@ The following are considered non-breaking:
   - `query` must be a non-empty string
   - `snippet` is intentionally bounded and does not guarantee the full section
 
+#### `summarize_modeling_report_sections()`
+
+- Stable name: `summarize_modeling_report_sections`
+- Purpose: summarize recurring section headings across saved modeling reports
+- Stable result shape: `list[ModelingReportSectionSummary]`
+- Stable item fields:
+  - `heading: str`
+  - `level: int`
+  - `report_count: int`
+  - `example_reports: list[str]`
+- Stable behavior:
+  - `example_reports` is intentionally bounded and does not list every matching report
+
 #### `list_recent_modeling_reports(limit: int = 5)`
 
 - Stable name: `list_recent_modeling_reports`
@@ -676,6 +689,8 @@ The `ds-workspace-mcp` console script is public.
   - prints bounded saved modeling report content matches as JSON
 - `ds-workspace-mcp search-modeling-report-sections <query>`
   - prints bounded saved modeling report section matches as JSON
+- `ds-workspace-mcp summarize-modeling-report-sections`
+  - prints a compact summary of recurring saved modeling report section headings as JSON
 - `ds-workspace-mcp list-recent-modeling-reports [--limit]`
   - prints the most recently modified saved modeling report file names, one per line
 - `ds-workspace-mcp summarize-modeling-reports [--limit]`

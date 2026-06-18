@@ -129,10 +129,20 @@ class ModelingReportSectionMatch(BaseModel):
     snippet: str
 
 
+class ModelingReportSectionSummary(BaseModel):
+    """A compact summary of one recurring section heading across saved reports."""
+
+    heading: str
+    level: int
+    report_count: int
+    example_reports: list[str]
+
+
 MAX_REPORT_PREVIEW_LINES = 12
 MAX_REPORT_DIFF_PREVIEW_LINES = 40
 MAX_REPORT_SEARCH_SNIPPET_LENGTH = 200
 MAX_REPORT_SECTION_SNIPPET_LINES = 4
+MAX_REPORT_SECTION_SUMMARY_EXAMPLES = 3
 
 
 def search_saved_modeling_reports(query: str) -> list[StoredModelingReport]:
@@ -343,6 +353,38 @@ def search_saved_modeling_report_sections(query: str) -> list[ModelingReportSect
             match.output_name.lower(),
             match.output_name,
         ),
+    )
+
+
+def summarize_saved_modeling_report_sections() -> list[ModelingReportSectionSummary]:
+    """Summarize recurring section headings across saved modeling reports."""
+
+    grouped_sections: dict[tuple[str, int], list[str]] = {}
+    for report in list_saved_modeling_reports():
+        path = Path(report.output_path)
+        lines = path.read_text(encoding="utf-8").splitlines()
+        seen_in_report: set[tuple[str, int]] = set()
+        for section in _extract_markdown_sections(lines):
+            key = (section.heading, section.level)
+            if key in seen_in_report:
+                continue
+            seen_in_report.add(key)
+            grouped_sections.setdefault(key, []).append(report.output_name)
+
+    summaries = [
+        ModelingReportSectionSummary(
+            heading=heading,
+            level=level,
+            report_count=len(report_names),
+            example_reports=sorted(report_names, key=str.lower)[
+                :MAX_REPORT_SECTION_SUMMARY_EXAMPLES
+            ],
+        )
+        for (heading, level), report_names in grouped_sections.items()
+    ]
+    return sorted(
+        summaries,
+        key=lambda summary: (-summary.report_count, summary.level, summary.heading.lower()),
     )
 
 
