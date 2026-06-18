@@ -30,6 +30,7 @@ from ds_workspace_mcp.report_export import (
     save_modeling_report_dataset,
     save_modeling_report_section,
     search_latest_modeling_report_content,
+    search_latest_modeling_report_sections,
     search_saved_modeling_report_content,
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
@@ -482,6 +483,37 @@ def test_search_saved_modeling_report_sections_matches_headings_across_reports(
 def test_search_saved_modeling_report_sections_rejects_blank_query() -> None:
     with pytest.raises(InvalidDatasetNameError, match="non-empty string"):
         search_saved_modeling_report_sections("   ")
+
+
+def test_search_latest_modeling_report_sections_reads_newest_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\n## Risk Log\nOld details", encoding="utf-8")
+    newer.write_text(
+        "# Newer\n\n## Summary\nNew summary\n\n## Risk Review\nNew details",
+        encoding="utf-8",
+    )
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    matches = search_latest_modeling_report_sections("risk")
+
+    assert [(match.heading, match.output_name) for match in matches] == [
+        ("Risk Review", "newer.md")
+    ]
+    assert matches[0].level == 2
+    assert "## Risk Review" in matches[0].snippet
+
+
+def test_search_latest_modeling_report_sections_rejects_blank_query() -> None:
+    with pytest.raises(InvalidDatasetNameError, match="non-empty string"):
+        search_latest_modeling_report_sections("   ")
 
 
 def test_summarize_saved_modeling_report_sections_counts_recurring_headings(

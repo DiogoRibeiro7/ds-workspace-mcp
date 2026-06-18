@@ -30,6 +30,7 @@ from ds_workspace_mcp.report_export import (
     save_modeling_report_dataset,
     save_modeling_report_section,
     search_latest_modeling_report_content,
+    search_latest_modeling_report_sections,
     search_saved_modeling_report_content,
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
@@ -136,6 +137,18 @@ def build_parser() -> argparse.ArgumentParser:
     search_report_sections_parser.add_argument(
         "query",
         help="Case-insensitive text to match inside section headings.",
+    )
+
+    search_latest_report_sections_parser = subparsers.add_parser(
+        "search-latest-modeling-report-sections",
+        help=(
+            "Search section headings in the newest saved modeling report and print "
+            "bounded matches as JSON."
+        ),
+    )
+    search_latest_report_sections_parser.add_argument(
+        "query",
+        help="Case-insensitive text to match inside newest report section headings.",
     )
 
     subparsers.add_parser(
@@ -447,6 +460,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "search-modeling-report-sections":
         section_matches = search_saved_modeling_report_sections(args.query)
         print(json.dumps([match.model_dump(mode="json") for match in section_matches], indent=2))
+        return 0
+
+    if command == "search-latest-modeling-report-sections":
+        latest_section_matches = search_latest_modeling_report_sections(args.query)
+        print(
+            json.dumps(
+                [match.model_dump(mode="json") for match in latest_section_matches],
+                indent=2,
+            )
+        )
         return 0
 
     if command == "summarize-modeling-report-sections":

@@ -406,6 +406,19 @@ def search_saved_modeling_report_sections(query: str) -> list[ModelingReportSect
     )
 
 
+def search_latest_modeling_report_sections(query: str) -> list[ModelingReportSectionMatch]:
+    """Search section headings inside the newest saved modeling report."""
+
+    if not isinstance(query, str) or not query.strip():
+        raise InvalidDatasetNameError("query must be a non-empty string.")
+
+    latest_report = _get_latest_saved_report()
+    return search_saved_modeling_report_sections_in_report(
+        output_name=latest_report.output_name,
+        query=query,
+    )
+
+
 def search_saved_modeling_report_content_in_report(
     output_name: str,
     query: str,
@@ -432,6 +445,42 @@ def search_saved_modeling_report_content_in_report(
             snippet=_build_search_snippet(markdown, query_index, len(normalized_query)),
         )
     ]
+
+
+def search_saved_modeling_report_sections_in_report(
+    output_name: str,
+    query: str,
+) -> list[ModelingReportSectionMatch]:
+    """Search section headings inside one saved modeling report."""
+
+    if not isinstance(query, str) or not query.strip():
+        raise InvalidDatasetNameError("query must be a non-empty string.")
+
+    path = resolve_existing_report_path(output_name)
+    normalized_query = query.strip().lower()
+    matches: list[ModelingReportSectionMatch] = []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for section in _extract_markdown_sections(lines):
+        if normalized_query not in section.heading.lower():
+            continue
+        matches.append(
+            ModelingReportSectionMatch(
+                output_name=path.name,
+                output_path=str(path),
+                heading=section.heading,
+                level=section.level,
+                snippet=_build_section_snippet(section.lines),
+            )
+        )
+
+    return sorted(
+        matches,
+        key=lambda match: (
+            match.heading.lower(),
+            match.output_name.lower(),
+            match.output_name,
+        ),
+    )
 
 
 def save_modeling_report_section(

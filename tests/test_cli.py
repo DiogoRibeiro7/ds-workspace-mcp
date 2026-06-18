@@ -245,6 +245,34 @@ def test_cli_search_modeling_report_sections(
     assert "## Risk Review" in payload[0]["snippet"]
 
 
+def test_cli_search_latest_modeling_report_sections(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\n## Risk Log\nOld details", encoding="utf-8")
+    newer.write_text(
+        "# Newer\n\n## Summary\nBody\n\n## Risk Review\nNew details",
+        encoding="utf-8",
+    )
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["search-latest-modeling-report-sections", "risk"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert [(match["heading"], match["output_name"]) for match in payload] == [
+        ("Risk Review", "newer.md"),
+    ]
+    assert "## Risk Review" in payload[0]["snippet"]
+
+
 def test_cli_summarize_modeling_report_sections(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

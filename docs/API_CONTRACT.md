@@ -266,6 +266,23 @@ The following are considered non-breaking:
   - `query` must be a non-empty string
   - `snippet` is intentionally bounded and does not guarantee the full section
 
+#### `search_latest_modeling_report_sections(query: str)`
+
+- Stable name: `search_latest_modeling_report_sections`
+- Implementation note: the Python function is named `search_latest_modeling_report_sections_tool`
+- Purpose: list section-heading matches from the most recently modified saved modeling report
+- Stable result shape: `list[ModelingReportSectionMatch]`
+- Stable item fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `heading: str`
+  - `level: int`
+  - `snippet: str`
+- Stable behavior:
+  - `query` must be a non-empty string
+  - fails clearly when no saved modeling reports exist
+  - `snippet` is intentionally bounded and does not guarantee the full section
+
 #### `summarize_modeling_report_sections()`
 
 - Stable name: `summarize_modeling_report_sections`
@@ -802,6 +819,8 @@ The `ds-workspace-mcp` console script is public.
   - prints bounded content matches from the most recently modified saved modeling report as JSON
 - `ds-workspace-mcp search-modeling-report-sections <query>`
   - prints bounded saved modeling report section matches as JSON
+- `ds-workspace-mcp search-latest-modeling-report-sections <query>`
+  - prints bounded section-heading matches from the most recently modified saved modeling report as JSON
 - `ds-workspace-mcp summarize-modeling-report-sections`
   - prints a compact summary of recurring saved modeling report section headings as JSON
 - `ds-workspace-mcp list-recent-modeling-reports [--limit]`

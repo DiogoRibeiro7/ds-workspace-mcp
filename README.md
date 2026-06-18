@@ -327,6 +327,12 @@ Search saved modeling report sections:
 poetry run ds-workspace-mcp search-modeling-report-sections risk
 ```
 
+Search section headings in the latest saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp search-latest-modeling-report-sections risk
+```
+
 Summarize recurring modeling report sections:
 
 ```bash
@@ -652,6 +658,18 @@ Arguments:
 #### `search_modeling_report_sections`
 
 Return saved modeling report sections whose headings match a case-insensitive text query.
+
+Arguments:
+
+```json
+{
+  "query": "risk"
+}
+```
+
+#### `search_latest_modeling_report_sections`
+
+Return section-heading matches from the most recently modified saved modeling report.
 
 Arguments:
 
