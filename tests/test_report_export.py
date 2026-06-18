@@ -9,6 +9,7 @@ import pytest
 from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalError
 from ds_workspace_mcp.report_export import (
     compare_latest_modeling_reports,
+    compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
@@ -265,6 +266,56 @@ def test_save_modeling_report_section_rejects_existing_output_name(
             "summary",
             new_output_name="summary-only.md",
         )
+
+
+def test_compare_saved_modeling_report_sections_returns_bounded_diff_summary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "before.md").write_text(
+        "# Report\n\n## Risks\n- Risk A\n- Risk B",
+        encoding="utf-8",
+    )
+    (reports_dir / "after.md").write_text(
+        "# Report\n\n## Risks\n- Risk A\n- Risk C",
+        encoding="utf-8",
+    )
+
+    comparison = compare_saved_modeling_report_sections("before.md", "after.md", "risks")
+
+    assert comparison.output_name == "before.md"
+    assert comparison.other_output_name == "after.md"
+    assert comparison.section_heading == "Risks"
+    assert comparison.changed is True
+    assert comparison.added_line_count == 1
+    assert comparison.removed_line_count == 1
+    assert "--- before.md:Risks" in comparison.diff_preview
+    assert "+++ after.md:Risks" in comparison.diff_preview
+
+
+def test_compare_saved_modeling_report_sections_marks_identical_section_unchanged(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    for name in ("one.md", "two.md"):
+        (reports_dir / name).write_text(
+            "# Report\n\n## Summary\nSame body",
+            encoding="utf-8",
+        )
+
+    comparison = compare_saved_modeling_report_sections("one.md", "two.md", "summary")
+
+    assert comparison.section_heading == "Summary"
+    assert comparison.changed is False
+    assert comparison.added_line_count == 0
+    assert comparison.removed_line_count == 0
+    assert comparison.diff_preview == ""
 
 
 def test_search_saved_modeling_report_sections_matches_headings_across_reports(

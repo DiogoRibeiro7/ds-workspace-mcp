@@ -127,6 +127,18 @@ class SavedModelingReportSection(BaseModel):
     output_path: str
 
 
+class ComparedModelingReportSection(BaseModel):
+    """A bounded diff summary between matching sections in two saved reports."""
+
+    output_name: str
+    other_output_name: str
+    section_heading: str
+    changed: bool
+    added_line_count: int
+    removed_line_count: int
+    diff_preview: str
+
+
 class ModelingReportSectionMatch(BaseModel):
     """One saved report section that matches a heading query."""
 
@@ -388,6 +400,54 @@ def save_modeling_report_section(
         source_output_name=section.output_name,
         section_heading=section.heading,
         output_path=str(target_path),
+    )
+
+
+def compare_saved_modeling_report_sections(
+    output_name: str,
+    other_output_name: str,
+    section_heading: str,
+) -> ComparedModelingReportSection:
+    """Return a bounded diff summary between matching sections in two reports."""
+
+    primary_section = read_saved_modeling_report_section(
+        output_name=output_name,
+        section_heading=section_heading,
+    )
+    other_section = read_saved_modeling_report_section(
+        output_name=other_output_name,
+        section_heading=section_heading,
+    )
+    primary_lines = primary_section.markdown.splitlines()
+    other_lines = other_section.markdown.splitlines()
+    diff_lines = list(
+        unified_diff(
+            primary_lines,
+            other_lines,
+            fromfile=f"{primary_section.output_name}:{primary_section.heading}",
+            tofile=f"{other_section.output_name}:{other_section.heading}",
+            lineterm="",
+        )
+    )
+    added_line_count = sum(
+        1
+        for line in diff_lines
+        if line.startswith("+") and not line.startswith("+++")
+    )
+    removed_line_count = sum(
+        1
+        for line in diff_lines
+        if line.startswith("-") and not line.startswith("---")
+    )
+    preview_lines = diff_lines[:MAX_REPORT_DIFF_PREVIEW_LINES]
+    return ComparedModelingReportSection(
+        output_name=primary_section.output_name,
+        other_output_name=other_section.output_name,
+        section_heading=primary_section.heading,
+        changed=bool(diff_lines),
+        added_line_count=added_line_count,
+        removed_line_count=removed_line_count,
+        diff_preview="\n".join(preview_lines),
     )
 
 

@@ -360,6 +360,12 @@ Save one section from a saved modeling report:
 poetry run ds-workspace-mcp save-modeling-report-section clinic-usage-report.md "Risks"
 ```
 
+Compare one section across two saved modeling reports:
+
+```bash
+poetry run ds-workspace-mcp compare-modeling-report-sections clinic-usage-report.md clinic-usage-v2.md "Risks"
+```
+
 Read the latest saved modeling report:
 
 ```bash
@@ -686,6 +692,20 @@ Arguments:
   "output_name": "clinic-usage-report.md",
   "section_heading": "Risks",
   "new_output_name": "clinic-risks.md"
+}
+```
+
+#### `compare_modeling_report_sections`
+
+Return a bounded diff summary between matching sections in two saved modeling reports.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md",
+  "other_output_name": "clinic-usage-v2.md",
+  "section_heading": "Risks"
 }
 ```
 

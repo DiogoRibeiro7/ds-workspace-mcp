@@ -380,6 +380,35 @@ def test_cli_save_modeling_report_section(
     assert output.read_text(encoding="utf-8") == "## Risks\n- Risk"
 
 
+def test_cli_compare_modeling_report_sections(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "before.md").write_text(
+        "# Report\n\n## Risks\n- Risk A\n- Risk B",
+        encoding="utf-8",
+    )
+    (reports_dir / "after.md").write_text(
+        "# Report\n\n## Risks\n- Risk A\n- Risk C",
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(["compare-modeling-report-sections", "before.md", "after.md", "risks"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["output_name"] == "before.md"
+    assert payload["other_output_name"] == "after.md"
+    assert payload["section_heading"] == "Risks"
+    assert payload["changed"] is True
+    assert payload["added_line_count"] == 1
+    assert payload["removed_line_count"] == 1
+
+
 def test_cli_read_latest_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

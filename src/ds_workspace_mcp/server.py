@@ -45,6 +45,7 @@ from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overvie
 from ds_workspace_mcp.profiling import DatasetProfile
 from ds_workspace_mcp.report_export import (
     ComparedModelingReport,
+    ComparedModelingReportSection,
     DeletedModelingReport,
     ModelingReportCatalogSummary,
     ModelingReportMetadata,
@@ -60,6 +61,7 @@ from ds_workspace_mcp.report_export import (
     SavedModelingReportSection,
     StoredModelingReport,
     compare_latest_modeling_reports,
+    compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
@@ -607,6 +609,37 @@ def save_modeling_report_section_tool(
             output_name=output_name,
             section_heading=section_heading,
             new_output_name=new_output_name,
+        )
+
+
+@mcp.tool()
+def compare_modeling_report_sections(
+    output_name: str,
+    other_output_name: str,
+    section_heading: str,
+) -> ComparedModelingReportSection:
+    """Return a bounded diff summary between matching sections in two reports."""
+
+    with traced_operation(
+        "tool.compare_modeling_report_sections",
+        {
+            "tool.name": "compare_modeling_report_sections",
+            "tool.output_name": output_name,
+            "tool.other_output_name": other_output_name,
+            "tool.section_heading": section_heading,
+        },
+    ):
+        logger.info(
+            "Tool compare_modeling_report_sections invoked "
+            "output_name=%s other_output_name=%s section_heading=%s",
+            output_name,
+            other_output_name,
+            section_heading,
+        )
+        return compare_saved_modeling_report_sections(
+            output_name=output_name,
+            other_output_name=other_output_name,
+            section_heading=section_heading,
         )
 
 

@@ -10,6 +10,7 @@ from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.report_export import (
     compare_latest_modeling_reports,
+    compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
     inspect_saved_modeling_report,
@@ -194,6 +195,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-name",
         dest="new_output_name",
         help="Optional markdown file name for the extracted section inside reports/.",
+    )
+
+    compare_report_sections_parser = subparsers.add_parser(
+        "compare-modeling-report-sections",
+        help="Print a bounded diff summary between matching sections in two reports as JSON.",
+    )
+    compare_report_sections_parser.add_argument(
+        "output_name",
+        help="Primary markdown report file name inside reports/.",
+    )
+    compare_report_sections_parser.add_argument(
+        "other_output_name",
+        help="Comparison markdown report file name inside reports/.",
+    )
+    compare_report_sections_parser.add_argument(
+        "section_heading",
+        help="Markdown heading to compare, case-insensitively.",
     )
 
     subparsers.add_parser(
@@ -414,6 +432,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(saved_section.output_path)
         return 0
 
+    if command == "compare-modeling-report-sections":
+        section_comparison = compare_saved_modeling_report_sections(
+            output_name=args.output_name,
+            other_output_name=args.other_output_name,
+            section_heading=args.section_heading,
+        )
+        print(json.dumps(section_comparison.model_dump(mode="json"), indent=2))
+        return 0
+
     if command == "read-latest-modeling-report":
         read_report = read_latest_modeling_report()
         print(read_report.markdown)
@@ -443,16 +470,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     if command == "compare-modeling-reports":
-        comparison = compare_saved_modeling_reports(
+        report_comparison = compare_saved_modeling_reports(
             output_name=args.output_name,
             other_output_name=args.other_output_name,
         )
-        print(json.dumps(comparison.model_dump(mode="json"), indent=2))
+        print(json.dumps(report_comparison.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "compare-latest-modeling-reports":
-        comparison = compare_latest_modeling_reports()
-        print(json.dumps(comparison.model_dump(mode="json"), indent=2))
+        latest_report_comparison = compare_latest_modeling_reports()
+        print(json.dumps(latest_report_comparison.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "preview-latest-modeling-report":

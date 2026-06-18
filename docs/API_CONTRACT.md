@@ -344,6 +344,24 @@ The following are considered non-breaking:
   - `new_output_name`, when provided, must be a single markdown file name inside `reports/`
   - fails clearly when the requested section is not present or the target output already exists
 
+#### `compare_modeling_report_sections(output_name: str, other_output_name: str, section_heading: str)`
+
+- Stable name: `compare_modeling_report_sections`
+- Purpose: return a bounded diff summary between matching sections in two saved modeling reports
+- Stable result fields:
+  - `output_name: str`
+  - `other_output_name: str`
+  - `section_heading: str`
+  - `changed: bool`
+  - `added_line_count: int`
+  - `removed_line_count: int`
+  - `diff_preview: str`
+- Stable behavior:
+  - `output_name` and `other_output_name` must be single markdown file names inside `reports/`
+  - `section_heading` must be a non-empty string
+  - fails clearly when the requested section is not present in either report
+  - `diff_preview` is intentionally bounded and does not guarantee a full diff
+
 #### `read_latest_modeling_report()`
 
 - Stable name: `read_latest_modeling_report`
@@ -718,6 +736,8 @@ The `ds-workspace-mcp` console script is public.
   - prints one markdown section from a saved modeling report as JSON
 - `ds-workspace-mcp save-modeling-report-section <output_name> <section_heading> [--output-name]`
   - saves one markdown section from a saved modeling report and prints the saved path
+- `ds-workspace-mcp compare-modeling-report-sections <output_name> <other_output_name> <section_heading>`
+  - prints a bounded diff summary between matching report sections as JSON
 - `ds-workspace-mcp read-latest-modeling-report`
   - prints the most recently modified saved modeling report as markdown
 - `ds-workspace-mcp delete-modeling-report <output_name>`
