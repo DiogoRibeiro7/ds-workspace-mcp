@@ -65,6 +65,7 @@ from ds_workspace_mcp.report_export import (
     compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
+    inspect_latest_modeling_report,
     inspect_saved_modeling_report,
     list_latest_modeling_report_sections,
     list_recent_modeling_reports,
@@ -812,6 +813,18 @@ def inspect_modeling_report(output_name: str) -> ModelingReportMetadata:
     ):
         logger.info("Tool inspect_modeling_report invoked output_name=%s", output_name)
         return inspect_saved_modeling_report(output_name=output_name)
+
+
+@mcp.tool()
+def inspect_latest_modeling_report_tool() -> ModelingReportMetadata:
+    """Return metadata for the most recently modified saved markdown modeling report."""
+
+    with traced_operation(
+        "tool.inspect_latest_modeling_report",
+        {"tool.name": "inspect_latest_modeling_report"},
+    ):
+        logger.info("Tool inspect_latest_modeling_report_tool invoked")
+        return inspect_latest_modeling_report()
 
 
 @mcp.tool()

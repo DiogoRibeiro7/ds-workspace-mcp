@@ -13,6 +13,7 @@ from ds_workspace_mcp.report_export import (
     compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
+    inspect_latest_modeling_report,
     inspect_saved_modeling_report,
     list_latest_modeling_report_sections,
     list_recent_modeling_reports,
@@ -693,6 +694,38 @@ def test_inspect_saved_modeling_report_returns_metadata(
 def test_inspect_saved_modeling_report_rejects_traversal() -> None:
     with pytest.raises(PathTraversalError, match="inside the reports directory"):
         inspect_saved_modeling_report("../escape.md")
+
+
+def test_inspect_latest_modeling_report_returns_newest_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nBody", encoding="utf-8")
+    newer.write_text("# Newer\n\nLatest body", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    metadata = inspect_latest_modeling_report()
+
+    assert metadata.output_name == "newer.md"
+    assert metadata.output_path == str(newer.resolve())
+    assert metadata.size_bytes > 0
+    assert metadata.modified_at.endswith("+00:00")
+
+
+def test_inspect_latest_modeling_report_rejects_empty_catalog(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(InvalidDatasetNameError, match="No modeling reports found"):
+        inspect_latest_modeling_report()
 
 
 def test_preview_saved_modeling_report_returns_bounded_preview(

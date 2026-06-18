@@ -14,6 +14,7 @@ from ds_workspace_mcp.report_export import (
     compare_saved_modeling_report_sections,
     compare_saved_modeling_reports,
     delete_saved_modeling_report,
+    inspect_latest_modeling_report,
     inspect_saved_modeling_report,
     list_latest_modeling_report_sections,
     list_recent_modeling_reports,
@@ -317,6 +318,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Markdown report file name inside reports/.",
     )
 
+    subparsers.add_parser(
+        "inspect-latest-modeling-report",
+        help="Print metadata for the most recently modified saved markdown modeling report.",
+    )
+
     preview_report_parser = subparsers.add_parser(
         "preview-modeling-report",
         help="Print a bounded preview of one saved markdown modeling report.",
@@ -576,6 +582,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if command == "inspect-modeling-report":
         metadata = inspect_saved_modeling_report(args.output_name)
+        print(json.dumps(metadata.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "inspect-latest-modeling-report":
+        metadata = inspect_latest_modeling_report()
         print(json.dumps(metadata.model_dump(mode="json"), indent=2))
         return 0
 

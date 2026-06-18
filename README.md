@@ -429,6 +429,12 @@ Inspect one saved modeling report:
 poetry run ds-workspace-mcp inspect-modeling-report clinic-usage-report.md
 ```
 
+Inspect the latest saved modeling report:
+
+```bash
+poetry run ds-workspace-mcp inspect-latest-modeling-report
+```
+
 Preview one saved modeling report:
 
 ```bash
@@ -853,6 +859,10 @@ Arguments:
   "output_name": "clinic-usage-report.md"
 }
 ```
+
+#### `inspect_latest_modeling_report`
+
+Return metadata for the most recently modified saved modeling report.
 
 #### `preview_modeling_report`
 

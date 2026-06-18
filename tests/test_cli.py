@@ -642,6 +642,31 @@ def test_cli_inspect_modeling_report(
     assert payload["size_bytes"] > 0
 
 
+def test_cli_inspect_latest_modeling_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nBody", encoding="utf-8")
+    newer.write_text("# Newer\n\nLatest body", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["inspect-latest-modeling-report"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["output_name"] == "newer.md"
+    assert payload["output_path"] == str(newer.resolve())
+    assert payload["size_bytes"] > 0
+    assert payload["modified_at"].endswith("+00:00")
+
+
 def test_cli_preview_modeling_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -256,6 +256,13 @@ def read_latest_modeling_report() -> ReadModelingReport:
     return read_saved_modeling_report(latest_report.output_name)
 
 
+def inspect_latest_modeling_report() -> ModelingReportMetadata:
+    """Return metadata for the most recently modified saved markdown modeling report."""
+
+    latest_report = _get_latest_saved_report()
+    return inspect_saved_modeling_report(latest_report.output_name)
+
+
 def preview_latest_modeling_report() -> PreviewModelingReport:
     """Return a bounded preview of the most recently modified modeling report."""
 

@@ -507,6 +507,20 @@ The following are considered non-breaking:
   - `output_name` must be a single markdown file name inside `reports/`
   - traversal-style paths are rejected
 
+#### `inspect_latest_modeling_report()`
+
+- Stable name: `inspect_latest_modeling_report`
+- Implementation note: the Python function is named `inspect_latest_modeling_report_tool`
+- Purpose: inspect metadata for the most recently modified markdown modeling report saved in the local `reports/` directory
+- Stable result fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `size_bytes: int`
+  - `created_at: str`
+  - `modified_at: str`
+- Stable behavior:
+  - fails clearly when no saved modeling reports exist
+
 #### `preview_modeling_report(output_name: str)`
 
 - Stable name: `preview_modeling_report`
@@ -853,6 +867,8 @@ The `ds-workspace-mcp` console script is public.
   - renames one saved modeling report and prints the new path
 - `ds-workspace-mcp inspect-modeling-report <output_name>`
   - prints metadata for one saved modeling report as JSON
+- `ds-workspace-mcp inspect-latest-modeling-report`
+  - prints metadata for the most recently modified saved modeling report as JSON
 - `ds-workspace-mcp preview-modeling-report <output_name>`
   - prints a bounded preview of one saved modeling report as JSON
 - `ds-workspace-mcp compare-modeling-reports <output_name> <other_output_name>`
