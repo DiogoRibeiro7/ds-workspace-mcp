@@ -847,6 +847,19 @@ The following are considered non-breaking:
   - exact prose may change across patch and minor releases
   - the prompt remains a reusable analysis scaffold, not a machine-parseable schema
 
+#### `modeling_report_review_prompt(output_name: str = "latest", focus: str = "model critique and next steps")`
+
+- Stable name: `modeling_report_review_prompt`
+- Stable return type: text prompt
+- Stable behavior:
+  - references the requested `output_name`
+  - supports `output_name="latest"` to target the most recently modified saved modeling report
+  - includes the requested `focus`
+  - instructs the client to inspect metadata, read the report, review section-level details, and recommend concrete next actions
+- Contract note:
+  - exact prose may change across patch and minor releases
+  - the prompt remains a reusable report-review scaffold, not a machine-parseable schema
+
 ## CLI Contract
 
 The `ds-workspace-mcp` console script is public.

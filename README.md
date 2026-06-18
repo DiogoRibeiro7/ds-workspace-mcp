@@ -1192,6 +1192,21 @@ Arguments:
 }
 ```
 
+#### `modeling_report_review_prompt`
+
+Creates a reusable review prompt for a saved modeling report.
+
+Arguments:
+
+```json
+{
+  "output_name": "clinic-usage-report.md",
+  "focus": "decide whether the report is ready for stakeholder review"
+}
+```
+
+Use `"latest"` for `output_name` to target the most recently modified saved modeling report.
+
 ---
 
 ## Test
