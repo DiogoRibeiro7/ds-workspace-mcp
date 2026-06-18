@@ -29,6 +29,7 @@ from ds_workspace_mcp.report_export import (
     save_latest_modeling_report_section,
     save_modeling_report_dataset,
     save_modeling_report_section,
+    search_latest_modeling_report_content,
     search_saved_modeling_report_content,
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
@@ -542,6 +543,32 @@ def test_read_latest_modeling_report_rejects_empty_catalog(
 
     with pytest.raises(InvalidDatasetNameError, match="No modeling reports found"):
         read_latest_modeling_report()
+
+
+def test_search_latest_modeling_report_content_reads_newest_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nLegacy elevated issue", encoding="utf-8")
+    newer.write_text("# Newer\n\nElevated queue pressure", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    matches = search_latest_modeling_report_content("elevated")
+
+    assert [match.output_name for match in matches] == ["newer.md"]
+    assert matches[0].headline == "Newer"
+    assert "elevated queue pressure" in matches[0].snippet.lower()
+
+
+def test_search_latest_modeling_report_content_rejects_blank_query() -> None:
+    with pytest.raises(InvalidDatasetNameError, match="non-empty string"):
+        search_latest_modeling_report_content("   ")
 
 
 def test_delete_saved_modeling_report_removes_file(

@@ -193,6 +193,30 @@ def test_cli_search_modeling_report_content(
     assert "elevated" in payload[0]["snippet"].lower()
 
 
+def test_cli_search_latest_modeling_report_content(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    older = reports_dir / "older.md"
+    newer = reports_dir / "newer.md"
+    older.write_text("# Older\n\nLegacy elevated issue", encoding="utf-8")
+    newer.write_text("# Newer\n\nElevated queue pressure", encoding="utf-8")
+    os.utime(older, (1_700_000_000, 1_700_000_000))
+    os.utime(newer, (1_800_000_000, 1_800_000_000))
+
+    exit_code = cli.main(["search-latest-modeling-report-content", "elevated"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert [match["output_name"] for match in payload] == ["newer.md"]
+    assert payload[0]["headline"] == "Newer"
+    assert "elevated" in payload[0]["snippet"].lower()
+
+
 def test_cli_search_modeling_report_sections(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

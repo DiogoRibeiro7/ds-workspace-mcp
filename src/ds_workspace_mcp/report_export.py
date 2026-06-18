@@ -208,6 +208,19 @@ def search_saved_modeling_report_content(query: str) -> list[ReportSearchMatch]:
     return sorted(matches, key=lambda match: (match.output_name.lower(), match.output_name))
 
 
+def search_latest_modeling_report_content(query: str) -> list[ReportSearchMatch]:
+    """Return a bounded content match from the newest saved modeling report."""
+
+    if not isinstance(query, str) or not query.strip():
+        raise InvalidDatasetNameError("query must be a non-empty string.")
+
+    latest_report = _get_latest_saved_report()
+    return search_saved_modeling_report_content_in_report(
+        output_name=latest_report.output_name,
+        query=query,
+    )
+
+
 def list_recent_modeling_reports(limit: int = 5) -> list[StoredModelingReport]:
     """Return the most recently modified saved modeling reports."""
 
@@ -391,6 +404,34 @@ def search_saved_modeling_report_sections(query: str) -> list[ModelingReportSect
             match.output_name,
         ),
     )
+
+
+def search_saved_modeling_report_content_in_report(
+    output_name: str,
+    query: str,
+) -> list[ReportSearchMatch]:
+    """Return bounded content matches inside one saved modeling report."""
+
+    if not isinstance(query, str) or not query.strip():
+        raise InvalidDatasetNameError("query must be a non-empty string.")
+
+    path = resolve_existing_report_path(output_name)
+    markdown = path.read_text(encoding="utf-8")
+    normalized_query = query.strip().lower()
+    normalized_markdown = markdown.lower()
+    query_index = normalized_markdown.find(normalized_query)
+    if query_index < 0:
+        return []
+
+    lines = markdown.splitlines()
+    return [
+        ReportSearchMatch(
+            output_name=path.name,
+            output_path=str(path),
+            headline=_extract_headline(lines),
+            snippet=_build_search_snippet(markdown, query_index, len(normalized_query)),
+        )
+    ]
 
 
 def save_modeling_report_section(

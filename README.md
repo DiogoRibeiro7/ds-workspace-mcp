@@ -315,6 +315,12 @@ Search saved modeling report content:
 poetry run ds-workspace-mcp search-modeling-report-content elevated
 ```
 
+Search the latest saved modeling report content:
+
+```bash
+poetry run ds-workspace-mcp search-latest-modeling-report-content elevated
+```
+
 Search saved modeling report sections:
 
 ```bash
@@ -622,6 +628,18 @@ Arguments:
 #### `search_modeling_report_content`
 
 Return saved markdown modeling reports whose content matches a case-insensitive text query.
+
+Arguments:
+
+```json
+{
+  "query": "elevated"
+}
+```
+
+#### `search_latest_modeling_report_content`
+
+Return content matches from the most recently modified saved modeling report.
 
 Arguments:
 

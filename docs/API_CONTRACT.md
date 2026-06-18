@@ -235,6 +235,22 @@ The following are considered non-breaking:
   - `query` must be a non-empty string
   - `snippet` is intentionally bounded and does not guarantee the full matching paragraph
 
+#### `search_latest_modeling_report_content(query: str)`
+
+- Stable name: `search_latest_modeling_report_content`
+- Implementation note: the Python function is named `search_latest_modeling_report_content_tool`
+- Purpose: list bounded content matches from the most recently modified saved modeling report
+- Stable result shape: `list[ReportSearchMatch]`
+- Stable item fields:
+  - `output_name: str`
+  - `output_path: str`
+  - `headline: str`
+  - `snippet: str`
+- Stable behavior:
+  - `query` must be a non-empty string
+  - fails clearly when no saved modeling reports exist
+  - `snippet` is intentionally bounded and does not guarantee the full matching paragraph
+
 #### `search_modeling_report_sections(query: str)`
 
 - Stable name: `search_modeling_report_sections`
@@ -782,6 +798,8 @@ The `ds-workspace-mcp` console script is public.
   - prints matching saved modeling report file names, one per line
 - `ds-workspace-mcp search-modeling-report-content <query>`
   - prints bounded saved modeling report content matches as JSON
+- `ds-workspace-mcp search-latest-modeling-report-content <query>`
+  - prints bounded content matches from the most recently modified saved modeling report as JSON
 - `ds-workspace-mcp search-modeling-report-sections <query>`
   - prints bounded saved modeling report section matches as JSON
 - `ds-workspace-mcp summarize-modeling-report-sections`

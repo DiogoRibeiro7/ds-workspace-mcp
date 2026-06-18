@@ -80,6 +80,7 @@ from ds_workspace_mcp.report_export import (
     save_latest_modeling_report_section,
     save_modeling_report_dataset,
     save_modeling_report_section,
+    search_latest_modeling_report_content,
     search_saved_modeling_report_content,
     search_saved_modeling_report_sections,
     search_saved_modeling_reports,
@@ -485,6 +486,18 @@ def search_modeling_report_content(query: str) -> list[ReportSearchMatch]:
     ):
         logger.info("Tool search_modeling_report_content invoked query=%s", query)
         return search_saved_modeling_report_content(query=query)
+
+
+@mcp.tool()
+def search_latest_modeling_report_content_tool(query: str) -> list[ReportSearchMatch]:
+    """Return content matches from the newest saved modeling report."""
+
+    with traced_operation(
+        "tool.search_latest_modeling_report_content",
+        {"tool.name": "search_latest_modeling_report_content", "tool.query": query},
+    ):
+        logger.info("Tool search_latest_modeling_report_content_tool invoked query=%s", query)
+        return search_latest_modeling_report_content(query=query)
 
 
 @mcp.tool()
