@@ -50,3 +50,35 @@
 - [x] Add security, deployment, and architecture docs.
 - [x] Add dataset, SQL length, and SQL timeout guardrails.
 - [x] Prepare `1.0.0` release metadata and notes.
+
+## v1.1 — Hardening and reliability
+
+- [ ] Enforce query timeouts and cancellation for DuckDB and SQLite execution.
+- [ ] Replace the regex SQL blocklist with DuckDB read-only/sandbox configuration as the primary control, keeping pattern checks as defense in depth.
+- [ ] Cache DuckDB query results by file fingerprint and normalized SQL, mirroring the profile cache.
+- [ ] Add explicit handling and tests for malformed, empty, and mixed-encoding CSV edge cases.
+- [ ] Surface per-tool resource limits (rows, columns, bytes) in error messages consistently.
+
+## v1.2 — Broader data access
+
+- [ ] Support Parquet datasets through the existing safe data-root checks.
+- [ ] Support Excel (`.xlsx`) and JSON datasets for preview and profiling.
+- [ ] Add a safe `group_by` aggregation tool so assistants avoid hand-writing SQL.
+- [ ] Add a bounded query-result export tool that writes a new CSV back into the data directory.
+- [ ] Add a dataset comparison / schema-diff tool for column and dtype drift.
+
+## v1.3 — Richer analytics
+
+- [ ] Add numeric histograms and binning to profiling output.
+- [ ] Add outlier detection (IQR and z-score) and constant/near-constant column flags.
+- [ ] Add duplicate-row detection and key-candidate suggestions.
+- [ ] Add time-series resampling and missing-interval fill suggestions.
+- [ ] Add a seasonal-naive forecast baseline alongside the existing validator.
+
+## v2.0 — Workspace and extensibility
+
+- [ ] Support multiple configured data roots with per-root access policies.
+- [ ] Add optional write-mode workflows behind explicit, audited opt-in.
+- [ ] Add a pluggable tool-registration system for third-party analytical tools.
+- [ ] Add per-client/session rate limiting for HTTP deployments.
+- [ ] Evaluate richer auth (scoped tokens or OAuth) beyond the shared bearer secret.
