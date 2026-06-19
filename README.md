@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/DiogoRibeiro7/ds-workspace-mcp/actions/workflows/ci.yml/badge.svg)
 
-A small but practical **Model Context Protocol (MCP)** server for data science workflows.
+A practical **Model Context Protocol (MCP)** server for data science workflows.
 
 It lets an MCP-compatible assistant safely inspect local CSV datasets through:
 
@@ -12,7 +12,7 @@ It lets an MCP-compatible assistant safely inspect local CSV datasets through:
 - **Report artifact tools** for saving, searching, comparing, extracting, and reusing modeling reports.
 - **Prompts** for reusable dataset analysis instructions.
 
-This project is designed as a clean portfolio-ready starter repo. It is intentionally focused, typed, tested, and safe by default.
+This project is designed as a portfolio-ready MCP product: focused, typed, tested, documented, and safe by default.
 
 ## Current scope
 
@@ -1434,8 +1434,8 @@ Baseline model notes:
 
 ---
 
-## Suggested portfolio positioning
+## Suggested Portfolio Positioning
 
-> An MCP server that lets AI assistants safely inspect, profile, and reason over local analytical datasets.
+> An MCP server that gives AI assistants safe, structured access to local analytical datasets, SQL sources, and reusable modeling report workflows.
 
-This demonstrates AI engineering, data tooling, typed Python, MCP integration, and safe tool design.
+This project demonstrates AI engineering, data tooling, typed Python service design, MCP integration, analytical workflow ergonomics, and security-minded local tool design.
