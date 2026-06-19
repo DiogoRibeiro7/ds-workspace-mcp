@@ -53,6 +53,78 @@ The following are considered non-breaking:
 - Stable behavior: returns newline-separated markdown report file names visible under the local `reports/` directory
 - Empty-state behavior: returns the sentence `No modeling reports found in the local reports directory.`
 
+#### `reports://modeling/latest`
+
+- Stable name: `reports://modeling/latest`
+- Return type: text payload
+- Stable behavior: returns the markdown content of the most recently modified saved modeling report
+- Empty-state behavior: returns the sentence `No modeling reports found in the local reports directory.`
+
+#### `reports://modeling/{output_name}`
+
+- Stable name: `reports://modeling/{output_name}`
+- Return type: text payload
+- Stable behavior: returns the markdown content of one saved modeling report identified by `output_name`
+- Stable parameter:
+  - `output_name: str`
+- Stable behavior notes:
+  - `output_name` must be a single markdown file name inside the configured reports root
+  - traversal-style paths are rejected
+  - missing reports fail clearly
+
+#### `reports://modeling/latest/sections`
+
+- Stable name: `reports://modeling/latest/sections`
+- Return type: structured JSON payload
+- Stable behavior: returns section headings from the most recently modified saved modeling report
+- Stable item fields:
+  - `heading: str`
+  - `level: int`
+- Stable behavior notes:
+  - fails clearly when no saved modeling reports exist
+
+#### `reports://modeling/{output_name}/sections`
+
+- Stable name: `reports://modeling/{output_name}/sections`
+- Return type: structured JSON payload
+- Stable behavior: returns section headings from one saved modeling report identified by `output_name`
+- Stable parameter:
+  - `output_name: str`
+- Stable item fields:
+  - `heading: str`
+  - `level: int`
+- Stable behavior notes:
+  - `output_name` must be a single markdown file name inside the configured reports root
+  - traversal-style paths are rejected
+  - missing reports fail clearly
+
+#### `reports://modeling/latest/sections/{section_heading}`
+
+- Stable name: `reports://modeling/latest/sections/{section_heading}`
+- Return type: text payload
+- Stable behavior: returns one section from the most recently modified saved modeling report as markdown
+- Stable parameter:
+  - `section_heading: str`
+- Stable behavior notes:
+  - `section_heading` must be a non-empty string
+  - fails clearly when no saved modeling reports exist
+  - fails clearly when the requested section is not present
+
+#### `reports://modeling/{output_name}/sections/{section_heading}`
+
+- Stable name: `reports://modeling/{output_name}/sections/{section_heading}`
+- Return type: text payload
+- Stable behavior: returns one section from a saved modeling report as markdown
+- Stable parameters:
+  - `output_name: str`
+  - `section_heading: str`
+- Stable behavior notes:
+  - `output_name` must be a single markdown file name inside the configured reports root
+  - `section_heading` must be a non-empty string
+  - traversal-style paths are rejected
+  - missing reports fail clearly
+  - fails clearly when the requested section is not present
+
 ### Tools
 
 #### `summarize_dataset(file_name: str)`

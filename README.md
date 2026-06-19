@@ -549,6 +549,42 @@ reports://modeling
 
 Returns the list of saved modeling report file names from the local `reports/` directory.
 
+```text
+reports://modeling/latest
+```
+
+Returns the most recently modified saved modeling report as markdown.
+
+```text
+reports://modeling/{output_name}
+```
+
+Returns one saved modeling report as markdown for the requested report file name.
+
+```text
+reports://modeling/latest/sections
+```
+
+Returns section headings from the most recently modified saved modeling report.
+
+```text
+reports://modeling/{output_name}/sections
+```
+
+Returns section headings from one saved modeling report.
+
+```text
+reports://modeling/latest/sections/{section_heading}
+```
+
+Returns one section from the most recently modified saved modeling report as markdown.
+
+```text
+reports://modeling/{output_name}/sections/{section_heading}
+```
+
+Returns one section from a saved modeling report as markdown.
+
 ### Tools
 
 #### `summarize_dataset`
