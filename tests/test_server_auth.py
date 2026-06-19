@@ -13,6 +13,7 @@ def build_settings(tmp_path: Path, api_key: str | None = None) -> Settings:
 
     return Settings(
         mcp_data_root=tmp_path,
+        mcp_reports_root=tmp_path / "reports",
         mcp_transport="streamable-http",
         mcp_host="127.0.0.1",
         mcp_port=8000,
@@ -56,3 +57,13 @@ def test_streamable_http_accepts_valid_api_key(tmp_path: Path) -> None:
         response = client.get("/mcp", headers={"Authorization": "Bearer secret-token"})
 
     assert response.status_code not in {401, 403}
+
+
+def test_create_mcp_reconfigures_runtime_settings(tmp_path: Path) -> None:
+    first = create_mcp(build_settings(tmp_path, api_key=None))
+    second = create_mcp(build_settings(tmp_path, api_key="secret-token"))
+
+    assert first is second
+    assert second.settings.host == "127.0.0.1"
+    assert second.settings.port == 8000
+    assert second.settings.auth is not None

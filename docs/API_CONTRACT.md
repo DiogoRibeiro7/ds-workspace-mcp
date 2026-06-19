@@ -530,7 +530,7 @@ The following are considered non-breaking:
   - `output_name: str`
   - `output_path: str`
   - `size_bytes: int`
-  - `created_at: str`
+  - `metadata_changed_at: str`
   - `modified_at: str`
 - Stable behavior:
   - `output_name` must be a single markdown file name inside `reports/`
@@ -545,7 +545,7 @@ The following are considered non-breaking:
   - `output_name: str`
   - `output_path: str`
   - `size_bytes: int`
-  - `created_at: str`
+  - `metadata_changed_at: str`
   - `modified_at: str`
 - Stable behavior:
   - fails clearly when no saved modeling reports exist
@@ -948,6 +948,7 @@ The `ds-workspace-mcp` console script is public.
 These runtime settings are public and documented:
 
 - `MCP_DATA_ROOT`
+- `MCP_REPORTS_ROOT`
 - `MCP_TRANSPORT`
 - `MCP_HOST`
 - `MCP_PORT`

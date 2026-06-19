@@ -17,6 +17,7 @@ from ds_workspace_mcp.config import (
     DEFAULT_PORT,
     DEFAULT_PROFILE_CACHE_ENABLED,
     DEFAULT_PROFILE_CACHE_MAX_ENTRIES,
+    DEFAULT_REPORTS_ROOT,
     DEFAULT_SQL_TIMEOUT_MS,
     DEFAULT_TRACING_CONSOLE_EXPORTER,
     DEFAULT_TRACING_ENABLED,
@@ -32,6 +33,7 @@ def test_settings_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     settings = get_settings()
 
     assert settings.mcp_data_root == (tmp_path / DEFAULT_DATA_ROOT).resolve()
+    assert settings.mcp_reports_root == (tmp_path / DEFAULT_REPORTS_ROOT).resolve()
     assert settings.mcp_transport == "streamable-http"
     assert settings.mcp_host == DEFAULT_HOST
     assert settings.mcp_port == DEFAULT_PORT
@@ -91,6 +93,20 @@ def test_settings_accept_custom_data_root(
     assert settings.mcp_data_root == custom_root.resolve()
     assert settings.mcp_data_root.exists()
     assert settings.mcp_data_root.is_dir()
+
+
+def test_settings_accept_custom_reports_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    custom_root = tmp_path / "custom-reports"
+    monkeypatch.setenv("MCP_REPORTS_ROOT", str(custom_root))
+
+    settings = get_settings()
+
+    assert settings.mcp_reports_root == custom_root.resolve()
+    assert settings.mcp_reports_root.exists()
+    assert settings.mcp_reports_root.is_dir()
 
 
 def test_settings_treat_blank_api_key_as_disabled(monkeypatch: pytest.MonkeyPatch) -> None:

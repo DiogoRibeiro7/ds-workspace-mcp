@@ -29,7 +29,7 @@ Today the repository covers four practical workflows:
 
 Many AI assistants can reason well, but they need controlled access to real data and real tools.
 
-This MCP server exposes a local analytical workspace without giving the model arbitrary file-system access. The server only reads CSV files from a configured data directory.
+This MCP server exposes a local analytical workspace without giving the model arbitrary file-system access. The server only reads CSV files from a configured data directory, and saved modeling reports live under a separate configured reports directory.
 
 Good use cases:
 
@@ -95,6 +95,7 @@ poetry install
 The server reads configuration from environment variables or a local `.env` file.
 
 - `MCP_DATA_ROOT`: directory that contains readable datasets. Defaults to `data`.
+- `MCP_REPORTS_ROOT`: directory that contains saved modeling reports. Defaults to `reports`.
 - `MCP_TRANSPORT`: `stdio` or `streamable-http`. Defaults to `streamable-http`.
 - `MCP_HOST`: bind host for HTTP mode. Defaults to `127.0.0.1`.
 - `MCP_PORT`: bind port for HTTP mode. Defaults to `8000`.
@@ -116,6 +117,7 @@ Example:
 
 ```bash
 MCP_DATA_ROOT=./data
+MCP_REPORTS_ROOT=./reports
 MCP_TRANSPORT=streamable-http
 MCP_HOST=127.0.0.1
 MCP_PORT=8000

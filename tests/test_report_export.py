@@ -111,6 +111,24 @@ def test_list_saved_modeling_reports_returns_sorted_reports(
     assert reports[0].size_bytes == 2
 
 
+def test_list_saved_modeling_reports_uses_configured_reports_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    reports_root = tmp_path / "custom-reports"
+    reports_root.mkdir()
+    monkeypatch.chdir(workspace)
+    monkeypatch.setenv("MCP_REPORTS_ROOT", str(reports_root))
+    (reports_root / "configured-report.md").write_text("body", encoding="utf-8")
+
+    reports = list_saved_modeling_reports()
+
+    assert [report.output_name for report in reports] == ["configured-report.md"]
+    assert reports[0].output_path == str((reports_root / "configured-report.md").resolve())
+
+
 def test_read_saved_modeling_report_returns_markdown(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -782,7 +800,7 @@ def test_inspect_saved_modeling_report_returns_metadata(
     assert metadata.output_name == "inspect-me.md"
     assert metadata.output_path == str(report_path.resolve())
     assert metadata.size_bytes > 0
-    assert metadata.created_at.endswith("+00:00")
+    assert metadata.metadata_changed_at.endswith("+00:00")
     assert metadata.modified_at.endswith("+00:00")
 
 

@@ -6,10 +6,9 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from ds_workspace_mcp.config import get_settings
 from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalError
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
-
-REPORTS_DIR = Path("reports")
 
 
 class SavedModelingReport(BaseModel):
@@ -69,7 +68,7 @@ class ModelingReportMetadata(BaseModel):
     output_name: str
     output_path: str
     size_bytes: int
-    created_at: str
+    metadata_changed_at: str
     modified_at: str
 
 
@@ -664,8 +663,7 @@ def save_modeling_report_dataset(
 def list_saved_modeling_reports() -> list[StoredModelingReport]:
     """List markdown modeling reports saved inside the local reports directory."""
 
-    reports_root = REPORTS_DIR.resolve()
-    reports_root.mkdir(parents=True, exist_ok=True)
+    reports_root = _get_reports_root()
     reports: list[StoredModelingReport] = []
     for path in sorted(reports_root.glob("*.md")):
         if not path.is_file():
@@ -773,7 +771,7 @@ def inspect_saved_modeling_report(output_name: str) -> ModelingReportMetadata:
         output_name=path.name,
         output_path=str(path),
         size_bytes=stat.st_size,
-        created_at=_format_timestamp(stat.st_ctime),
+        metadata_changed_at=_format_timestamp(stat.st_ctime),
         modified_at=_format_timestamp(stat.st_mtime),
     )
 
@@ -803,8 +801,7 @@ def resolve_report_output_path(
 ) -> Path:
     """Resolve a safe markdown output path inside the reports directory."""
 
-    reports_root = REPORTS_DIR.resolve()
-    reports_root.mkdir(parents=True, exist_ok=True)
+    reports_root = _get_reports_root()
 
     candidate_name = output_name or _default_output_name(file_name, target_column)
     if not isinstance(candidate_name, str) or not candidate_name.strip():
@@ -823,8 +820,7 @@ def resolve_report_output_path(
 def resolve_existing_report_path(output_name: str) -> Path:
     """Resolve one existing markdown report inside the reports directory."""
 
-    reports_root = REPORTS_DIR.resolve()
-    reports_root.mkdir(parents=True, exist_ok=True)
+    reports_root = _get_reports_root()
 
     if not isinstance(output_name, str) or not output_name.strip():
         raise InvalidDatasetNameError("output_name must be a non-empty string.")
@@ -844,8 +840,7 @@ def resolve_existing_report_path(output_name: str) -> Path:
 def resolve_report_target_path(output_name: str) -> Path:
     """Resolve a target markdown report path inside the reports directory."""
 
-    reports_root = REPORTS_DIR.resolve()
-    reports_root.mkdir(parents=True, exist_ok=True)
+    reports_root = _get_reports_root()
 
     if not isinstance(output_name, str) or not output_name.strip():
         raise InvalidDatasetNameError("output_name must be a non-empty string.")
@@ -900,6 +895,12 @@ def _extract_headline(lines: list[str]) -> str:
         if stripped.startswith("# "):
             return stripped.removeprefix("# ").strip()
     return "Untitled modeling report"
+
+
+def _get_reports_root() -> Path:
+    """Return the configured reports root."""
+
+    return get_settings().mcp_reports_root
 
 
 def _get_latest_saved_report() -> StoredModelingReport:

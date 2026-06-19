@@ -11,6 +11,7 @@ Transport = Literal["stdio", "streamable-http"]
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 DEFAULT_DATA_ROOT = Path("data")
+DEFAULT_REPORTS_ROOT = Path("reports")
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8000
 DEFAULT_MAX_PREVIEW_ROWS = 50
@@ -37,6 +38,7 @@ class Settings(BaseSettings):
     )
 
     mcp_data_root: Path = DEFAULT_DATA_ROOT
+    mcp_reports_root: Path = DEFAULT_REPORTS_ROOT
     mcp_transport: Transport = "streamable-http"
     mcp_host: str = DEFAULT_HOST
     mcp_port: int = DEFAULT_PORT
@@ -62,6 +64,17 @@ class Settings(BaseSettings):
         resolved = value.expanduser().resolve()
         if resolved.exists() and not resolved.is_dir():
             raise ValueError("MCP_DATA_ROOT must point to a directory.")
+        resolved.mkdir(parents=True, exist_ok=True)
+        return resolved
+
+    @field_validator("mcp_reports_root", mode="after")
+    @classmethod
+    def validate_reports_root(cls, value: Path) -> Path:
+        """Resolve the reports root and ensure it is a directory."""
+
+        resolved = value.expanduser().resolve()
+        if resolved.exists() and not resolved.is_dir():
+            raise ValueError("MCP_REPORTS_ROOT must point to a directory.")
         resolved.mkdir(parents=True, exist_ok=True)
         return resolved
 

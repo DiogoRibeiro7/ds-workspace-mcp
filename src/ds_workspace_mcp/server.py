@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.server import Settings as FastMCPSettings
 
 from ds_workspace_mcp.auth import build_http_auth
 from ds_workspace_mcp.config import Settings, Transport, get_settings
@@ -116,23 +117,38 @@ from ds_workspace_mcp.tracing import configure_tracing, traced_operation
 
 logger = logging.getLogger(__name__)
 
+mcp = FastMCP(
+    "Data Science Workspace MCP",
+    json_response=True,
+)
+
 
 def create_mcp(settings: Settings) -> FastMCP:
-    """Create the MCP server with validated runtime settings."""
+    """Configure the shared MCP server with validated runtime settings."""
 
     auth_settings, token_verifier = build_http_auth(settings)
-    return FastMCP(
-        "Data Science Workspace MCP",
-        json_response=True,
+    mcp.settings = FastMCPSettings(
+        debug=mcp.settings.debug,
+        log_level=settings.mcp_log_level,
         host=settings.mcp_host,
         port=settings.mcp_port,
-        log_level=settings.mcp_log_level,
+        mount_path=mcp.settings.mount_path,
+        sse_path=mcp.settings.sse_path,
+        message_path=mcp.settings.message_path,
+        streamable_http_path=mcp.settings.streamable_http_path,
+        json_response=True,
         auth=auth_settings,
-        token_verifier=token_verifier,
+        stateless_http=mcp.settings.stateless_http,
+        warn_on_duplicate_resources=mcp.settings.warn_on_duplicate_resources,
+        warn_on_duplicate_tools=mcp.settings.warn_on_duplicate_tools,
+        warn_on_duplicate_prompts=mcp.settings.warn_on_duplicate_prompts,
+        dependencies=mcp.settings.dependencies,
+        lifespan=mcp.settings.lifespan,
+        transport_security=mcp.settings.transport_security,
     )
-
-
-mcp = create_mcp(get_settings())
+    mcp._token_verifier = token_verifier
+    mcp._session_manager = None
+    return mcp
 
 
 @mcp.resource("datasets://catalog")
@@ -1295,6 +1311,7 @@ def main() -> None:
     settings = get_settings()
     configure_logging(settings)
     configure_tracing(settings)
+    server = create_mcp(settings)
     logger.info(
         "Starting MCP server transport=%s host=%s port=%s auth_enabled=%s",
         settings.mcp_transport,
@@ -1302,7 +1319,7 @@ def main() -> None:
         settings.mcp_port,
         settings.mcp_transport == "streamable-http" and settings.mcp_api_key is not None,
     )
-    mcp.run(transport=get_transport())
+    server.run(transport=get_transport())
 
 
 if __name__ == "__main__":
