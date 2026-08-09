@@ -402,7 +402,7 @@ def rename_modeling_report(
         },
     ):
         logger.info(
-            "Tool rename_modeling_report invoked output_name=%s new_output_name=%s " "overwrite=%s",
+            "Tool rename_modeling_report invoked output_name=%s new_output_name=%s overwrite=%s",
             output_name,
             new_output_name,
             overwrite,
