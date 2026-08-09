@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-08-09
+
 ### Added
 
 - Added Zenodo and GitHub citation metadata.
@@ -16,6 +18,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Changed
 
 - Documented the repository quality gate and aligned pull request expectations with CI.
+- Migrated package metadata to PEP 621 `[project]` fields to remove Poetry 2 deprecation warnings.
+- Refreshed dependency lock metadata after Dependabot maintenance updates.
 
 ## [1.0.1] - 2026-06-16
 

@@ -1,6 +1,7 @@
 {
   "title": "Data Science Workspace MCP Server",
   "upload_type": "software",
+  "version": "1.0.2",
   "description": "A Model Context Protocol server for safely inspecting and profiling local analytical datasets.",
   "creators": [
     {
