@@ -147,6 +147,16 @@ Responsibilities:
 - classifies time series as regular, approximately regular, irregular, insufficient, or grouped heterogeneous before counting missing intervals
 - emits baseline-readiness warnings for time-series workflows
 
+### `forecasting.py`
+
+Responsibilities:
+
+- evaluates transparent last-value, seasonal-naive, and drift forecast baselines
+- uses chronological rolling-origin backtesting rather than shuffled evaluation
+- rejects irregular frequencies instead of fabricating forecast scores
+- supports bounded grouped series and reports per-group plus aggregate metrics
+- documents MAE, RMSE, MASE, and sMAPE conventions in the structured result
+
 ### `ml/baselines.py`
 
 Responsibilities:
@@ -190,6 +200,7 @@ Responsibilities:
    - `diagnostics.py` for heuristics
    - `sql/duckdb_engine.py` for SQL
    - `timeseries.py` for forecasting-readiness checks
+   - `forecasting.py` for transparent forecast baseline evaluation
    - `ml/baselines.py` for dummy model evaluation
 5. Structured results are returned through FastMCP as JSON.
 

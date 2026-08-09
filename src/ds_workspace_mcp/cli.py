@@ -8,6 +8,7 @@ from pathlib import Path
 from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
 from ds_workspace_mcp.drift import compare_datasets_dataset
 from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
+from ds_workspace_mcp.forecasting import evaluate_forecast_baselines_dataset
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.report_export import (
     compare_latest_modeling_report_sections,
@@ -75,6 +76,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     compare_datasets_parser.add_argument("left_file_name", help="Baseline dataset file name.")
     compare_datasets_parser.add_argument("right_file_name", help="Comparison dataset file name.")
+
+    forecast_parser = subparsers.add_parser(
+        "evaluate-forecast-baselines",
+        help="Evaluate transparent time-ordered forecast baselines.",
+    )
+    forecast_parser.add_argument("file_name", help="CSV dataset file name.")
+    forecast_parser.add_argument("--time-column", required=True, help="Timestamp column name.")
+    forecast_parser.add_argument("--target-column", required=True, help="Numeric target column.")
+    forecast_parser.add_argument("--group-column", help="Optional grouped series column.")
+    forecast_parser.add_argument(
+        "--forecast-horizon",
+        type=int,
+        default=1,
+        help="Forecast horizon in regular series steps.",
+    )
+    forecast_parser.add_argument(
+        "--test-size",
+        type=float,
+        default=0.2,
+        help="Fraction of newest observations to evaluate.",
+    )
+    forecast_parser.add_argument(
+        "--seasonal-period",
+        type=int,
+        help="Optional explicit seasonal period in regular series steps.",
+    )
 
     plan_parser = subparsers.add_parser(
         "plan-modeling",
@@ -496,6 +523,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             right_file_name=args.right_file_name,
         )
         print(json.dumps(comparison.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "evaluate-forecast-baselines":
+        forecast_result = evaluate_forecast_baselines_dataset(
+            file_name=args.file_name,
+            time_column=args.time_column,
+            target_column=args.target_column,
+            group_column=args.group_column,
+            forecast_horizon=args.forecast_horizon,
+            test_size=args.test_size,
+            seasonal_period=args.seasonal_period,
+        )
+        print(json.dumps(forecast_result.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "plan-modeling":
