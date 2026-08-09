@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
+from ds_workspace_mcp.cache import ProfileCache, ProfileCacheConfig, ProfileCacheKey
 from ds_workspace_mcp.core import profile_cache, profile_csv_dataset
+from ds_workspace_mcp.profiling import DatasetProfile, ProfilingLimits
 
 
 def write_cached_dataset(
@@ -22,6 +25,33 @@ def write_cached_dataset(
         index=False,
     )
     return path
+
+
+def make_cache_key(
+    root: Path,
+    name: str,
+    size: int = 1,
+    modified_time_ns: int = 1,
+) -> ProfileCacheKey:
+    return ProfileCacheKey(
+        path=root / name,
+        file_size=size,
+        modified_time_ns=modified_time_ns,
+        max_categorical_values=10,
+    )
+
+
+def make_profile(name: str) -> DatasetProfile:
+    return DatasetProfile(
+        file_name=name,
+        row_count=1,
+        column_count=1,
+        columns=["value"],
+        dtypes={"value": "int64"},
+        missing_values={"value": 0},
+        missing_percentage={"value": 0.0},
+        profiling_limits=ProfilingLimits(max_categorical_values=10),
+    )
 
 
 def test_profile_cache_reuses_cached_entry(
@@ -97,3 +127,88 @@ def test_profile_cache_respects_max_entries(
 
     profile_csv_dataset("b.csv")
     assert len(profile_cache) == 1
+
+
+def test_profile_cache_exposes_path_free_stats(tmp_path: Path) -> None:
+    cache = ProfileCache(enabled=True, max_entries=2)
+    key = make_cache_key(tmp_path, "private.csv")
+
+    assert cache.get(key) is None
+    cache.set(key, make_profile("private.csv"))
+    assert cache.get(key) is not None
+
+    stats = cache.stats()
+
+    assert stats.hits == 1
+    assert stats.misses == 1
+    assert stats.evictions == 0
+    assert stats.current_entries == 1
+    assert str(tmp_path) not in repr(stats)
+
+
+def test_profile_cache_lru_eviction_is_explicit(tmp_path: Path) -> None:
+    cache = ProfileCache(enabled=True, max_entries=2)
+    first_key = make_cache_key(tmp_path, "first.csv")
+    second_key = make_cache_key(tmp_path, "second.csv")
+    third_key = make_cache_key(tmp_path, "third.csv")
+
+    cache.set(first_key, make_profile("first.csv"))
+    cache.set(second_key, make_profile("second.csv"))
+    assert cache.get(first_key) is not None
+    cache.set(third_key, make_profile("third.csv"))
+
+    assert cache.get(second_key) is None
+    assert cache.get(first_key) is not None
+    assert cache.get(third_key) is not None
+    assert cache.stats().evictions == 1
+
+
+def test_profile_cache_configuration_trims_entries_and_can_disable(tmp_path: Path) -> None:
+    cache = ProfileCache(enabled=True, max_entries=3)
+    first_key = make_cache_key(tmp_path, "first.csv")
+    second_key = make_cache_key(tmp_path, "second.csv")
+    third_key = make_cache_key(tmp_path, "third.csv")
+    for key in (first_key, second_key, third_key):
+        cache.set(key, make_profile(key.path.name))
+
+    cache.configure(ProfileCacheConfig(enabled=True, max_entries=1))
+
+    assert len(cache) == 1
+    assert cache.stats().evictions == 2
+
+    cache.configure(enabled=False)
+
+    assert len(cache) == 0
+    assert cache.stats().enabled is False
+
+
+def test_profile_cache_invalidate_removes_one_entry(tmp_path: Path) -> None:
+    cache = ProfileCache(enabled=True, max_entries=2)
+    key = make_cache_key(tmp_path, "cache.csv")
+
+    cache.set(key, make_profile("cache.csv"))
+
+    assert cache.invalidate(key) is True
+    assert cache.invalidate(key) is False
+    assert len(cache) == 0
+
+
+def test_profile_cache_concurrent_access_cannot_corrupt_state(tmp_path: Path) -> None:
+    cache = ProfileCache(enabled=True, max_entries=8)
+    keys = [make_cache_key(tmp_path, f"{index}.csv", size=index + 1) for index in range(24)]
+
+    def touch_cache(index: int) -> None:
+        key = keys[index % len(keys)]
+        cache.configure(enabled=True, max_entries=8)
+        cache.set(key, make_profile(key.path.name))
+        cache.get(key)
+        if index % 5 == 0:
+            cache.invalidate(keys[(index + 1) % len(keys)])
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        list(executor.map(touch_cache, range(200)))
+
+    stats = cache.stats()
+    assert stats.current_entries <= stats.max_entries
+    assert stats.hits > 0
+    assert stats.evictions > 0

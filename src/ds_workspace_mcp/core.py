@@ -64,7 +64,7 @@ def get_data_root() -> Path:
 def reset_profile_cache() -> None:
     """Clear the profile cache for tests or runtime resets."""
 
-    profile_cache.clear()
+    profile_cache.clear(reset_metrics=True)
 
 
 def resolve_dataset_path(file_name: str) -> Path:
@@ -215,8 +215,10 @@ def profile_csv_dataset(file_name: str) -> DatasetProfile:
             max_categorical_values=settings.mcp_max_categorical_values,
         )
 
-        profile_cache._enabled = settings.mcp_profile_cache_enabled
-        profile_cache._max_entries = settings.mcp_profile_cache_max_entries
+        profile_cache.configure(
+            enabled=settings.mcp_profile_cache_enabled,
+            max_entries=settings.mcp_profile_cache_max_entries,
+        )
 
         cached_profile = profile_cache.get(cache_key)
         if cached_profile is not None:
