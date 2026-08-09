@@ -64,6 +64,7 @@ ds-workspace-mcp/
 │       ├── overview.py
 │       ├── profiling.py
 │       ├── report_export.py
+│       ├── reports/
 │       ├── server.py
 │       ├── timeseries.py
 │       ├── ml/

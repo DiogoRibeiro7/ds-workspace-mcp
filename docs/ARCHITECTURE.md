@@ -123,6 +123,18 @@ Responsibilities:
 - validates split-specific arguments and reports metadata explaining how metrics were produced
 - returns structured metrics for comparison against future models
 
+### `reports/`
+
+Responsibilities:
+
+- keeps report Pydantic models in `reports/models.py`, separate from filesystem I/O
+- stores and resolves markdown artifacts through `reports/storage.py` and `reports/paths.py`
+- parses markdown sections in `reports/parsing.py`, including repeated headings, nested sections, empty sections, and fenced code blocks
+- compares reports and extracted sections through pure diff helpers in `reports/diff.py`
+- keeps report rendering in `reports/rendering.py`, while catalog and section workflows live in `reports/catalog.py` and `reports/sections.py`
+
+`report_export.py` and `report_storage.py` remain compatibility facades for existing imports.
+
 ### Supporting modules
 
 - `auth.py`: optional shared-token auth for HTTP mode
