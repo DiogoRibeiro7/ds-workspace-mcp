@@ -16,17 +16,16 @@ DEFAULT_DATASET_NAME = os.getenv("MCP_EXAMPLE_DATASET", "sample_clinic_usage.csv
 async def main() -> None:
     """Connect to the local server over Streamable HTTP and inspect one dataset."""
 
-    client_kwargs: dict[str, object] = {}
+    headers: dict[str, str] = {}
     api_key = os.getenv("MCP_API_KEY")
     if api_key:
-        client_kwargs["headers"] = {"Authorization": f"Bearer {api_key}"}
-    client_kwargs["follow_redirects"] = True
+        headers["Authorization"] = f"Bearer {api_key}"
 
     dataset_name = DEFAULT_DATASET_NAME
 
     try:
         async with (
-            httpx.AsyncClient(**client_kwargs) as client,
+            httpx.AsyncClient(headers=headers or None, follow_redirects=True) as client,
             streamable_http_client(
                 SERVER_URL,
                 http_client=client,
