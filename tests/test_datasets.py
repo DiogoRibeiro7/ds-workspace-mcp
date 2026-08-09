@@ -22,7 +22,13 @@ class JsonDatasetReader:
     extensions: tuple[str, ...] = (".json",)
     can_query: bool = False
 
-    def load_frame(self, path: Path, *, nrows: int | None = None) -> pd.DataFrame:
+    def load_frame(
+        self,
+        ref: DatasetRef,
+        path: Path,
+        *,
+        nrows: int | None = None,
+    ) -> pd.DataFrame:
         frame = pd.read_json(path)
         return frame.head(nrows) if nrows is not None else frame
 

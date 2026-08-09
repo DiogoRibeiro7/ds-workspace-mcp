@@ -109,7 +109,7 @@ def query_dataset_with_duckdb(
         expected_format=expected_format,
         unsupported_message=unsupported_message,
     )
-    df = resolved.reader.load_frame(resolved.path)
+    df = resolved.reader.load_frame(resolved.ref, resolved.path)
 
     logger.info(
         "Executing DuckDB query for file_name=%s requested_limit=%s applied_limit=%s",

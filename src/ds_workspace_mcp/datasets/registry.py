@@ -23,7 +23,13 @@ class DatasetReader(Protocol):
     extensions: tuple[str, ...]
     can_query: bool
 
-    def load_frame(self, path: Path, *, nrows: int | None = None) -> pd.DataFrame:
+    def load_frame(
+        self,
+        ref: DatasetRef,
+        path: Path,
+        *,
+        nrows: int | None = None,
+    ) -> pd.DataFrame:
         """Load a bounded frame from a resolved dataset path."""
 
     def fingerprint(self, path: Path) -> DatasetFingerprint:
@@ -87,7 +93,7 @@ class DatasetRegistry:
     ) -> ResolvedDataset:
         """Resolve a dataset reference and select the matching reader."""
 
-        path = (self.data_root / ref.file_name).resolve()
+        path = (self.data_root / ref.path_name).resolve()
         if path != self.data_root and self.data_root not in path.parents:
             raise PathTraversalError("Access outside the configured data directory is not allowed.")
 
@@ -98,9 +104,9 @@ class DatasetRegistry:
             )
 
         if not path.exists():
-            raise DatasetNotFoundError(f"Dataset not found: {ref.file_name}")
+            raise DatasetNotFoundError(f"Dataset not found: {ref.path_name}")
         if not path.is_file():
-            raise DatasetNotFoundError(f"Dataset not found: {ref.file_name}")
+            raise DatasetNotFoundError(f"Dataset not found: {ref.path_name}")
 
         self._validate_dataset_file_size(path)
         return ResolvedDataset(ref=ref, path=path, format=reader.format, reader=reader)
@@ -136,7 +142,7 @@ class DatasetRegistry:
             expected_format=expected_format,
             unsupported_message=unsupported_message,
         )
-        return resolved.reader.load_frame(resolved.path, nrows=nrows)
+        return resolved.reader.load_frame(resolved.ref, resolved.path, nrows=nrows)
 
     def fingerprint(
         self,

@@ -86,6 +86,7 @@ EXPECTED_TOOL_NAMES = [
     "inspect_dataset_file",
     "inspect_latest_modeling_report_tool",
     "inspect_modeling_report",
+    "list_excel_sheets_tool",
     "list_latest_modeling_report_sections_tool",
     "list_modeling_report_sections",
     "list_modeling_reports",
@@ -220,6 +221,7 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "row_count",
         "column_count",
         "columns",
+        "format_metadata",
     ],
     "DatasetOverview": [
         "file_name",

@@ -23,7 +23,13 @@ class ParquetDatasetReader:
     extensions: tuple[str, ...] = (".parquet",)
     can_query: bool = True
 
-    def load_frame(self, path: Path, *, nrows: int | None = None) -> pd.DataFrame:
+    def load_frame(
+        self,
+        ref: DatasetRef,
+        path: Path,
+        *,
+        nrows: int | None = None,
+    ) -> pd.DataFrame:
         """Load a bounded Parquet frame through DuckDB."""
 
         query = "SELECT * FROM read_parquet(?)"

@@ -7,6 +7,7 @@ from ds_workspace_mcp.core import (
     DatasetPreview,
     detect_csv_dataset_issues,
     inspect_dataset,
+    list_excel_sheets,
     preview_csv_dataset,
     preview_dataset,
 )
@@ -65,6 +66,18 @@ def inspect_dataset_file(file_name: str) -> DatasetMetadata:
     ):
         logger.info("Tool inspect_dataset_file invoked file_name=%s", file_name)
         return inspect_dataset(file_name=file_name)
+
+
+@_mcp_tool()
+def list_excel_sheets_tool(file_name: str) -> list[str]:
+    """List sheet names for one `.xlsx` dataset."""
+
+    with traced_operation(
+        "tool.list_excel_sheets",
+        {"tool.name": "list_excel_sheets", "dataset.file_name": file_name},
+    ):
+        logger.info("Tool list_excel_sheets invoked file_name=%s", file_name)
+        return list_excel_sheets(file_name=file_name)
 
 
 @_mcp_tool()
