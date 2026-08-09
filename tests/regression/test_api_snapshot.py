@@ -9,7 +9,7 @@ from ds_workspace_mcp.core import DatasetIssue, DatasetPreview
 from ds_workspace_mcp.diagnostics import CorrelationSummary, LeakageSummary
 from ds_workspace_mcp.experiment_plan import ExperimentPlanResult
 from ds_workspace_mcp.feature_selection import FeatureSelectionResult
-from ds_workspace_mcp.ml.baselines import BaselineEvaluationResult
+from ds_workspace_mcp.ml.baselines import BaselineEvaluationResult, ValidationSplitMetadata
 from ds_workspace_mcp.modeling_readiness import ModelingReadinessResult
 from ds_workspace_mcp.modeling_report import ModelingReportResult
 from ds_workspace_mcp.overview import DatasetOverview
@@ -162,6 +162,7 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "test_rows",
         "regression_metrics",
         "classification_metrics",
+        "validation",
     ],
     "ComparedModelingReport": [
         "output_name",
@@ -227,6 +228,9 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "target_source",
         "suggested_task_type",
         "validation_strategy",
+        "recommended_validation_strategy",
+        "recommended_time_column",
+        "recommended_group_column",
         "feature_columns",
         "review_columns",
         "risks",
@@ -251,6 +255,9 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "target_source",
         "suggested_task_type",
         "validation_strategy",
+        "recommended_validation_strategy",
+        "recommended_time_column",
+        "recommended_group_column",
         "target_candidate",
         "target_suggestions",
         "feature_selection",
@@ -341,6 +348,22 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "group_summaries",
         "warnings",
     ],
+    "ValidationSplitMetadata": [
+        "strategy",
+        "test_size",
+        "random_state",
+        "shuffle",
+        "stratified",
+        "time_column",
+        "group_column",
+        "train_start_time",
+        "train_end_time",
+        "test_start_time",
+        "test_end_time",
+        "train_group_count",
+        "test_group_count",
+        "group_overlap",
+    ],
 }
 
 RESULT_MODELS: list[type[BaseModel]] = [
@@ -379,6 +402,7 @@ RESULT_MODELS: list[type[BaseModel]] = [
     StoredModelingReport,
     TargetSuggestionResult,
     TimeSeriesValidationResult,
+    ValidationSplitMetadata,
 ]
 
 

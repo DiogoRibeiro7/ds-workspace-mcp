@@ -205,6 +205,9 @@ The following are considered non-breaking:
   - `target_source: str`
   - `suggested_task_type: str`
   - `validation_strategy: str`
+  - `recommended_validation_strategy: str`
+  - `recommended_time_column: str | null`
+  - `recommended_group_column: str | null`
   - `target_candidate: TargetCandidate | null`
   - `target_suggestions: list[TargetCandidate]`
   - `feature_selection: FeatureSelectionResult`
@@ -213,7 +216,8 @@ The following are considered non-breaking:
   - `summary: str`
 - Heuristic notes:
   - when `target_column` is omitted, the tool uses the top suggested target candidate
-  - validation strategy is advisory and may prefer time-series review when datetime context and regression-style targets are both present
+  - `validation_strategy` preserves advisory readiness language, while `recommended_validation_strategy` maps to an executable baseline split strategy
+  - time-series review maps to chronological baseline validation with `recommended_time_column` populated when a datetime column is detected
   - this tool summarizes downstream heuristics and does not replace manual target or feature judgment
 
 #### `build_experiment_plan(file_name: str, target_column: str | None = None)`
@@ -226,6 +230,9 @@ The following are considered non-breaking:
   - `target_source: str`
   - `suggested_task_type: str`
   - `validation_strategy: str`
+  - `recommended_validation_strategy: str`
+  - `recommended_time_column: str | null`
+  - `recommended_group_column: str | null`
   - `feature_columns: list[str]`
   - `review_columns: list[str]`
   - `risks: list[str]`
@@ -239,6 +246,7 @@ The following are considered non-breaking:
 - Heuristic notes:
   - model suggestions are planning guidance, not implemented training pipelines
   - baseline model names may refer to standard model families rather than built-in MCP execution capabilities
+  - recommended validation fields are directly consumable by `evaluate_baseline_model`
   - when `target_column` is omitted, the plan uses the top suggested target candidate
 
 #### `build_modeling_report(file_name: str, target_column: str | None = None)`
@@ -878,7 +886,7 @@ The following are considered non-breaking:
   - inferred frequency and missing-interval counts are best-effort summaries
   - history sufficiency warnings are baseline-readiness guidance, not modeling guarantees
 
-#### `evaluate_baseline_model(file_name: str, target_column: str, task_type: str, test_size: float = 0.2, random_state: int = 42)`
+#### `evaluate_baseline_model(file_name: str, target_column: str, task_type: str, test_size: float = 0.2, random_state: int = 42, validation_strategy: str | None = None, time_column: str | None = None, group_column: str | None = None, shuffle: bool | None = None)`
 
 - Stable name: `evaluate_baseline_model`
 - Supported `task_type` values:
@@ -893,6 +901,27 @@ The following are considered non-breaking:
   - `test_rows: int`
   - `regression_metrics: RegressionMetrics | null`
   - `classification_metrics: ClassificationMetrics | null`
+  - `validation: ValidationSplitMetadata`
+- Supported `validation_strategy` values:
+  - `random`
+  - `stratified`
+  - `chronological`
+  - `grouped`
+- Stable validation metadata fields:
+  - `strategy: str`
+  - `test_size: float`
+  - `random_state: int | null`
+  - `shuffle: bool`
+  - `stratified: bool`
+  - `time_column: str | null`
+  - `group_column: str | null`
+  - `train_start_time: str | null`
+  - `train_end_time: str | null`
+  - `test_start_time: str | null`
+  - `test_end_time: str | null`
+  - `train_group_count: int | null`
+  - `test_group_count: int | null`
+  - `group_overlap: bool | null`
 - Stable regression metric fields:
   - `mae: float`
   - `rmse: float`
@@ -903,6 +932,9 @@ The following are considered non-breaking:
   - `macro_f1: float`
 - Heuristic notes:
   - this tool uses dummy baselines only
+  - classification defaults to stratified validation when class support and split size make it feasible
+  - chronological validation requires `time_column`, sorts stably, never shuffles, and holds out the newest observations
+  - grouped validation requires `group_column` and reports whether group membership overlaps across train and test
   - metric values are comparison baselines, not target production quality thresholds
 
 ### Prompts
