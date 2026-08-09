@@ -59,7 +59,9 @@ Responsibilities:
 
 Responsibilities:
 
-- validates safe DuckDB SQL
+- applies DuckDB connection-level security policy before user SQL executes
+- parses user SQL and validates base relation references against an explicit allowlist
+- rejects external scan functions and destructive SQL as defense in depth
 - registers the CSV as a temporary `dataset` table
 - executes bounded read-only analytical queries
 - normalizes tabular results into JSON-friendly rows
@@ -156,7 +158,8 @@ Responsibilities:
 
 - environment validation happens in `config.py`
 - path and file-type validation happen in `core.py` and `sqlite_engine.py`
-- SQL validation happens before query execution
+- DuckDB SQL validation combines engine settings, parsed relation allowlisting, and defense-in-depth statement/function rejection before query execution
+- SQLite SQL validation happens before query execution and SQLite databases are opened read-only
 
 ### Observability
 
@@ -171,6 +174,6 @@ Responsibilities:
 ## Design Tradeoffs
 
 - pandas-first CSV handling keeps the implementation simple, but very large files may still be expensive
-- SQL validation is pragmatic and bounded, not a formal sandbox
+- DuckDB SQL validation uses structural parsing for relation access, but query complexity and resource exhaustion still require operational limits
 - auth is intentionally minimal to support local and small self-hosted use without introducing a full identity layer
 - heuristics are exposed because analytical guidance is useful, but they are documented as non-authoritative

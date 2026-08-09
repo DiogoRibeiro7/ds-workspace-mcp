@@ -23,5 +23,6 @@ The highest priority issues are:
 ## Hardening Expectations
 
 - All read paths must stay inside the configured data root.
-- SQL tools must remain read-only and bounded.
+- DuckDB query execution must keep external access and extension loading disabled, validate parsed relation access against the registered in-memory `dataset` relation, and keep destructive/function blocklists as defense in depth.
+- SQLite query execution must use read-only connections and bounded single-statement queries.
 - User-facing errors should avoid leaking unnecessary local path details.

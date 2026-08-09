@@ -8,7 +8,10 @@ from typing import cast
 
 import duckdb
 import pandas as pd
+import sqlglot
 from pydantic import BaseModel, Field
+from sqlglot import exp
+from sqlglot.errors import ParseError
 
 from ds_workspace_mcp.config import get_settings
 from ds_workspace_mcp.core import read_csv_dataset
@@ -18,13 +21,34 @@ from ds_workspace_mcp.tracing import traced_operation
 logger = logging.getLogger(__name__)
 
 SAFE_DATASET_TABLE = "dataset"
+ALLOWED_BASE_RELATIONS = frozenset({SAFE_DATASET_TABLE})
 DESTRUCTIVE_SQL_PATTERN = re.compile(
     r"\b(drop|delete|update|insert|alter|create|copy|attach|install|load|export|call)\b",
     re.IGNORECASE,
 )
 EXTERNAL_ACCESS_PATTERN = re.compile(
-    r"\b(read_csv|read_parquet|parquet_scan|glob|httpfs|read_json|read_xlsx|read_text)\b",
+    r"\b("
+    r"read_blob|read_csv|read_csv_auto|read_json|read_json_auto|read_parquet|"
+    r"read_text|glob|sniff_csv|parquet_scan|query|query_table|httpfs|read_xlsx"
+    r")\b",
     re.IGNORECASE,
+)
+BLOCKED_TABLE_FUNCTIONS = frozenset(
+    {
+        "glob",
+        "parquet_scan",
+        "query",
+        "query_table",
+        "read_blob",
+        "read_csv",
+        "read_csv_auto",
+        "read_json",
+        "read_json_auto",
+        "read_parquet",
+        "read_text",
+        "read_xlsx",
+        "sniff_csv",
+    }
 )
 
 
@@ -78,6 +102,7 @@ def query_csv_with_duckdb_dataset(
         ),
         duckdb.connect(database=":memory:") as connection,
     ):
+        _configure_duckdb_security_policy(connection)
         connection.register(SAFE_DATASET_TABLE, df)
         query = f"SELECT * FROM ({normalized_sql}) AS safe_query LIMIT {safe_limit}"
         result_frame = _execute_query_with_timeout(
@@ -126,8 +151,6 @@ def _validate_and_normalize_sql(sql: str, max_sql_query_length: int) -> str:
     """Validate query safety and return a normalized single statement."""
 
     normalized_sql = sql.strip()
-    while normalized_sql.endswith(";"):
-        normalized_sql = normalized_sql[:-1].rstrip()
 
     if not normalized_sql:
         raise InvalidSQLError("sql must be a non-empty string.")
@@ -136,15 +159,18 @@ def _validate_and_normalize_sql(sql: str, max_sql_query_length: int) -> str:
         logger.warning("Rejected DuckDB query because it exceeded the configured length limit.")
         raise InvalidSQLError(f"sql must not exceed {max_sql_query_length} characters.")
 
-    if ";" in normalized_sql:
+    statements = _parse_single_statement(normalized_sql)
+    if len(statements) != 1:
         logger.warning("Rejected DuckDB query because multiple statements were detected.")
         raise InvalidSQLError("Only a single SQL statement is allowed.")
+    parsed = statements[0]
+    normalized_sql = parsed.sql(dialect="duckdb")
 
     if DESTRUCTIVE_SQL_PATTERN.search(normalized_sql):
         logger.warning("Rejected DuckDB query because it contained blocked SQL keywords.")
         raise InvalidSQLError("Destructive or schema-changing SQL is not allowed.")
 
-    if not normalized_sql.lower().startswith(("select", "with")):
+    if not isinstance(parsed, exp.Select):
         logger.warning("Rejected DuckDB query because it was not a SELECT or WITH statement.")
         raise InvalidSQLError("Only SELECT and WITH queries are allowed.")
 
@@ -152,11 +178,90 @@ def _validate_and_normalize_sql(sql: str, max_sql_query_length: int) -> str:
         logger.warning("Rejected DuckDB query because it attempted external data access.")
         raise InvalidSQLError("SQL cannot access external files or DuckDB scanning functions.")
 
-    if SAFE_DATASET_TABLE.lower() not in normalized_sql.lower():
-        logger.warning("Rejected DuckDB query because it did not reference the dataset table.")
-        raise InvalidSQLError("Queries must reference the dataset table named `dataset`.")
+    _validate_relation_access(parsed, allowed_relations=ALLOWED_BASE_RELATIONS)
 
     return normalized_sql
+
+
+def _parse_single_statement(sql: str) -> list[exp.Expression]:
+    """Parse a DuckDB SQL string into one or more statements."""
+
+    try:
+        statements = sqlglot.parse(sql, read="duckdb")
+    except ParseError as exc:
+        logger.warning("Rejected DuckDB query because parsing failed.")
+        raise InvalidSQLError("SQL query could not be parsed.") from exc
+
+    return cast(
+        list[exp.Expression], [statement for statement in statements if statement is not None]
+    )
+
+
+def _validate_relation_access(
+    statement: exp.Expression,
+    allowed_relations: frozenset[str],
+) -> None:
+    """Ensure a parsed statement references only explicitly allowed base relations."""
+
+    cte_names = {
+        _normalize_identifier(cte.alias)
+        for cte in statement.find_all(exp.CTE)
+        if _normalize_identifier(cte.alias)
+    }
+    if cte_names & allowed_relations:
+        logger.warning("Rejected DuckDB query because a CTE shadowed an allowed relation.")
+        raise InvalidSQLError("SQL cannot shadow the allowed in-memory relation `dataset`.")
+
+    permitted_references = allowed_relations | cte_names
+    referenced_allowed_relation = False
+
+    for function in statement.find_all(exp.Func):
+        function_name = _normalize_identifier(function.sql_name())
+        if function_name in BLOCKED_TABLE_FUNCTIONS:
+            logger.warning("Rejected DuckDB query because it used a blocked table function.")
+            raise InvalidSQLError("SQL cannot access external files or DuckDB scanning functions.")
+
+    for table in statement.find_all(exp.Table):
+        if table.catalog or table.db:
+            logger.warning("Rejected DuckDB query because it used a qualified table reference.")
+            raise InvalidSQLError("SQL may only reference explicitly allowed in-memory relations.")
+
+        table_name = _normalize_identifier(table.name)
+        if not table_name:
+            logger.warning("Rejected DuckDB query because it used a table-valued function.")
+            raise InvalidSQLError("SQL may only reference explicitly allowed in-memory relations.")
+
+        if table_name not in permitted_references:
+            logger.warning("Rejected DuckDB query because it referenced a disallowed relation.")
+            raise InvalidSQLError("SQL may only reference explicitly allowed in-memory relations.")
+
+        if table_name in allowed_relations and table_name not in cte_names:
+            referenced_allowed_relation = True
+
+    if not referenced_allowed_relation:
+        logger.warning("Rejected DuckDB query because it did not reference an allowed relation.")
+        raise InvalidSQLError("Queries must reference the allowed in-memory relation `dataset`.")
+
+
+def _normalize_identifier(identifier: str) -> str:
+    """Normalize SQL identifiers for allowlist checks."""
+
+    return identifier.strip().strip('"').lower()
+
+
+def _configure_duckdb_security_policy(connection: duckdb.DuckDBPyConnection) -> None:
+    """Apply DuckDB's built-in read-only and external-access restrictions."""
+
+    security_statements = (
+        "SET enable_external_access=false",
+        "SET autoinstall_known_extensions=false",
+        "SET autoload_known_extensions=false",
+        "SET allow_community_extensions=false",
+        "SET allow_persistent_secrets=false",
+        "SET lock_configuration=true",
+    )
+    for statement in security_statements:
+        connection.execute(statement)
 
 
 def _normalize_scalar(value: object) -> object:

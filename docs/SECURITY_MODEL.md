@@ -44,9 +44,14 @@ This isolates the MCP surface from arbitrary host files, but it does not protect
 DuckDB controls:
 
 - queries must be a single `SELECT` or `WITH` statement
-- queries must reference the temporary table named `dataset`
-- destructive and schema-changing statements are rejected
-- external file access functions such as `read_csv`, `read_parquet`, `read_json`, and similar scan helpers are rejected
+- DuckDB external access is disabled on the in-memory query connection
+- DuckDB extension autoload/autoinstall, community extensions, and persistent secrets are disabled
+- DuckDB configuration is locked before user SQL executes
+- user SQL is parsed and base relation references are allowlisted to the registered in-memory `dataset` relation
+- CTEs, aliases, subqueries, joins, quoted identifiers, and window functions are validated structurally rather than by substring checks
+- CTEs may not shadow the allowed `dataset` relation
+- destructive and schema-changing statements are rejected as defense in depth
+- external file and scan functions such as `read_csv`, `read_parquet`, `read_json`, `glob`, `sniff_csv`, `query`, and similar helpers are rejected as defense in depth
 - a final row limit is always applied
 - best-effort query interruption is attempted when execution exceeds `MCP_SQL_TIMEOUT_MS`
 
@@ -58,7 +63,7 @@ SQLite controls:
 - a final row limit is always applied
 - a progress-handler timeout interrupts long-running queries after `MCP_SQL_TIMEOUT_MS`
 
-These controls reduce accidental or hostile misuse, but they are application-layer checks rather than full database sandboxing.
+SQLite controls reduce accidental or hostile misuse through application-layer checks and read-only handles. DuckDB uses both engine-level external-access restrictions and application-level structural validation.
 
 ### Transport and auth
 
