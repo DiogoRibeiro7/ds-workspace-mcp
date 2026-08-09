@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from ds_workspace_mcp.core import read_csv_dataset
 
 CorrelationMethod = Literal["pearson", "spearman", "kendall"]
+WarningSeverity = Literal["low", "medium", "high"]
 CORRELATION_METHODS: set[CorrelationMethod] = {"pearson", "spearman", "kendall"}
 MAX_CORRELATION_RESULTS = 10
 HIGH_CORRELATION_THRESHOLD = 0.9
@@ -39,6 +40,8 @@ class LeakageWarning(BaseModel):
     column: str
     warning_type: str
     description: str
+    severity: WarningSeverity = "medium"
+    confidence: float = Field(ge=0.0, le=1.0, default=0.5)
 
 
 class LeakageSummary(BaseModel):
@@ -119,58 +122,70 @@ def detect_possible_target_leakage_dataset(
         series = df[column]
         warning_types: set[str] = set()
 
-        if target_name_normalized and target_name_normalized in _normalize_name(column_name):
-            warning_types.add("target_name_overlap")
+        if _is_duplicate_column(series, target_series):
+            warning_types.add("exact_target_duplicate")
             warnings.append(
-                LeakageWarning(
+                _build_warning(
                     column=column_name,
-                    warning_type="target_name_overlap",
-                    description="Column name contains the target name and may encode the label.",
+                    warning_type="exact_target_duplicate",
+                    description="Column duplicates the target values exactly after alignment.",
+                    severity="high",
+                    confidence=1.0,
                 )
             )
 
-        if _is_identifier_like(series):
-            warning_types.add("identifier_like")
+        if _is_identifier_like(series, column_name=column_name):
+            warning_types.add("likely_identifier")
             warnings.append(
-                LeakageWarning(
+                _build_warning(
                     column=column_name,
-                    warning_type="identifier_like",
+                    warning_type="likely_identifier",
                     description="Column has near-unique values and may act like an identifier.",
+                    severity="medium",
+                    confidence=0.85,
+                )
+            )
+
+        if target_name_normalized and target_name_normalized in _normalize_name(column_name):
+            warning_types.add("suspicious_name_overlap")
+            warnings.append(
+                _build_warning(
+                    column=column_name,
+                    warning_type="suspicious_name_overlap",
+                    description=(
+                        "Column name contains the target name; review whether it is target-derived."
+                    ),
+                    severity="medium",
+                    confidence=0.65,
                 )
             )
 
         if _is_highly_correlated(series, target_series):
-            warning_types.add("high_correlation")
+            warning_types.add("very_high_correlation")
             warnings.append(
-                LeakageWarning(
+                _build_warning(
                     column=column_name,
-                    warning_type="high_correlation",
+                    warning_type="very_high_correlation",
                     description=(
-                        "Column is highly correlated with the target "
-                        "and may leak target information."
+                        "Column is highly correlated with the target; treat this as evidence "
+                        "for review, not proof of leakage by itself."
                     ),
-                )
-            )
-
-        if _is_duplicate_column(series, target_series):
-            warning_types.add("duplicate_values")
-            warnings.append(
-                LeakageWarning(
-                    column=column_name,
-                    warning_type="duplicate_values",
-                    description="Column duplicates the target values exactly after alignment.",
+                    severity="medium",
+                    confidence=0.7,
                 )
             )
 
         if _is_datetime_like(series):
             warnings.append(
-                LeakageWarning(
+                _build_warning(
                     column=column_name,
-                    warning_type="datetime_review",
+                    warning_type="temporal_review",
                     description=(
                         "Datetime-like column may occur after the prediction "
                         "point and should be reviewed."
                     ),
+                    severity="medium",
+                    confidence=0.6,
                 )
             )
 
@@ -190,20 +205,54 @@ def _validate_correlation_method(method: str) -> str:
     return method
 
 
+def _build_warning(
+    column: str,
+    warning_type: str,
+    description: str,
+    severity: WarningSeverity,
+    confidence: float,
+) -> LeakageWarning:
+    """Build a leakage warning with explicit evidence strength."""
+
+    return LeakageWarning(
+        column=column,
+        warning_type=warning_type,
+        description=description,
+        severity=severity,
+        confidence=confidence,
+    )
+
+
 def _normalize_name(value: str) -> str:
     """Normalize a column name for heuristic comparisons."""
 
     return "".join(character for character in value.lower() if character.isalnum())
 
 
-def _is_identifier_like(series: pd.Series[Any]) -> bool:
+def _is_identifier_like(series: pd.Series[Any], column_name: str) -> bool:
     """Return whether a column behaves like an identifier."""
 
     non_null = series.dropna()
     if non_null.empty:
         return False
     unique_ratio = float(non_null.nunique() / max(len(series), 1))
-    return unique_ratio > 0.95
+    if unique_ratio <= 0.95:
+        return False
+    if _has_identifier_name_marker(column_name):
+        return True
+    return not is_numeric_dtype(series)
+
+
+def _has_identifier_name_marker(column_name: str) -> bool:
+    """Return whether a column name carries identifier semantics."""
+
+    normalized = _normalize_name(column_name)
+    return (
+        normalized in {"id", "uuid", "key"}
+        or normalized.endswith("id")
+        or normalized.endswith("uuid")
+        or normalized.endswith("key")
+    )
 
 
 def _is_highly_correlated(left: pd.Series[Any], right: pd.Series[Any]) -> bool:

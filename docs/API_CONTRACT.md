@@ -192,7 +192,8 @@ The following are considered non-breaking:
   - `reasons: list[str]`
 - Heuristic notes:
   - the tool is designed for practical baseline readiness, not definitive feature engineering
-  - identifier-like, duplicate, target-overlap, and strongly target-correlated columns may be excluded as leakage risks
+  - exact target duplicates, constant columns, excessive missingness, and likely identifiers may be excluded from the default baseline feature set
+  - target-name overlap and very high target correlation are review evidence by themselves, not automatic exclusion proof
   - datetime-like and moderately sparse columns are usually marked for review rather than automatic exclusion
 
 #### `assess_modeling_readiness(file_name: str, target_column: str | None = None)`
@@ -849,8 +850,11 @@ The following are considered non-breaking:
   - `column: str`
   - `warning_type: str`
   - `description: str`
+  - `severity: str`
+  - `confidence: float`
 - Heuristic notes:
-  - warnings such as `target_name_overlap`, `identifier_like`, `high_correlation`, `duplicate_values`, and `datetime_review` are review signals
+  - warnings such as `suspicious_name_overlap`, `likely_identifier`, `very_high_correlation`, `exact_target_duplicate`, and `temporal_review` are review signals with severity and confidence
+  - high correlation and target-name overlap alone are evidence, not proof of leakage
   - warning descriptions may evolve without changing the contract
   - absence of warnings is not proof that leakage is impossible
 

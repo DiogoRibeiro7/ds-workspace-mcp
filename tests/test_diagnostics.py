@@ -87,11 +87,11 @@ def test_detect_possible_target_leakage_flags_name_overlap_and_identifier(
     summary = detect_possible_target_leakage_dataset("diagnostics.csv", target_column="target")
     warning_pairs = {(warning.column, warning.warning_type) for warning in summary.warnings}
 
-    assert ("target_score", "target_name_overlap") in warning_pairs
-    assert ("record_id", "identifier_like") in warning_pairs
+    assert ("target_score", "suspicious_name_overlap") in warning_pairs
+    assert ("record_id", "likely_identifier") in warning_pairs
 
 
-def test_detect_possible_target_leakage_flags_high_correlation_and_duplicates(
+def test_detect_possible_target_leakage_flags_evidence_types(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -100,7 +100,13 @@ def test_detect_possible_target_leakage_flags_high_correlation_and_duplicates(
 
     summary = detect_possible_target_leakage_dataset("diagnostics.csv", target_column="target")
     warning_pairs = {(warning.column, warning.warning_type) for warning in summary.warnings}
+    warning_by_pair = {
+        (warning.column, warning.warning_type): warning for warning in summary.warnings
+    }
 
-    assert ("target_score", "high_correlation") in warning_pairs
-    assert ("target_score", "duplicate_values") in warning_pairs
-    assert ("prediction_time", "datetime_review") in warning_pairs
+    assert ("feature_linear", "very_high_correlation") in warning_pairs
+    assert ("target_score", "exact_target_duplicate") in warning_pairs
+    assert ("prediction_time", "temporal_review") in warning_pairs
+    assert warning_by_pair[("target_score", "exact_target_duplicate")].severity == "high"
+    assert warning_by_pair[("target_score", "exact_target_duplicate")].confidence == 1.0
+    assert warning_by_pair[("feature_linear", "very_high_correlation")].severity == "medium"

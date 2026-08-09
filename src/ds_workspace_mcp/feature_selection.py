@@ -113,19 +113,25 @@ def _build_feature_suggestion(
 
     if _is_duplicate_column(series, target_series):
         decision = "exclude"
-        reasons.append("duplicates the target values and would leak the answer")
+        reasons.append(
+            "exact_target_duplicate: duplicates the target values and would leak the answer"
+        )
 
-    if _is_identifier_like(series) and not is_datetime_column:
+    if _is_identifier_like(series, column_name=column_name) and not is_datetime_column:
         decision = "exclude"
-        reasons.append("looks like an identifier rather than a reusable feature")
+        reasons.append("likely_identifier: looks like an identifier rather than a reusable feature")
 
-    if _has_target_name_overlap(column_name, target_column):
-        decision = "exclude"
-        reasons.append("column name overlaps with the target and may encode the label")
+    if _has_target_name_overlap(column_name, target_column) and decision != "exclude":
+        decision = "review"
+        reasons.append(
+            "suspicious_name_overlap: column name overlaps with the target and needs review"
+        )
 
-    if _is_highly_correlated(series, target_series):
-        decision = "exclude"
-        reasons.append("very high correlation with the target should be reviewed as leakage")
+    if _is_highly_correlated(series, target_series) and decision != "exclude":
+        decision = "review"
+        reasons.append(
+            "very_high_correlation: strong target correlation is evidence for review, not proof"
+        )
 
     if missing_percentage >= EXCLUDE_MISSINGNESS_THRESHOLD:
         decision = "exclude"
@@ -136,7 +142,9 @@ def _build_feature_suggestion(
 
     if is_datetime_column and decision != "exclude":
         decision = "review"
-        reasons.append("time-like column may need feature engineering before modeling")
+        reasons.append(
+            "temporal_review: time-like column may need feature engineering before modeling"
+        )
 
     if decision == "include" and unique_count > 0:
         reasons.append("looks usable as a baseline feature without immediate red flags")
@@ -176,14 +184,30 @@ def _normalize_name(value: str) -> str:
     return "".join(character for character in value.lower() if character.isalnum())
 
 
-def _is_identifier_like(series: pd.Series[Any]) -> bool:
+def _is_identifier_like(series: pd.Series[Any], column_name: str) -> bool:
     """Return whether a column behaves like an identifier."""
 
     non_null = series.dropna()
     if non_null.empty:
         return False
     unique_ratio = float(non_null.nunique() / max(len(series), 1))
-    return unique_ratio > 0.95
+    if unique_ratio <= 0.95:
+        return False
+    if _has_identifier_name_marker(column_name):
+        return True
+    return not is_numeric_dtype(series)
+
+
+def _has_identifier_name_marker(column_name: str) -> bool:
+    """Return whether a column name carries identifier semantics."""
+
+    normalized = _normalize_name(column_name)
+    return (
+        normalized in {"id", "uuid", "key"}
+        or normalized.endswith("id")
+        or normalized.endswith("uuid")
+        or normalized.endswith("key")
+    )
 
 
 def _is_highly_correlated(left: pd.Series[Any], right: pd.Series[Any]) -> bool:
