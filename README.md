@@ -11,7 +11,7 @@ It lets an MCP-compatible assistant safely inspect local CSV, Parquet, JSON, and
 
 - **Resources** for dataset discovery.
 - **Overview tools** for fast first-pass dataset understanding.
-- **Tools** for dataset preview, profiling, SQL access, diagnostics, and baseline evaluation.
+- **Tools** for dataset preview, profiling, safe aggregation, SQL access, diagnostics, and baseline evaluation.
 - **Report artifact tools** for saving, searching, comparing, extracting, and reusing modeling reports.
 - **Prompts** for reusable dataset analysis instructions.
 
@@ -22,6 +22,7 @@ This project is designed as a portfolio-ready MCP product: focused, typed, teste
 Today the repository covers four practical workflows:
 
 - Safe local dataset access for CSV, Parquet, JSON, Excel, and SQLite sources.
+- Structured aggregations for common EDA without free-form SQL.
 - Lightweight analytical diagnostics, including leakage review, correlations, and time-series checks.
 - Baseline modeling planning and markdown report generation.
 - Saved report lifecycle management, including cataloging, search, section extraction, section export, and section-aware diffs.

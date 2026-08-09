@@ -86,6 +86,16 @@ Responsibilities:
 - summarizes numeric, categorical, boolean, and datetime-like columns
 - records the runtime profiling limits applied to the result
 
+### `aggregation.py`
+
+Responsibilities:
+
+- accepts typed aggregation requests rather than executable expressions
+- validates group, metric, filter, and ordering columns against loaded dataset schema
+- allowlists aggregation and filter operations
+- bounds grouping cardinality and returned rows through configured SQL row limits
+- normalizes result values for JSON output
+
 ### `sql/duckdb_engine.py`
 
 Responsibilities:

@@ -5,6 +5,7 @@ import asyncio
 
 from pydantic import BaseModel
 
+from ds_workspace_mcp.aggregation import AggregationResult
 from ds_workspace_mcp.cli import build_parser
 from ds_workspace_mcp.config import Settings
 from ds_workspace_mcp.core import DatasetIssue, DatasetPreview
@@ -69,6 +70,7 @@ EXPECTED_RESOURCE_URIS = [
 ]
 
 EXPECTED_TOOL_NAMES = [
+    "aggregate_dataset_tool",
     "assess_modeling_readiness",
     "build_experiment_plan",
     "build_modeling_report",
@@ -185,6 +187,15 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "validation",
     ],
     "ClassificationMetrics": ["accuracy", "balanced_accuracy", "macro_f1", "weighted_f1"],
+    "AggregationResult": [
+        "file_name",
+        "group_by",
+        "metric_columns",
+        "rows",
+        "row_count",
+        "total_group_count",
+        "limit_applied",
+    ],
     "ComparedModelingReport": [
         "output_name",
         "other_output_name",
@@ -431,6 +442,7 @@ EXPECTED_RESULT_MODEL_FIELDS = {
 
 RESULT_MODELS: list[type[BaseModel]] = [
     BaselineEvaluationResult,
+    AggregationResult,
     ClassificationMetrics,
     ComparedModelingReport,
     ComparedModelingReportSection,
