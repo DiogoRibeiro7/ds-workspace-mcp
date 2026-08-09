@@ -1,6 +1,6 @@
 [project]
 name = "ds-workspace-mcp"
-version = "1.0.2"
+version = "1.1.0"
 description = "A Model Context Protocol server for safely inspecting and profiling local analytical datasets."
 readme = "README.md"
 license = "MIT"
