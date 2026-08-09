@@ -10,14 +10,15 @@ from pydantic import BaseModel
 
 from ds_workspace_mcp.cache import ProfileCache, ProfileCacheKey
 from ds_workspace_mcp.config import get_settings
+from ds_workspace_mcp.datasets import (
+    CsvDatasetReader,
+    DatasetFormat,
+    DatasetRef,
+    DatasetRegistry,
+    ResolvedDataset,
+)
 from ds_workspace_mcp.exceptions import (
-    DatasetNotFoundError,
-    DatasetReadError,
-    DatasetTooLargeError,
-    InvalidDatasetNameError,
-    PathTraversalError,
     ProfilingError,
-    UnsupportedFileTypeError,
 )
 from ds_workspace_mcp.profiling import DatasetProfile, build_dataset_profile
 from ds_workspace_mcp.tracing import traced_operation
@@ -61,6 +62,17 @@ def get_data_root() -> Path:
     return get_settings().mcp_data_root
 
 
+def get_dataset_registry() -> DatasetRegistry:
+    """Return the dataset registry configured for the current data root."""
+
+    settings = get_settings()
+    return DatasetRegistry(
+        data_root=settings.mcp_data_root,
+        readers=(CsvDatasetReader(),),
+        max_dataset_bytes=settings.mcp_max_dataset_bytes,
+    )
+
+
 def reset_profile_cache() -> None:
     """Clear the profile cache for tests or runtime resets."""
 
@@ -83,33 +95,7 @@ def resolve_dataset_path(file_name: str) -> Path:
         FileNotFoundError: If the CSV file does not exist.
     """
 
-    with traced_operation("dataset.resolve", {"dataset.file_name": file_name}):
-        if not isinstance(file_name, str):
-            logger.warning("Rejected dataset path resolution because file_name was not a string.")
-            raise InvalidDatasetNameError("file_name must be a string.")
-
-        if not file_name.strip():
-            logger.warning("Rejected dataset path resolution because file_name was empty.")
-            raise InvalidDatasetNameError("file_name must be a non-empty string.")
-
-        data_root = get_data_root()
-        path = (data_root / file_name).resolve()
-
-        # Prevent path traversal such as ../secret.csv.
-        if path != data_root and data_root not in path.parents:
-            logger.warning("Rejected dataset path outside data root for file_name=%s", file_name)
-            raise PathTraversalError("Access outside the configured data directory is not allowed.")
-
-        if path.suffix.lower() != ".csv":
-            logger.warning("Rejected non-CSV dataset for file_name=%s", file_name)
-            raise UnsupportedFileTypeError("Only CSV files are supported.")
-
-        if not path.exists():
-            logger.warning("Dataset not found for file_name=%s", file_name)
-            raise DatasetNotFoundError(f"Dataset not found: {file_name}")
-
-        logger.info("Resolved dataset path for file_name=%s", file_name)
-        return path
+    return _resolve_csv_dataset(file_name).path
 
 
 def list_csv_files() -> list[str]:
@@ -120,8 +106,7 @@ def list_csv_files() -> list[str]:
         A sorted list of CSV file names.
     """
 
-    data_root = get_data_root()
-    files = sorted(path.name for path in data_root.glob("*.csv") if path.is_file())
+    files = get_dataset_registry().list(DatasetFormat.CSV)
     logger.info("Listed %s CSV datasets from configured data root", len(files))
     return files
 
@@ -142,14 +127,9 @@ def read_csv_dataset(file_name: str, nrows: int | None = None) -> pd.DataFrame:
         "dataset.read_csv",
         {"dataset.file_name": file_name, "dataset.nrows": nrows},
     ):
-        path = resolve_dataset_path(file_name)
-        _validate_dataset_file_size(path)
+        resolved = _resolve_csv_dataset(file_name)
         logger.info("Reading CSV dataset file_name=%s nrows=%s", file_name, nrows)
-        try:
-            return pd.read_csv(path, nrows=nrows)
-        except (UnicodeDecodeError, pd.errors.ParserError) as exc:
-            logger.warning("Failed to read CSV dataset file_name=%s", file_name)
-            raise DatasetReadError(f"Could not read dataset: {file_name}") from exc
+        return resolved.reader.load_frame(resolved.path, nrows=nrows)
 
 
 def preview_csv_dataset(file_name: str, rows: int = 5) -> DatasetPreview:
@@ -205,13 +185,13 @@ def profile_csv_dataset(file_name: str) -> DatasetProfile:
     """
 
     with traced_operation("dataset.profile", {"dataset.file_name": file_name}):
-        path = resolve_dataset_path(file_name)
         settings = get_settings()
-        stat = path.stat()
+        resolved = _resolve_csv_dataset(file_name)
+        fingerprint = resolved.reader.fingerprint(resolved.path)
         cache_key = ProfileCacheKey(
-            path=path,
-            file_size=stat.st_size,
-            modified_time_ns=stat.st_mtime_ns,
+            path=resolved.path,
+            file_size=fingerprint.size_bytes,
+            modified_time_ns=fingerprint.modified_time_ns,
             max_categorical_values=settings.mcp_max_categorical_values,
         )
 
@@ -226,7 +206,8 @@ def profile_csv_dataset(file_name: str) -> DatasetProfile:
             return cached_profile
 
         try:
-            df = read_csv_dataset(file_name=file_name)
+            logger.info("Reading CSV dataset file_name=%s nrows=%s", file_name, None)
+            df = resolved.reader.load_frame(resolved.path)
             profile = build_dataset_profile(df=df, file_name=file_name)
         except Exception as exc:  # pragma: no cover - exercised by targeted tests
             logger.exception("Profiling failed for file_name=%s", file_name)
@@ -283,18 +264,13 @@ def detect_csv_dataset_issues(file_name: str) -> list[DatasetIssue]:
     return issues
 
 
-def _validate_dataset_file_size(path: Path) -> None:
-    """Reject datasets that exceed the configured maximum readable size."""
-
-    max_dataset_bytes = get_settings().mcp_max_dataset_bytes
-    file_size = path.stat().st_size
-    if file_size > max_dataset_bytes:
-        logger.warning(
-            "Rejected dataset because file_size=%s exceeded max_dataset_bytes=%s path=%s",
-            file_size,
-            max_dataset_bytes,
-            path.name,
+def _resolve_csv_dataset(file_name: str) -> ResolvedDataset:
+    with traced_operation("dataset.resolve", {"dataset.file_name": file_name}):
+        ref = DatasetRef(file_name=file_name)
+        resolved = get_dataset_registry().resolve(
+            ref,
+            expected_format=DatasetFormat.CSV,
+            unsupported_message="Only CSV files are supported.",
         )
-        raise DatasetTooLargeError(
-            f"Dataset exceeds the maximum allowed size of {max_dataset_bytes} bytes."
-        )
+        logger.info("Resolved dataset path for file_name=%s", file_name)
+        return resolved

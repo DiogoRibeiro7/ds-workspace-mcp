@@ -58,13 +58,21 @@ This is the central configuration boundary for the application.
 
 Responsibilities:
 
-- resolves dataset paths under `MCP_DATA_ROOT`
-- lists CSV files
-- reads CSV content
+- exposes CSV-compatible public helpers backed by the dataset registry
 - builds dataset previews
 - orchestrates profiling and issue detection
 
-This is the core CSV access layer.
+This is the current CSV workflow facade. Format-neutral path resolution and
+dispatch live in `datasets/`.
+
+### `datasets/`
+
+Responsibilities:
+
+- models dataset references as relative names under an approved data root
+- centralizes path containment, format dispatch, file-size checks, metadata, and fingerprints
+- exposes a small `DatasetReader` protocol for format-specific frame loading and metadata
+- keeps CSV support behind `CsvDatasetReader` while preserving existing CSV-specific APIs
 
 ### `profiling.py`
 
@@ -152,7 +160,7 @@ Responsibilities:
 2. `server.py` logs and traces the tool boundary.
 3. `core.py` resolves `file_name` under `MCP_DATA_ROOT`.
 4. The relevant subsystem runs:
-   - `profiling.py` for summaries
+   - `datasets/` and `profiling.py` for safe CSV loading and summaries
    - `diagnostics.py` for heuristics
    - `sql/duckdb_engine.py` for SQL
    - `timeseries.py` for forecasting-readiness checks
@@ -169,6 +177,7 @@ Responsibilities:
 ## Data Flow Principles
 
 - all public operations start from validated names rather than arbitrary paths
+- dataset references are resolved through the format-neutral registry boundary
 - file reads happen only after data-root resolution
 - SQL results are normalized to JSON-friendly scalar values
 - expensive or verbose outputs are bounded before returning to the client

@@ -56,6 +56,7 @@ ds-workspace-mcp/
 │       ├── cli.py
 │       ├── config.py
 │       ├── core.py
+│       ├── datasets/
 │       ├── diagnostics.py
 │       ├── experiment_plan.py
 │       ├── feature_selection.py
