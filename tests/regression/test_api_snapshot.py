@@ -1,0 +1,412 @@
+from __future__ import annotations
+
+import argparse
+
+from pydantic import BaseModel
+
+from ds_workspace_mcp.cli import build_parser
+from ds_workspace_mcp.core import DatasetIssue, DatasetPreview
+from ds_workspace_mcp.diagnostics import CorrelationSummary, LeakageSummary
+from ds_workspace_mcp.experiment_plan import ExperimentPlanResult
+from ds_workspace_mcp.feature_selection import FeatureSelectionResult
+from ds_workspace_mcp.ml.baselines import BaselineEvaluationResult
+from ds_workspace_mcp.modeling_readiness import ModelingReadinessResult
+from ds_workspace_mcp.modeling_report import ModelingReportResult
+from ds_workspace_mcp.overview import DatasetOverview
+from ds_workspace_mcp.profiling import DatasetProfile
+from ds_workspace_mcp.report_export import (
+    ComparedModelingReport,
+    ComparedModelingReportSection,
+    CopiedModelingReport,
+    DeletedModelingReport,
+    ModelingReportCatalogSummary,
+    ModelingReportMetadata,
+    ModelingReportSection,
+    ModelingReportSectionMatch,
+    ModelingReportSectionSummary,
+    PreviewModelingReport,
+    ReadModelingReport,
+    ReadModelingReportSection,
+    RenamedModelingReport,
+    ReportSearchMatch,
+    SavedModelingReport,
+    SavedModelingReportSection,
+    StoredModelingReport,
+)
+from ds_workspace_mcp.server import mcp
+from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult
+from ds_workspace_mcp.sql.sqlite_engine import (
+    SQLiteColumnInfo,
+    SQLiteDatabaseInfo,
+    SQLiteQueryResult,
+    SQLiteTableSchema,
+)
+from ds_workspace_mcp.targeting import TargetSuggestionResult
+from ds_workspace_mcp.timeseries import TimeSeriesValidationResult
+
+EXPECTED_RESOURCE_URIS = [
+    "databases://sqlite",
+    "datasets://catalog",
+    "reports://modeling",
+    "reports://modeling/latest",
+    "reports://modeling/latest/sections",
+    "reports://modeling/latest/sections/{section_heading}",
+    "reports://modeling/{output_name}",
+    "reports://modeling/{output_name}/sections",
+    "reports://modeling/{output_name}/sections/{section_heading}",
+]
+
+EXPECTED_TOOL_NAMES = [
+    "assess_modeling_readiness",
+    "build_experiment_plan",
+    "build_modeling_report",
+    "compare_latest_modeling_report_sections_tool",
+    "compare_latest_modeling_reports_tool",
+    "compare_modeling_report_sections",
+    "compare_modeling_reports",
+    "copy_latest_modeling_report_tool",
+    "copy_modeling_report",
+    "delete_modeling_report",
+    "describe_sqlite_table",
+    "detect_csv_issues",
+    "detect_possible_target_leakage",
+    "evaluate_baseline_model",
+    "inspect_latest_modeling_report_tool",
+    "inspect_modeling_report",
+    "list_latest_modeling_report_sections_tool",
+    "list_modeling_report_sections",
+    "list_modeling_reports",
+    "list_recent_modeling_reports_tool",
+    "list_sqlite_databases_tool",
+    "list_sqlite_tables",
+    "preview_csv",
+    "preview_latest_modeling_report_tool",
+    "preview_modeling_report",
+    "profile_csv",
+    "query_csv_with_duckdb",
+    "query_sqlite",
+    "read_latest_modeling_report_section_tool",
+    "read_latest_modeling_report_tool",
+    "read_modeling_report",
+    "read_modeling_report_section",
+    "rename_latest_modeling_report_tool",
+    "rename_modeling_report",
+    "save_latest_modeling_report_section_tool",
+    "save_modeling_report",
+    "save_modeling_report_section_tool",
+    "search_latest_modeling_report_content_tool",
+    "search_latest_modeling_report_sections_tool",
+    "search_modeling_report_content",
+    "search_modeling_report_sections",
+    "search_modeling_reports",
+    "suggest_feature_columns",
+    "suggest_target_columns",
+    "summarize_correlations",
+    "summarize_dataset",
+    "summarize_modeling_report_catalog_tool",
+    "summarize_modeling_report_sections",
+    "validate_time_series_dataset_tool",
+]
+
+EXPECTED_PROMPT_NAMES = [
+    "dataset_analysis_prompt",
+    "modeling_report_review_prompt",
+]
+
+EXPECTED_CLI_COMMANDS = [
+    "compare-latest-modeling-report-sections",
+    "compare-latest-modeling-reports",
+    "compare-modeling-report-sections",
+    "compare-modeling-reports",
+    "copy-latest-modeling-report",
+    "copy-modeling-report",
+    "delete-modeling-report",
+    "generate-sample-healthcare-data",
+    "inspect-latest-modeling-report",
+    "inspect-modeling-report",
+    "list-datasets",
+    "list-latest-modeling-report-sections",
+    "list-modeling-report-sections",
+    "list-modeling-reports",
+    "list-recent-modeling-reports",
+    "plan-modeling",
+    "preview-latest-modeling-report",
+    "preview-modeling-report",
+    "profile-dataset",
+    "read-latest-modeling-report",
+    "read-latest-modeling-report-section",
+    "read-modeling-report",
+    "read-modeling-report-section",
+    "rename-latest-modeling-report",
+    "rename-modeling-report",
+    "report-modeling",
+    "save-latest-modeling-report-section",
+    "save-modeling-report",
+    "save-modeling-report-section",
+    "search-latest-modeling-report-content",
+    "search-latest-modeling-report-sections",
+    "search-modeling-report-content",
+    "search-modeling-report-sections",
+    "search-modeling-reports",
+    "serve",
+    "summarize-modeling-report-sections",
+    "summarize-modeling-reports",
+]
+
+EXPECTED_RESULT_MODEL_FIELDS = {
+    "BaselineEvaluationResult": [
+        "file_name",
+        "target_column",
+        "task_type",
+        "train_rows",
+        "test_rows",
+        "regression_metrics",
+        "classification_metrics",
+    ],
+    "ComparedModelingReport": [
+        "output_name",
+        "other_output_name",
+        "changed",
+        "added_line_count",
+        "removed_line_count",
+        "diff_preview",
+    ],
+    "ComparedModelingReportSection": [
+        "output_name",
+        "other_output_name",
+        "section_heading",
+        "changed",
+        "added_line_count",
+        "removed_line_count",
+        "diff_preview",
+    ],
+    "CopiedModelingReport": [
+        "source_output_name",
+        "new_output_name",
+        "source_output_path",
+        "new_output_path",
+    ],
+    "CorrelationSummary": ["file_name", "method", "numeric_columns", "top_correlations"],
+    "DatasetIssue": ["column", "issue_type", "description"],
+    "DatasetOverview": [
+        "file_name",
+        "row_count",
+        "column_count",
+        "sample_columns",
+        "numeric_column_count",
+        "categorical_column_count",
+        "boolean_column_count",
+        "datetime_column_count",
+        "columns_with_missing_values",
+        "high_missingness_columns",
+        "possible_identifier_columns",
+        "top_correlations",
+        "recommended_next_tools",
+        "summary",
+    ],
+    "DatasetPreview": ["file_name", "rows"],
+    "DatasetProfile": [
+        "file_name",
+        "row_count",
+        "column_count",
+        "columns",
+        "dtypes",
+        "missing_values",
+        "missing_percentage",
+        "numeric_columns",
+        "categorical_columns",
+        "boolean_columns",
+        "datetime_columns",
+        "profiling_limits",
+    ],
+    "DeletedModelingReport": ["output_name", "output_path"],
+    "DuckDBQueryResult": ["file_name", "columns", "rows", "row_count", "limit_applied"],
+    "ExperimentPlanResult": [
+        "file_name",
+        "target_column",
+        "target_source",
+        "suggested_task_type",
+        "validation_strategy",
+        "feature_columns",
+        "review_columns",
+        "risks",
+        "baseline_models",
+        "evaluation_metrics",
+        "next_steps",
+        "summary",
+    ],
+    "FeatureSelectionResult": [
+        "file_name",
+        "target_column",
+        "include_columns",
+        "review_columns",
+        "exclude_columns",
+        "suggestions",
+        "summary",
+    ],
+    "LeakageSummary": ["file_name", "target_column", "warnings"],
+    "ModelingReadinessResult": [
+        "file_name",
+        "target_column",
+        "target_source",
+        "suggested_task_type",
+        "validation_strategy",
+        "target_candidate",
+        "target_suggestions",
+        "feature_selection",
+        "leakage_warnings",
+        "recommended_next_tools",
+        "summary",
+    ],
+    "ModelingReportCatalogSummary": [
+        "report_count",
+        "total_size_bytes",
+        "most_recent_reports",
+    ],
+    "ModelingReportMetadata": [
+        "output_name",
+        "output_path",
+        "size_bytes",
+        "metadata_changed_at",
+        "modified_at",
+    ],
+    "ModelingReportResult": ["file_name", "target_column", "headline", "markdown"],
+    "ModelingReportSection": ["heading", "level"],
+    "ModelingReportSectionMatch": [
+        "output_name",
+        "output_path",
+        "heading",
+        "level",
+        "snippet",
+    ],
+    "ModelingReportSectionSummary": [
+        "heading",
+        "level",
+        "report_count",
+        "example_reports",
+    ],
+    "PreviewModelingReport": [
+        "output_name",
+        "output_path",
+        "headline",
+        "preview_markdown",
+        "line_count",
+    ],
+    "ReadModelingReport": ["output_name", "output_path", "markdown"],
+    "ReadModelingReportSection": [
+        "output_name",
+        "output_path",
+        "heading",
+        "level",
+        "markdown",
+    ],
+    "RenamedModelingReport": [
+        "old_output_name",
+        "new_output_name",
+        "old_output_path",
+        "new_output_path",
+    ],
+    "ReportSearchMatch": ["output_name", "output_path", "headline", "snippet"],
+    "SavedModelingReport": ["file_name", "target_column", "output_path", "headline"],
+    "SavedModelingReportSection": [
+        "source_output_name",
+        "section_heading",
+        "output_path",
+    ],
+    "SQLiteColumnInfo": [
+        "cid",
+        "name",
+        "data_type",
+        "not_null",
+        "default_value",
+        "is_primary_key",
+    ],
+    "SQLiteDatabaseInfo": ["file_name"],
+    "SQLiteQueryResult": ["file_name", "columns", "rows", "row_count", "limit_applied"],
+    "SQLiteTableSchema": ["file_name", "table_name", "columns"],
+    "StoredModelingReport": ["output_name", "output_path", "size_bytes", "modified_at"],
+    "TargetSuggestionResult": ["file_name", "candidates", "summary"],
+    "TimeSeriesValidationResult": [
+        "file_name",
+        "time_column",
+        "target_column",
+        "group_column",
+        "row_count",
+        "parsed_timestamp_count",
+        "duplicate_timestamps",
+        "is_sorted",
+        "inferred_frequency",
+        "missing_intervals",
+        "missing_target_values",
+        "group_summaries",
+        "warnings",
+    ],
+}
+
+RESULT_MODELS: list[type[BaseModel]] = [
+    BaselineEvaluationResult,
+    ComparedModelingReport,
+    ComparedModelingReportSection,
+    CopiedModelingReport,
+    CorrelationSummary,
+    DatasetIssue,
+    DatasetOverview,
+    DatasetPreview,
+    DatasetProfile,
+    DeletedModelingReport,
+    DuckDBQueryResult,
+    ExperimentPlanResult,
+    FeatureSelectionResult,
+    LeakageSummary,
+    ModelingReadinessResult,
+    ModelingReportCatalogSummary,
+    ModelingReportMetadata,
+    ModelingReportResult,
+    ModelingReportSection,
+    ModelingReportSectionMatch,
+    ModelingReportSectionSummary,
+    PreviewModelingReport,
+    ReadModelingReport,
+    ReadModelingReportSection,
+    RenamedModelingReport,
+    ReportSearchMatch,
+    SavedModelingReport,
+    SavedModelingReportSection,
+    SQLiteColumnInfo,
+    SQLiteDatabaseInfo,
+    SQLiteQueryResult,
+    SQLiteTableSchema,
+    StoredModelingReport,
+    TargetSuggestionResult,
+    TimeSeriesValidationResult,
+]
+
+
+def test_mcp_public_surface_snapshot() -> None:
+    resource_uris = sorted(str(uri) for uri in mcp._resource_manager._resources)
+    template_uris = sorted(str(uri) for uri in mcp._resource_manager._templates)
+
+    assert resource_uris + template_uris == EXPECTED_RESOURCE_URIS
+    assert sorted(mcp._tool_manager._tools) == EXPECTED_TOOL_NAMES
+    assert sorted(mcp._prompt_manager._prompts) == EXPECTED_PROMPT_NAMES
+
+
+def test_cli_command_snapshot() -> None:
+    assert _registered_cli_commands() == EXPECTED_CLI_COMMANDS
+
+
+def test_result_model_field_snapshot() -> None:
+    actual_fields = {
+        model.__name__: list(model.model_fields)
+        for model in sorted(RESULT_MODELS, key=lambda item: item.__name__)
+    }
+
+    assert actual_fields == EXPECTED_RESULT_MODEL_FIELDS
+
+
+def _registered_cli_commands() -> list[str]:
+    parser = build_parser()
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            return sorted(action.choices)
+    raise AssertionError("CLI parser does not define subcommands.")
