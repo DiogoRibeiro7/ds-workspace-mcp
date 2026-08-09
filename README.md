@@ -1386,6 +1386,7 @@ Mount your own datasets:
 docker run --rm \
   -p 8000:8000 \
   -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/reports:/app/reports" \
   ds-workspace-mcp
 ```
 
@@ -1395,7 +1396,7 @@ Run with Docker Compose:
 docker compose up --build
 ```
 
-The Compose setup reads defaults from `.env.example`, overrides from `.env` when present, binds the server to `0.0.0.0`, publishes `MCP_PORT`, and mounts the local `data/` directory into the container at `/app/data`.
+The Compose setup reads defaults from `.env.example`, overrides from `.env` when present, binds the server to `0.0.0.0`, publishes `MCP_PORT`, mounts local `data/` at `/app/data`, and mounts local `reports/` at `/app/reports` so saved reports survive container recreation.
 
 To inspect the running HTTP server with MCP Inspector:
 

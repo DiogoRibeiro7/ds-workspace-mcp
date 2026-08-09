@@ -14,6 +14,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added classification baseline class-count metadata and weighted F1.
 - Added structured time-series frequency inference with regularity kind, confidence, support ratio, and missing-interval metadata.
 - Added severity and confidence metadata to leakage warnings.
+- Added Docker report persistence wiring and a container smoke test.
 
 ### Changed
 
@@ -23,6 +24,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Classification baselines now reject unsupported or unrepresentative train/test splits instead of returning misleading metrics.
 - Time-series validation now reports irregular gap patterns without fabricating a dominant frequency or missing-interval count.
 - Feature selection now treats high correlation and target-name overlap as review evidence instead of automatic exclusion.
+- Docker builds now install from `poetry.lock`, run as a non-root user, and persist reports through `/app/reports`.
 
 ## [1.0.2] - 2026-08-09
 

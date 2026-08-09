@@ -16,6 +16,7 @@ services:
       MCP_HOST: 0.0.0.0
       MCP_PORT: ${MCP_PORT:-8000}
       MCP_DATA_ROOT: /app/data
+      MCP_REPORTS_ROOT: /app/reports
       MCP_MAX_PREVIEW_ROWS: ${MCP_MAX_PREVIEW_ROWS:-50}
       MCP_MAX_SQL_ROWS: ${MCP_MAX_SQL_ROWS:-1000}
       MCP_MAX_CATEGORICAL_VALUES: ${MCP_MAX_CATEGORICAL_VALUES:-5}
@@ -28,3 +29,4 @@ services:
       MCP_TRACING_CONSOLE_EXPORTER: ${MCP_TRACING_CONSOLE_EXPORTER:-false}
     volumes:
       - ./data:/app/data
+      - ./reports:/app/reports
