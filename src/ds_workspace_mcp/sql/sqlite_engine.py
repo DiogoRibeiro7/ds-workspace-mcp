@@ -6,6 +6,7 @@ import re
 import sqlite3
 import time
 from pathlib import Path
+from typing import cast
 
 from pydantic import BaseModel, Field
 
@@ -201,19 +202,28 @@ def query_sqlite_database(
             "sql.sqlite.query",
             {
                 "dataset.file_name": file_name,
+                "sql.engine": "sqlite",
                 "sql.limit": safe_limit,
+                "sql.timeout_ms": settings.mcp_sql_timeout_ms,
             },
-        ),
+        ) as trace,
         _connect_read_only(path) as connection,
     ):
-        cursor = _execute_query_with_timeout(
-            connection=connection,
-            query=f"SELECT * FROM ({normalized_sql}) AS safe_query LIMIT ?",
-            parameters=(safe_limit,),
-            timeout_ms=settings.mcp_sql_timeout_ms,
-        )
-        rows = cursor.fetchall()
-        columns = [str(description[0]) for description in cursor.description or []]
+        query_started_at = time.monotonic()
+        try:
+            rows, columns = _execute_query_with_timeout(
+                connection=connection,
+                query=f"SELECT * FROM ({normalized_sql}) AS safe_query LIMIT ?",
+                parameters=(safe_limit,),
+                timeout_ms=settings.mcp_sql_timeout_ms,
+            )
+        except QueryTimeoutError:
+            trace.set_attribute("sql.cancelled", True)
+            trace.set_attribute("sql.elapsed_ms", _elapsed_ms(query_started_at))
+            raise
+        trace.set_attribute("sql.cancelled", False)
+        trace.set_attribute("sql.elapsed_ms", _elapsed_ms(query_started_at))
+        trace.set_attribute("sql.result_row_count", len(rows))
 
     clean_rows = [
         {column: _normalize_scalar(value) for column, value in zip(columns, row, strict=True)}
@@ -228,10 +238,11 @@ def query_sqlite_database(
         limit_applied=safe_limit,
     )
     logger.info(
-        "Completed SQLite query for file_name=%s result_rows=%s columns=%s",
+        "Completed SQLite query for file_name=%s result_rows=%s columns=%s timeout_ms=%s",
         file_name,
         result.row_count,
         len(result.columns),
+        settings.mcp_sql_timeout_ms,
     )
     return result
 
@@ -315,21 +326,41 @@ def _execute_query_with_timeout(
     query: str,
     parameters: tuple[object, ...],
     timeout_ms: int,
-) -> sqlite3.Cursor:
-    """Execute a SQLite query with a progress-handler timeout."""
+) -> tuple[list[tuple[object, ...]], list[str]]:
+    """Execute and fetch a SQLite query with a progress-handler timeout."""
 
     deadline = time.monotonic() + (timeout_ms / 1000)
+    started_at = time.monotonic()
 
     def progress_handler() -> int:
         return 1 if time.monotonic() >= deadline else 0
 
     connection.set_progress_handler(progress_handler, 1_000)
     try:
-        return connection.execute(query, parameters)
+        cursor = connection.execute(query, parameters)
+        rows = cast(list[tuple[object, ...]], cursor.fetchall())
+        columns = [str(description[0]) for description in cursor.description or []]
+        logger.debug(
+            "SQLite query completed timeout_ms=%s elapsed_ms=%s result_rows=%s cancelled=false",
+            timeout_ms,
+            _elapsed_ms(started_at),
+            len(rows),
+        )
+        return rows, columns
     except sqlite3.OperationalError as exc:
         if "interrupted" in str(exc).lower():
-            logger.warning("Interrupted SQLite query after timeout_ms=%s", timeout_ms)
+            logger.warning(
+                "Interrupted SQLite query timeout_ms=%s elapsed_ms=%s cancelled=true",
+                timeout_ms,
+                _elapsed_ms(started_at),
+            )
             raise QueryTimeoutError(f"SQL query exceeded the timeout of {timeout_ms} ms.") from exc
         raise
     finally:
         connection.set_progress_handler(None, 0)
+
+
+def _elapsed_ms(started_at: float) -> int:
+    """Return elapsed monotonic time in milliseconds."""
+
+    return int((time.monotonic() - started_at) * 1000)

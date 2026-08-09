@@ -160,6 +160,7 @@ Responsibilities:
 - path and file-type validation happen in `core.py` and `sqlite_engine.py`
 - DuckDB SQL validation combines engine settings, parsed relation allowlisting, and defense-in-depth statement/function rejection before query execution
 - SQLite SQL validation happens before query execution and SQLite databases are opened read-only
+- SQL timeout guards cover execution and result materialization, and timeout/cancellation metadata is logged and attached to tracing spans when tracing is enabled
 
 ### Observability
 
@@ -174,6 +175,6 @@ Responsibilities:
 ## Design Tradeoffs
 
 - pandas-first CSV handling keeps the implementation simple, but very large files may still be expensive
-- DuckDB SQL validation uses structural parsing for relation access, but query complexity and resource exhaustion still require operational limits
+- DuckDB SQL validation uses structural parsing for relation access, but query complexity and resource exhaustion still require operational limits and cancellation handling
 - auth is intentionally minimal to support local and small self-hosted use without introducing a full identity layer
 - heuristics are exposed because analytical guidance is useful, but they are documented as non-authoritative

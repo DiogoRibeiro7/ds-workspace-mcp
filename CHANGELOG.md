@@ -14,6 +14,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Changed
 
 - Hardened DuckDB query connections by disabling external access, extension autoload/autoinstall, community extensions, persistent secrets, and runtime configuration changes before user SQL executes.
+- Strengthened SQL timeout handling so SQLite timeout protection remains active during result fetching and both SQL engines log/trace timeout, cancellation, elapsed-time, and result-row metadata.
 
 ## [1.0.2] - 2026-08-09
 

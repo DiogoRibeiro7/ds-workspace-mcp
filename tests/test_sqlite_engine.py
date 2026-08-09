@@ -151,6 +151,12 @@ def test_query_sqlite_database_rejects_overlong_sql(
 def test_execute_query_with_timeout_interrupts_sqlite_connection(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    class FakeCursor:
+        description = (("value", None, None, None, None, None, None),)
+
+        def fetchall(self) -> list[tuple[int]]:
+            return [(1,)]
+
     class FakeConnection:
         def __init__(self) -> None:
             self.progress_handler: Any = None
@@ -162,9 +168,9 @@ def test_execute_query_with_timeout_interrupts_sqlite_connection(
             assert self.progress_handler is not None
             if self.progress_handler() == 1:
                 raise sqlite3.OperationalError("interrupted")
-            raise AssertionError("progress handler should have timed out")
+            return cast(sqlite3.Cursor, FakeCursor())
 
-    monotonic_values = iter([0.0, 1.0])
+    monotonic_values = iter([0.0, 0.0, 1.0, 1.0])
     monkeypatch.setattr(
         "ds_workspace_mcp.sql.sqlite_engine.time.monotonic",
         lambda: next(monotonic_values),
@@ -177,3 +183,49 @@ def test_execute_query_with_timeout_interrupts_sqlite_connection(
             parameters=(),
             timeout_ms=100,
         )
+
+
+def test_execute_query_with_timeout_keeps_sqlite_timeout_active_during_fetch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeCursor:
+        description = (("value", None, None, None, None, None, None),)
+
+        def __init__(self, connection: FakeConnection) -> None:
+            self.connection = connection
+
+        def fetchall(self) -> list[tuple[int]]:
+            assert self.connection.progress_handler is not None
+            if self.connection.progress_handler() == 1:
+                raise sqlite3.OperationalError("interrupted")
+            return [(1,)]
+
+    class FakeConnection:
+        def __init__(self) -> None:
+            self.progress_handler: Any = None
+            self.cleared = False
+
+        def set_progress_handler(self, handler: Any, instructions: int) -> None:
+            self.progress_handler = handler
+            if handler is None and instructions == 0:
+                self.cleared = True
+
+        def execute(self, query: str, parameters: tuple[object, ...]) -> sqlite3.Cursor:
+            return cast(sqlite3.Cursor, FakeCursor(self))
+
+    monotonic_values = iter([0.0, 0.0, 1.0, 1.0])
+    monkeypatch.setattr(
+        "ds_workspace_mcp.sql.sqlite_engine.time.monotonic",
+        lambda: next(monotonic_values),
+    )
+    connection = FakeConnection()
+
+    with pytest.raises(QueryTimeoutError, match="timeout of 100 ms"):
+        _execute_query_with_timeout(
+            connection=cast(Any, connection),
+            query="SELECT 1",
+            parameters=(),
+            timeout_ms=100,
+        )
+
+    assert connection.cleared is True

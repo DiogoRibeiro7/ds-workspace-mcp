@@ -53,7 +53,7 @@ DuckDB controls:
 - destructive and schema-changing statements are rejected as defense in depth
 - external file and scan functions such as `read_csv`, `read_parquet`, `read_json`, `glob`, `sniff_csv`, `query`, and similar helpers are rejected as defense in depth
 - a final row limit is always applied
-- best-effort query interruption is attempted when execution exceeds `MCP_SQL_TIMEOUT_MS`
+- query execution and result materialization run behind a timeout; DuckDB interruption is requested when execution exceeds `MCP_SQL_TIMEOUT_MS`
 
 SQLite controls:
 
@@ -61,7 +61,7 @@ SQLite controls:
 - queries must be a single `SELECT` or `WITH` statement
 - destructive and schema-changing statements are rejected
 - a final row limit is always applied
-- a progress-handler timeout interrupts long-running queries after `MCP_SQL_TIMEOUT_MS`
+- a progress-handler timeout remains active through execution and result fetching, interrupting long-running queries after `MCP_SQL_TIMEOUT_MS`
 
 SQLite controls reduce accidental or hostile misuse through application-layer checks and read-only handles. DuckDB uses both engine-level external-access restrictions and application-level structural validation.
 
