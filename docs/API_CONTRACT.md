@@ -788,15 +788,27 @@ The following are considered non-breaking:
   - `categorical_columns: list[CategoricalColumnProfile]`
   - `boolean_columns: list[BooleanColumnProfile]`
   - `datetime_columns: list[DatetimeColumnProfile]`
+  - `data_quality: DatasetQualityDiagnostics`
   - `profiling_limits.max_categorical_values: int`
+  - `profiling_limits.max_histogram_bins: int`
+  - `profiling_limits.max_candidate_key_columns: int`
+  - `profiling_limits.max_candidate_key_combinations: int`
 - Stable profile item fields:
-  - `NumericColumnProfile`: `column`, `count`, `mean`, `std`, `min`, `q25`, `median`, `q75`, `max`
-  - `CategoricalColumnProfile`: `column`, `count`, `unique_count`, `top_value`, `top_value_frequency`, `top_values`
+  - `NumericColumnProfile`: `column`, `count`, `mean`, `std`, `min`, `q25`, `median`, `q75`, `max`, `iqr`, `robust_spread`, `histogram`, `iqr_outlier_count`, `z_score_outlier_count`, `skewness`, `quality_signals`
+  - `NumericHistogramBin`: `lower_bound`, `upper_bound`, `count`
+  - `CategoricalColumnProfile`: `column`, `count`, `unique_count`, `top_value`, `top_value_frequency`, `top_values`, `rare_category_count`, `rare_category_mass`, `entropy`, `normalized_entropy`, `quality_signals`
   - `ValueFrequency`: `value`, `count`
   - `BooleanColumnProfile`: `column`, `true_count`, `false_count`, `missing_count`
   - `DatetimeColumnProfile`: `column`, `count`, `min`, `max`
+  - `ProfileHeuristicSignal`: `signal`, `reason`, `severity`, `confidence`
+  - `ColumnQualitySignal`: `column`, `signal`, `reason`, `severity`, `confidence`
+  - `DatasetQualityDiagnostics`: `duplicate_row_count`, `duplicate_row_percentage`, `candidate_keys`, `empty_columns`, `one_value_columns`, `probable_free_text_columns`, `possible_identifier_columns`
+  - `CandidateKeyProfile`: `columns`, `uniqueness_ratio`, `missing_count`, `reason`, `confidence`
 - Heuristic notes:
   - categorical top values are intentionally bounded
+  - numeric histograms are intentionally capped and should not be interpreted as exact density estimates
+  - candidate key combinations are searched only within documented column and combination caps
+  - quality signals are advisory and always include reason plus confidence/severity metadata
   - datetime detection is conservative and may leave ambiguous text columns in categorical output
 
 #### `detect_csv_issues(file_name: str)`

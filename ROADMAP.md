@@ -77,9 +77,9 @@
 
 ## v1.3 — Richer analytics
 
-- [ ] Add numeric histograms and binning to profiling output.
-- [ ] Add outlier detection (IQR and z-score) and constant/near-constant column flags.
-- [ ] Add duplicate-row detection and key-candidate suggestions.
+- [x] Add numeric histograms and binning to profiling output.
+- [x] Add outlier detection (IQR and z-score) and constant/near-constant column flags.
+- [x] Add duplicate-row detection and key-candidate suggestions.
 - [ ] Add time-series resampling and missing-interval fill suggestions.
 - [ ] Add a seasonal-naive forecast baseline alongside the existing validator.
 

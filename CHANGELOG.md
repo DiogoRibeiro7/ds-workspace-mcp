@@ -19,6 +19,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added a FastMCP application factory for isolated server construction.
 - Added domain-specific MCP registration modules for resources, tools, and prompts.
 - Added dataset schema diff and drift diagnostics across CSV, Parquet, JSON, JSONL, Excel, and SQLite datasets.
+- Added richer bounded profiling diagnostics for numeric distributions, categorical quality, duplicate rows, identifiers, free-text columns, and candidate keys.
 
 ### Changed
 

@@ -84,7 +84,7 @@ http://localhost:8000/mcp
 Useful first tool calls:
 
 - `summarize_dataset` for a compact dataset overview.
-- `profile_csv` for detailed column summaries.
+- `profile_csv` for detailed column summaries, distributions, and bounded quality diagnostics.
 - `aggregate_dataset` for allowlisted grouped metrics.
 - `assess_modeling_readiness` for target, feature, leakage, and next-step guidance.
 - `save_modeling_report` for a reusable markdown report artifact.
@@ -1142,7 +1142,7 @@ Arguments:
 
 #### `profile_csv`
 
-Return row count, column count, dtypes, missing values, missing percentages, and bounded column summaries for numeric, categorical, boolean, and datetime fields.
+Return row count, column count, dtypes, missing values, missing percentages, bounded column summaries for numeric, categorical, boolean, and datetime fields, and advisory data-quality diagnostics.
 
 Arguments:
 
@@ -1170,7 +1170,14 @@ Example response shape:
       "q25": 77.0,
       "median": 84.0,
       "q75": 90.0,
-      "max": 103.0
+      "max": 103.0,
+      "iqr": 13.0,
+      "robust_spread": 9.64,
+      "histogram": [{"lower_bound": 61.0, "upper_bound": 70.0, "count": 4}],
+      "iqr_outlier_count": 1,
+      "z_score_outlier_count": 0,
+      "skewness": 0.12,
+      "quality_signals": []
     }
   ],
   "categorical_columns": [
@@ -1180,7 +1187,12 @@ Example response shape:
       "unique_count": 4,
       "top_value": "north",
       "top_value_frequency": 32,
-      "top_values": [{"value": "north", "count": 32}]
+      "top_values": [{"value": "north", "count": 32}],
+      "rare_category_count": 0,
+      "rare_category_mass": 0.0,
+      "entropy": 1.97,
+      "normalized_entropy": 0.98,
+      "quality_signals": []
     }
   ],
   "boolean_columns": [
@@ -1200,10 +1212,24 @@ Example response shape:
     }
   ],
   "profiling_limits": {
-    "max_categorical_values": 5
+    "max_categorical_values": 5,
+    "max_histogram_bins": 10,
+    "max_candidate_key_columns": 12,
+    "max_candidate_key_combinations": 25
+  },
+  "data_quality": {
+    "duplicate_row_count": 0,
+    "duplicate_row_percentage": 0.0,
+    "candidate_keys": [],
+    "empty_columns": [],
+    "one_value_columns": [],
+    "probable_free_text_columns": [],
+    "possible_identifier_columns": []
   }
 }
 ```
+
+Histogram bins, top values, and candidate key searches are capped. Quality signals are advisory and include a reason plus severity and confidence metadata.
 
 Profiling limits:
 
