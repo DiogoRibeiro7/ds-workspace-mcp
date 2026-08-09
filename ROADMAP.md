@@ -81,7 +81,7 @@
 - [x] Add outlier detection (IQR and z-score) and constant/near-constant column flags.
 - [x] Add duplicate-row detection and key-candidate suggestions.
 - [ ] Add time-series resampling and missing-interval fill suggestions.
-- [ ] Add a seasonal-naive forecast baseline alongside the existing validator.
+- [x] Add a seasonal-naive forecast baseline alongside the existing validator.
 
 ## v2.0 — Workspace and extensibility
 

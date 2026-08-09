@@ -282,7 +282,7 @@ The following are considered non-breaking:
 - Heuristic notes:
   - model suggestions are planning guidance, not implemented training pipelines
   - baseline model names may refer to standard model families rather than built-in MCP execution capabilities
-  - recommended validation fields are directly consumable by `evaluate_baseline_model`
+  - recommended validation fields are directly consumable by `evaluate_baseline_model` for tabular tasks and `evaluate_forecast_baselines` for time-series regression tasks
   - when `target_column` is omitted, the plan uses the top suggested target candidate
 
 #### `build_modeling_report(file_name: str, target_column: str | None = None)`
@@ -966,6 +966,59 @@ The following are considered non-breaking:
   - grouped validation infers frequency per group and does not force one global frequency when groups disagree
   - history sufficiency warnings are baseline-readiness guidance, not modeling guarantees
 
+#### `evaluate_forecast_baselines(file_name: str, time_column: str, target_column: str, group_column: str | None = None, forecast_horizon: int = 1, test_size: float = 0.2, seasonal_period: int | None = None)`
+
+- Stable name: `evaluate_forecast_baselines`
+- Purpose: evaluate transparent forecasting baselines with chronological rolling-origin backtesting
+- Stable result fields:
+  - `file_name: str`
+  - `time_column: str`
+  - `target_column: str`
+  - `group_column: str | null`
+  - `frequency: FrequencyInferenceResult`
+  - `forecast_horizon: int`
+  - `test_size: float`
+  - `seasonal_period: int | null`
+  - `evaluated_points: int`
+  - `baselines: list[ForecastBaselineResult]`
+  - `group_results: list[GroupForecastBaselineResult]`
+  - `warnings: list[str]`
+  - `metric_notes: ForecastMetricNotes`
+- Stable baseline result fields:
+  - `baseline_name: str`
+  - `baseline_definition: str`
+  - `forecast_horizon: int`
+  - `seasonal_period: int | null`
+  - `training_start: str`
+  - `training_end: str`
+  - `test_start: str`
+  - `test_end: str`
+  - `evaluated_points: int`
+  - `metrics: ForecastBaselineMetrics`
+- Stable metric fields:
+  - `mae: float`
+  - `rmse: float`
+  - `mase: float | null`
+  - `smape: float`
+- Stable group result fields:
+  - `group: str`
+  - `row_count: int`
+  - `frequency: FrequencyInferenceResult`
+  - `baselines: list[ForecastBaselineResult]`
+- Stable metric note fields:
+  - `mae: str`
+  - `rmse: str`
+  - `mase: str`
+  - `smape: str`
+- Heuristic and mathematical notes:
+  - only regular inferred frequencies are scored initially; irregular series fail clearly
+  - grouped evaluation is bounded to a fixed maximum number of groups
+  - last-value naive predicts from the most recent value available at the rolling origin
+  - seasonal naive runs only when the explicit or inferred seasonal period is valid for the horizon and training history
+  - drift extends a straight line from the first observed value to each rolling origin
+  - MASE uses the relevant training-difference denominator and returns null when it is zero or unavailable
+  - sMAPE uses `200*abs(actual-prediction)/(abs(actual)+abs(prediction))`; terms where actual and prediction are both zero contribute `0`
+
 #### `evaluate_baseline_model(file_name: str, target_column: str, task_type: str, test_size: float = 0.2, random_state: int = 42, validation_strategy: str | None = None, time_column: str | None = None, group_column: str | None = None, shuffle: bool | None = None)`
 
 - Stable name: `evaluate_baseline_model`
@@ -1131,6 +1184,8 @@ The `ds-workspace-mcp` console script is public.
   - prints a bounded diff summary between the two most recently modified saved modeling reports as JSON
 - `ds-workspace-mcp preview-latest-modeling-report`
   - prints a bounded preview of the most recently modified saved modeling report as JSON
+- `ds-workspace-mcp evaluate-forecast-baselines <file_name> --time-column <column> --target-column <column> [--group-column] [--forecast-horizon] [--test-size] [--seasonal-period]`
+  - prints the `evaluate_forecast_baselines` result as JSON
 - `ds-workspace-mcp generate-sample-healthcare-data [--output] [--start-date] [--days] [--clinics] [--seed]`
   - writes a synthetic healthcare CSV and prints the output path
 

@@ -81,7 +81,8 @@ def test_assess_modeling_readiness_uses_top_suggested_target(
     assert result.recommended_time_column == "date"
     assert result.recommended_group_column is None
     assert "validate_time_series_dataset" in result.recommended_next_tools
-    assert "evaluate_baseline_model" in result.recommended_next_tools
+    assert "evaluate_forecast_baselines" in result.recommended_next_tools
+    assert "evaluate_baseline_model" not in result.recommended_next_tools
     assert "record_id" in result.feature_selection.exclude_columns
     assert result.target_candidate is not None
     assert result.target_candidate.column == "revenue"

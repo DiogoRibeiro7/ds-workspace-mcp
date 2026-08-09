@@ -23,7 +23,7 @@ release metadata, Docker support, and CI-backed documentation.
 | --- | --- |
 | Dataset access | Safe reads for CSV, Parquet, JSON, Excel, SQLite, and DuckDB-backed CSV queries |
 | Exploration | Preview, profiling, missingness summaries, categorical summaries, correlations, and issue detection |
-| Modeling readiness | Target suggestions, feature review, leakage checks, time-series validation, and dummy baselines |
+| Modeling readiness | Target suggestions, feature review, leakage checks, time-series validation, forecast baselines, and dummy baselines |
 | Report workflow | Generate, save, search, preview, compare, copy, rename, delete, and extract markdown report sections |
 | MCP integration | Resources, tools, prompts, stdio transport, Streamable HTTP transport, and runnable client examples |
 | Safety controls | Configured data/report roots, path traversal rejection, size limits, row limits, query length limits, and SQL timeouts |
@@ -1363,6 +1363,29 @@ Arguments:
 }
 ```
 
+#### `evaluate_forecast_baselines`
+
+Evaluate transparent forecasting baselines with chronological rolling-origin backtesting.
+Regular frequencies are required; irregular series are rejected instead of being scored.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "time_column": "date",
+  "target_column": "appointments_completed",
+  "group_column": "clinic_id",
+  "forecast_horizon": 1,
+  "test_size": 0.2,
+  "seasonal_period": 7
+}
+```
+
+The result includes last-value naive and drift baselines, plus seasonal naive when the
+frequency and history support a seasonal period. Metrics include MAE, RMSE, MASE when
+the training denominator is valid, and sMAPE with both-zero terms contributing `0`.
+
 #### `evaluate_baseline_model`
 
 Evaluate a dummy baseline model for regression, binary classification, or multiclass classification.
@@ -1600,6 +1623,9 @@ Time-series validation notes:
 - Missing intervals are counted only after a regular or sufficiently supported approximate fixed interval is established.
 - Grouped series infer frequency per group and avoid reporting one global frequency when groups disagree.
 - History-length warnings are heuristic and intended for baseline forecasting readiness, not strict modeling requirements.
+- Forecast baselines use chronological rolling-origin evaluation and require regular inferred frequencies.
+- Seasonal naive runs only when an explicit or inferred seasonal period is valid for the horizon and training history.
+- Forecast baseline metrics include MAE, RMSE, MASE when the denominator is valid, and sMAPE with both-zero terms contributing `0`.
 
 Baseline model notes:
 

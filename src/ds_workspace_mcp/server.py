@@ -74,7 +74,10 @@ from ds_workspace_mcp.mcp.tools.sql import (
     query_csv_with_duckdb,
     query_sqlite,
 )
-from ds_workspace_mcp.mcp.tools.timeseries import validate_time_series_dataset_tool
+from ds_workspace_mcp.mcp.tools.timeseries import (
+    evaluate_forecast_baselines,
+    validate_time_series_dataset_tool,
+)
 from ds_workspace_mcp.tracing import configure_tracing
 
 logger = logging.getLogger(__name__)
@@ -97,6 +100,7 @@ __all__ = [
     "detect_csv_issues",
     "detect_possible_target_leakage",
     "evaluate_baseline_model",
+    "evaluate_forecast_baselines",
     "get_transport",
     "inspect_latest_modeling_report_tool",
     "inspect_modeling_report",

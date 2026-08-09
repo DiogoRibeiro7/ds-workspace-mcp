@@ -158,6 +158,9 @@ def _build_baseline_models(readiness: ModelingReadinessResult) -> list[ModelCand
 def _build_evaluation_metrics(readiness: ModelingReadinessResult) -> list[str]:
     """Return the most useful starter metrics for the detected task."""
 
+    if readiness.validation_strategy == "time_series_review":
+        return ["mae", "rmse", "mase", "smape"]
+
     if readiness.suggested_task_type == "regression":
         return ["mae", "rmse", "r2"]
 
@@ -207,14 +210,14 @@ def _build_next_steps(readiness: ModelingReadinessResult) -> list[str]:
 
     if readiness.validation_strategy == "time_series_review":
         steps.append(
-            "Run the built-in baseline evaluation with chronological validation and then "
-            "engineer lag or calendar features."
+            "Run the built-in forecast baseline evaluation with chronological validation "
+            "before engineering lag or calendar features."
         )
-
-    steps.append(
-        "Run the built-in baseline evaluation for the chosen target using "
-        f"`{readiness.recommended_validation_strategy}` validation."
-    )
+    else:
+        steps.append(
+            "Run the built-in baseline evaluation for the chosen target using "
+            f"`{readiness.recommended_validation_strategy}` validation."
+        )
     steps.append("Compare the baseline against one linear model and one tree-based model.")
 
     if readiness.leakage_warnings:

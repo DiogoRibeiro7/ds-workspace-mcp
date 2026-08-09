@@ -148,8 +148,13 @@ def _build_recommended_next_tools(
         recommendations.append("suggest_feature_columns")
     if validation_strategy == "time_series_review":
         recommendations.append("validate_time_series_dataset")
+        recommendations.append("evaluate_forecast_baselines")
     recommendations.append("detect_possible_target_leakage")
-    if suggested_task_type != "review_manually" and include_feature_count > 0:
+    if (
+        suggested_task_type != "review_manually"
+        and include_feature_count > 0
+        and validation_strategy != "time_series_review"
+    ):
         recommendations.append("evaluate_baseline_model")
     return recommendations
 
