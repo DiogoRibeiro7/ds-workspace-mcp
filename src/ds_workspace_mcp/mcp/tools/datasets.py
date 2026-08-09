@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 
+from ds_workspace_mcp.aggregation import AggregationRequest, AggregationResult, aggregate_dataset
 from ds_workspace_mcp.core import (
     DatasetIssue,
     DatasetPreview,
@@ -17,6 +18,18 @@ from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overvie
 from ds_workspace_mcp.tracing import traced_operation
 
 logger = logging.getLogger(__name__)
+
+
+@_mcp_tool()
+def aggregate_dataset_tool(request: AggregationRequest) -> AggregationResult:
+    """Run a safe bounded aggregation over any supported tabular dataset."""
+
+    with traced_operation(
+        "tool.aggregate_dataset",
+        {"tool.name": "aggregate_dataset", "dataset.file_name": request.file_name},
+    ):
+        logger.info("Tool aggregate_dataset invoked file_name=%s", request.file_name)
+        return aggregate_dataset(request)
 
 
 @_mcp_tool()

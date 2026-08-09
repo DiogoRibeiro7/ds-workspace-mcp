@@ -37,6 +37,10 @@ class InvalidSQLError(DsWorkspaceError, ValueError):
     """Raised when a SQL statement is invalid or unsafe."""
 
 
+class InvalidAggregationError(DsWorkspaceError, ValueError):
+    """Raised when a structured aggregation request is invalid."""
+
+
 class ProfilingError(DsWorkspaceError, RuntimeError):
     """Raised when dataset profiling cannot be completed safely."""
 
