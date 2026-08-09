@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+title: "Data Science Workspace MCP Server"
+type: software
+authors:
+  - family-names: Ribeiro
+    given-names: Diogo
+    affiliation: "School of Media Arts and Design, Polytechnic of Porto, Portugal"
+    orcid: "https://orcid.org/0009-0001-2022-7072"
+abstract: "A Model Context Protocol server for safely inspecting and profiling local analytical datasets."
+keywords:
+  - model-context-protocol
+  - mcp
+  - data-science
+  - analytics
+  - python
+  - dataset-profiling
+license: MIT
+repository-code: "https://github.com/DiogoRibeiro7/ds-workspace-mcp"
+url: "https://github.com/DiogoRibeiro7/ds-workspace-mcp"
+version: 1.0.1

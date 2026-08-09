@@ -298,14 +298,10 @@ def compare_saved_modeling_reports(
         )
     )
     added_line_count = sum(
-        1
-        for line in diff_lines
-        if line.startswith("+") and not line.startswith("+++")
+        1 for line in diff_lines if line.startswith("+") and not line.startswith("+++")
     )
     removed_line_count = sum(
-        1
-        for line in diff_lines
-        if line.startswith("-") and not line.startswith("---")
+        1 for line in diff_lines if line.startswith("-") and not line.startswith("---")
     )
     preview_lines = diff_lines[:MAX_REPORT_DIFF_PREVIEW_LINES]
     return ComparedModelingReport(
@@ -372,9 +368,7 @@ def read_saved_modeling_report_section(
                 markdown="\n".join(section.lines),
             )
 
-    raise InvalidDatasetNameError(
-        f"Modeling report section not found: {section_heading}"
-    )
+    raise InvalidDatasetNameError(f"Modeling report section not found: {section_heading}")
 
 
 def read_latest_modeling_report_section(section_heading: str) -> ReadModelingReportSection:
@@ -566,14 +560,10 @@ def compare_saved_modeling_report_sections(
         )
     )
     added_line_count = sum(
-        1
-        for line in diff_lines
-        if line.startswith("+") and not line.startswith("+++")
+        1 for line in diff_lines if line.startswith("+") and not line.startswith("+++")
     )
     removed_line_count = sum(
-        1
-        for line in diff_lines
-        if line.startswith("-") and not line.startswith("---")
+        1 for line in diff_lines if line.startswith("-") and not line.startswith("---")
     )
     preview_lines = diff_lines[:MAX_REPORT_DIFF_PREVIEW_LINES]
     return ComparedModelingReportSection(

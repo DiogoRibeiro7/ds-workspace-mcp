@@ -283,9 +283,7 @@ def _validate_and_normalize_sql(sql: str, max_sql_query_length: int) -> str:
 
     if len(normalized_sql) > max_sql_query_length:
         logger.warning("Rejected SQLite query because it exceeded the configured length limit.")
-        raise InvalidSQLError(
-            f"sql must not exceed {max_sql_query_length} characters."
-        )
+        raise InvalidSQLError(f"sql must not exceed {max_sql_query_length} characters.")
 
     if ";" in normalized_sql:
         logger.warning("Rejected SQLite query because multiple statements were detected.")
@@ -331,9 +329,7 @@ def _execute_query_with_timeout(
     except sqlite3.OperationalError as exc:
         if "interrupted" in str(exc).lower():
             logger.warning("Interrupted SQLite query after timeout_ms=%s", timeout_ms)
-            raise QueryTimeoutError(
-                f"SQL query exceeded the timeout of {timeout_ms} ms."
-            ) from exc
+            raise QueryTimeoutError(f"SQL query exceeded the timeout of {timeout_ms} ms.") from exc
         raise
     finally:
         connection.set_progress_handler(None, 0)

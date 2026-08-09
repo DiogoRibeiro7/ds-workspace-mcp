@@ -12,8 +12,17 @@ Run the local quality gate before opening a pull request:
 
 ```bash
 poetry run ruff check .
+poetry run ruff format --check src tests examples
 poetry run mypy
-poetry run pytest
+poetry run pytest -m "not integration"
+```
+
+If `make` is available, `make quality` runs the same default gate.
+
+Run integration coverage before release or when changing transports, example clients, server startup, or MCP protocol behavior:
+
+```bash
+poetry run pytest -m integration tests/integration tests/test_examples.py -vv
 ```
 
 You can also use the local CLI:
@@ -37,3 +46,4 @@ poetry run ds-workspace-mcp profile-dataset sample_clinic_usage.csv
 - Update `README.md` when user-facing behavior changes.
 - Update `ROADMAP.md` or `CHANGELOG.md` when milestone status changes.
 - Include test coverage for new features and validation failures.
+- Use the pull request template checklist to record which quality gates were run.

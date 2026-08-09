@@ -1,0 +1,53 @@
+name: Bug Report
+description: Report a reproducible problem in the MCP server, CLI, or dataset tooling.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please avoid sharing private dataset contents.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction Steps
+      description: Provide the smallest set of commands, environment variables, and sample inputs needed to reproduce the issue.
+      placeholder: |
+        1. Configure MCP_DATA_ROOT=...
+        2. Run poetry run ds-workspace-mcp ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include Python version, operating system, package version, and transport mode.
+      placeholder: |
+        Python:
+        OS:
+        ds-workspace-mcp:
+        MCP_TRANSPORT:
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Tracebacks
+      description: Paste relevant logs. Redact secrets, API keys, and private paths if needed.
+      render: text

@@ -1,0 +1,30 @@
+name: Feature Request
+description: Propose a new capability or improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow or limitation should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the behavior, API, CLI command, or documentation change you want.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What workarounds or designs have you considered?
+  - type: textarea
+    id: risks
+    attributes:
+      label: Safety and Compatibility Notes
+      description: Note any implications for local file access, SQL execution, API compatibility, or performance.

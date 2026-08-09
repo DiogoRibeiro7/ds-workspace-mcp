@@ -69,8 +69,7 @@ def test_suggest_feature_columns_separates_include_review_and_exclude(
     assert "event_date" in result.review_columns
     assert suggestion_by_name["event_date"].decision == "review"
     assert any(
-        "feature engineering" in reason
-        for reason in suggestion_by_name["event_date"].reasons
+        "feature engineering" in reason for reason in suggestion_by_name["event_date"].reasons
     )
 
     assert "record_id" in result.exclude_columns

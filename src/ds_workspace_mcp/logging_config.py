@@ -21,4 +21,3 @@ def configure_logging(settings: Settings) -> None:
         return
 
     logging.basicConfig(level=level, format=LOG_FORMAT)
-

@@ -43,6 +43,9 @@ jobs:
       - name: Run Ruff
         run: poetry run ruff check .
 
+      - name: Check formatting
+        run: poetry run ruff format --check src tests examples
+
       - name: Run mypy
         run: poetry run mypy
 

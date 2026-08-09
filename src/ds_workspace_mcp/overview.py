@@ -113,17 +113,13 @@ def _build_summary(
     parts.append(f"Detected {numeric_column_count} numeric columns.")
 
     if columns_with_missing_values:
-        parts.append(
-            f"{len(columns_with_missing_values)} columns contain missing values."
-        )
+        parts.append(f"{len(columns_with_missing_values)} columns contain missing values.")
     else:
         parts.append("No missing values were detected.")
 
     if high_missingness_columns:
         high_missingness_text = ", ".join(high_missingness_columns[:MAX_OVERVIEW_ISSUES])
-        parts.append(
-            f"High-missingness columns: {high_missingness_text}."
-        )
+        parts.append(f"High-missingness columns: {high_missingness_text}.")
 
     if possible_identifier_columns:
         parts.append(

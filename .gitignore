@@ -13,6 +13,7 @@ ENV/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.tmp/
 .tox/
 .nox/
 .coverage

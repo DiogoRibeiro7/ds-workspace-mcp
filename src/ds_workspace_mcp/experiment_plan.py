@@ -98,8 +98,7 @@ def _build_baseline_models(readiness: ModelingReadinessResult) -> list[ModelCand
             ModelCandidate(
                 name="linear_regression",
                 rationale=(
-                    "Fast interpretable baseline for numeric targets "
-                    "with mixed feature types."
+                    "Fast interpretable baseline for numeric targets with mixed feature types."
                 ),
             ),
             ModelCandidate(
@@ -137,8 +136,7 @@ def _build_baseline_models(readiness: ModelingReadinessResult) -> list[ModelCand
             ModelCandidate(
                 name="gradient_boosted_trees",
                 rationale=(
-                    "Strong tabular benchmark after label quality "
-                    "and feature encoding are stable."
+                    "Strong tabular benchmark after label quality and feature encoding are stable."
                 ),
             ),
         ]
@@ -172,9 +170,7 @@ def _build_risks(readiness: ModelingReadinessResult) -> list[str]:
     risks: list[str] = []
 
     if readiness.validation_strategy == "time_series_review":
-        risks.append(
-            "Datetime context is present, so random splits may overstate performance."
-        )
+        risks.append("Datetime context is present, so random splits may overstate performance.")
 
     if readiness.feature_selection.review_columns:
         review_columns = ", ".join(readiness.feature_selection.review_columns[:5])
@@ -183,9 +179,7 @@ def _build_risks(readiness: ModelingReadinessResult) -> list[str]:
     if readiness.leakage_warnings:
         warning_columns = sorted({warning.column for warning in readiness.leakage_warnings})
         risks.append(
-            "Potential leakage signals were detected in: "
-            + ", ".join(warning_columns[:5])
-            + "."
+            "Potential leakage signals were detected in: " + ", ".join(warning_columns[:5]) + "."
         )
 
     if not readiness.feature_selection.include_columns:

@@ -88,8 +88,7 @@ def query_csv_with_duckdb_dataset(
 
     records = cast(list[dict[str, object]], result_frame.astype(object).to_dict(orient="records"))
     clean_rows = [
-        {column: _normalize_scalar(value) for column, value in row.items()}
-        for row in records
+        {column: _normalize_scalar(value) for column, value in row.items()} for row in records
     ]
 
     result = DuckDBQueryResult(
@@ -135,9 +134,7 @@ def _validate_and_normalize_sql(sql: str, max_sql_query_length: int) -> str:
 
     if len(normalized_sql) > max_sql_query_length:
         logger.warning("Rejected DuckDB query because it exceeded the configured length limit.")
-        raise InvalidSQLError(
-            f"sql must not exceed {max_sql_query_length} characters."
-        )
+        raise InvalidSQLError(f"sql must not exceed {max_sql_query_length} characters.")
 
     if ";" in normalized_sql:
         logger.warning("Rejected DuckDB query because multiple statements were detected.")
@@ -204,9 +201,7 @@ def _execute_query_with_timeout(
         logger.warning("Interrupted DuckDB query after timeout_ms=%s", timeout_ms)
         connection.interrupt()
         worker.join(timeout=1.0)
-        raise QueryTimeoutError(
-            f"SQL query exceeded the timeout of {timeout_ms} ms."
-        )
+        raise QueryTimeoutError(f"SQL query exceeded the timeout of {timeout_ms} ms.")
 
     worker.join()
     if captured_error is not None:

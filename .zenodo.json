@@ -1,0 +1,28 @@
+{
+  "title": "Data Science Workspace MCP Server",
+  "upload_type": "software",
+  "description": "A Model Context Protocol server for safely inspecting and profiling local analytical datasets.",
+  "creators": [
+    {
+      "name": "Ribeiro, Diogo",
+      "affiliation": "School of Media Arts and Design, Polytechnic of Porto, Portugal",
+      "orcid": "0009-0001-2022-7072"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "model-context-protocol",
+    "mcp",
+    "data-science",
+    "analytics",
+    "python",
+    "dataset-profiling"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/DiogoRibeiro7/ds-workspace-mcp",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

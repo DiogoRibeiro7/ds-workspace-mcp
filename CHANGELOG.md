@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Added
+
+- Added Zenodo and GitHub citation metadata.
+- Added GitHub issue templates, a pull request template, and Dependabot configuration.
+- Added a Makefile with repeatable development, quality, test, build, and cleanup commands.
+- Added editor and Git attributes for consistent formatting and line endings.
+
+### Changed
+
+- Documented the repository quality gate and aligned pull request expectations with CI.
+
 ## [1.0.1] - 2026-06-16
 
 ### Changed

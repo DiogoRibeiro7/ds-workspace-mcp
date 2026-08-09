@@ -1,6 +1,9 @@
 # Data Science Workspace MCP Server
 
 ![CI](https://github.com/DiogoRibeiro7/ds-workspace-mcp/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Release](https://img.shields.io/github/v/release/DiogoRibeiro7/ds-workspace-mcp?include_prereleases)
 
 A practical **Model Context Protocol (MCP)** server for data science workflows.
 
@@ -81,6 +84,25 @@ ds-workspace-mcp/
 - Python 3.11+
 - Poetry
 - Node.js, only if you want to use the MCP Inspector through `npx`
+
+---
+
+## Quality Gate
+
+Run the same checks expected before pull requests:
+
+```bash
+poetry run ruff check .
+poetry run ruff format --check src tests examples
+poetry run mypy
+poetry run pytest -m "not integration"
+```
+
+On systems with `make`, the same gate is available as:
+
+```bash
+make quality
+```
 
 ---
 
@@ -1331,6 +1353,7 @@ If Jupyter is not installed in your Poetry environment yet, install it in that e
 ## Project Docs
 
 - `CHANGELOG.md`: user-facing change history
+- `CITATION.cff`: citation metadata for GitHub and Zenodo
 - `CONTRIBUTING.md`: local development and PR expectations
 - `SECURITY.md`: security reporting and hardening expectations
 - `docs/API_CONTRACT.md`: versioned public MCP, CLI, and configuration contract
