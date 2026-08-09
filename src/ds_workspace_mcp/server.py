@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
 
 from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.server import Settings as FastMCPSettings
 
 from ds_workspace_mcp.auth import build_http_auth
 from ds_workspace_mcp.config import Settings, Transport, get_settings
@@ -116,42 +117,71 @@ from ds_workspace_mcp.timeseries import TimeSeriesValidationResult, validate_tim
 from ds_workspace_mcp.tracing import configure_tracing, traced_operation
 
 logger = logging.getLogger(__name__)
+_Handler = TypeVar("_Handler", bound=Callable[..., Any])
 
 mcp = FastMCP(
     "Data Science Workspace MCP",
     json_response=True,
 )
+_MCP_REGISTRARS: list[Callable[[FastMCP], None]] = []
+
+
+def create_mcp_server(settings: Settings) -> FastMCP:
+    """Create a configured MCP server instance with registered handlers."""
+
+    server = _new_mcp_server(settings)
+    for register in _MCP_REGISTRARS:
+        register(server)
+    return server
 
 
 def create_mcp(settings: Settings) -> FastMCP:
-    """Configure the shared MCP server with validated runtime settings."""
+    """Create a configured MCP server instance.
 
+    This compatibility alias preserves the previous public import while no longer
+    mutating the module-global server.
+    """
+
+    return create_mcp_server(settings)
+
+
+def _new_mcp_server(settings: Settings) -> FastMCP:
     auth_settings, token_verifier = build_http_auth(settings)
-    mcp.settings = FastMCPSettings(
-        debug=mcp.settings.debug,
+    return FastMCP(
+        "Data Science Workspace MCP",
+        json_response=True,
         log_level=settings.mcp_log_level,
         host=settings.mcp_host,
         port=settings.mcp_port,
-        mount_path=mcp.settings.mount_path,
-        sse_path=mcp.settings.sse_path,
-        message_path=mcp.settings.message_path,
-        streamable_http_path=mcp.settings.streamable_http_path,
-        json_response=True,
         auth=auth_settings,
-        stateless_http=mcp.settings.stateless_http,
-        warn_on_duplicate_resources=mcp.settings.warn_on_duplicate_resources,
-        warn_on_duplicate_tools=mcp.settings.warn_on_duplicate_tools,
-        warn_on_duplicate_prompts=mcp.settings.warn_on_duplicate_prompts,
-        dependencies=mcp.settings.dependencies,
-        lifespan=mcp.settings.lifespan,
-        transport_security=mcp.settings.transport_security,
+        token_verifier=token_verifier,
     )
-    mcp._token_verifier = token_verifier
-    mcp._session_manager = None
-    return mcp
 
 
-@mcp.resource("datasets://catalog")
+def _record_mcp_decorator(kind: str, *args: Any, **kwargs: Any) -> Callable[[_Handler], _Handler]:
+    def decorate(handler: _Handler) -> _Handler:
+        def register(server: FastMCP) -> None:
+            getattr(server, kind)(*args, **kwargs)(handler)
+
+        _MCP_REGISTRARS.append(register)
+        return cast(_Handler, getattr(mcp, kind)(*args, **kwargs)(handler))
+
+    return decorate
+
+
+def _mcp_resource(*args: Any, **kwargs: Any) -> Callable[[_Handler], _Handler]:
+    return _record_mcp_decorator("resource", *args, **kwargs)
+
+
+def _mcp_tool(*args: Any, **kwargs: Any) -> Callable[[_Handler], _Handler]:
+    return _record_mcp_decorator("tool", *args, **kwargs)
+
+
+def _mcp_prompt(*args: Any, **kwargs: Any) -> Callable[[_Handler], _Handler]:
+    return _record_mcp_decorator("prompt", *args, **kwargs)
+
+
+@_mcp_resource("datasets://catalog")
 def list_datasets() -> str:
     """
     List CSV datasets available to the assistant.
@@ -169,7 +199,7 @@ def list_datasets() -> str:
         return "\n".join(files)
 
 
-@mcp.resource("databases://sqlite")
+@_mcp_resource("databases://sqlite")
 def list_sqlite_databases() -> str:
     """List SQLite databases available to the assistant."""
 
@@ -183,7 +213,7 @@ def list_sqlite_databases() -> str:
         return "\n".join(files)
 
 
-@mcp.resource("reports://modeling")
+@_mcp_resource("reports://modeling")
 def list_modeling_reports_resource() -> str:
     """List saved modeling report artifacts from the local reports directory."""
 
@@ -197,7 +227,7 @@ def list_modeling_reports_resource() -> str:
         return "\n".join(report.output_name for report in reports)
 
 
-@mcp.resource("reports://modeling/latest", mime_type="text/markdown")
+@_mcp_resource("reports://modeling/latest", mime_type="text/markdown")
 def latest_modeling_report_resource() -> str:
     """Return the latest saved modeling report as markdown."""
 
@@ -211,7 +241,7 @@ def latest_modeling_report_resource() -> str:
         return read_latest_modeling_report().markdown
 
 
-@mcp.resource("reports://modeling/{output_name}", mime_type="text/markdown")
+@_mcp_resource("reports://modeling/{output_name}", mime_type="text/markdown")
 def read_modeling_report_resource(output_name: str) -> str:
     """Return one saved modeling report as markdown."""
 
@@ -223,7 +253,7 @@ def read_modeling_report_resource(output_name: str) -> str:
         return read_saved_modeling_report(output_name=output_name).markdown
 
 
-@mcp.resource("reports://modeling/latest/sections")
+@_mcp_resource("reports://modeling/latest/sections")
 def latest_modeling_report_sections_resource() -> list[ModelingReportSection]:
     """Return section headings from the latest saved modeling report."""
 
@@ -236,7 +266,7 @@ def latest_modeling_report_sections_resource() -> list[ModelingReportSection]:
         return sections
 
 
-@mcp.resource("reports://modeling/{output_name}/sections")
+@_mcp_resource("reports://modeling/{output_name}/sections")
 def modeling_report_sections_resource(output_name: str) -> list[ModelingReportSection]:
     """Return section headings from one saved modeling report."""
 
@@ -253,7 +283,7 @@ def modeling_report_sections_resource(output_name: str) -> list[ModelingReportSe
         return sections
 
 
-@mcp.resource("reports://modeling/latest/sections/{section_heading}", mime_type="text/markdown")
+@_mcp_resource("reports://modeling/latest/sections/{section_heading}", mime_type="text/markdown")
 def latest_modeling_report_section_resource(section_heading: str) -> str:
     """Return one section from the latest saved modeling report as markdown."""
 
@@ -268,7 +298,7 @@ def latest_modeling_report_section_resource(section_heading: str) -> str:
         return read_latest_modeling_report_section(section_heading=section_heading).markdown
 
 
-@mcp.resource(
+@_mcp_resource(
     "reports://modeling/{output_name}/sections/{section_heading}",
     mime_type="text/markdown",
 )
@@ -293,7 +323,7 @@ def modeling_report_section_resource(output_name: str, section_heading: str) -> 
         ).markdown
 
 
-@mcp.tool()
+@_mcp_tool()
 def preview_csv(file_name: str, rows: int = 5) -> DatasetPreview:
     """
     Preview the first rows of a CSV dataset.
@@ -314,7 +344,7 @@ def preview_csv(file_name: str, rows: int = 5) -> DatasetPreview:
         return preview_csv_dataset(file_name=file_name, rows=rows)
 
 
-@mcp.tool()
+@_mcp_tool()
 def profile_csv(file_name: str) -> DatasetProfile:
     """
     Profile a CSV dataset.
@@ -334,7 +364,7 @@ def profile_csv(file_name: str) -> DatasetProfile:
         return profile_csv_dataset(file_name=file_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def detect_csv_issues(file_name: str) -> list[DatasetIssue]:
     """
     Detect simple data-quality issues in a CSV dataset.
@@ -356,7 +386,7 @@ def detect_csv_issues(file_name: str) -> list[DatasetIssue]:
         return detect_csv_dataset_issues(file_name=file_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def summarize_dataset(file_name: str) -> DatasetOverview:
     """
     Return a compact first-pass overview of a CSV dataset.
@@ -376,7 +406,7 @@ def summarize_dataset(file_name: str) -> DatasetOverview:
         return summarize_dataset_overview(file_name=file_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def suggest_target_columns(file_name: str) -> TargetSuggestionResult:
     """
     Suggest plausible target columns for modeling.
@@ -396,7 +426,7 @@ def suggest_target_columns(file_name: str) -> TargetSuggestionResult:
         return suggest_target_columns_dataset(file_name=file_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def suggest_feature_columns(file_name: str, target_column: str) -> FeatureSelectionResult:
     """
     Suggest which feature columns to include, review, or exclude for modeling.
@@ -428,7 +458,7 @@ def suggest_feature_columns(file_name: str, target_column: str) -> FeatureSelect
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def assess_modeling_readiness(
     file_name: str,
     target_column: str | None = None,
@@ -463,7 +493,7 @@ def assess_modeling_readiness(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def build_experiment_plan(
     file_name: str,
     target_column: str | None = None,
@@ -498,7 +528,7 @@ def build_experiment_plan(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def build_modeling_report(
     file_name: str,
     target_column: str | None = None,
@@ -533,7 +563,7 @@ def build_modeling_report(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def save_modeling_report(
     file_name: str,
     target_column: str | None = None,
@@ -579,7 +609,7 @@ def save_modeling_report(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def list_modeling_reports() -> list[StoredModelingReport]:
     """Return markdown modeling reports saved inside the local reports directory."""
 
@@ -588,7 +618,7 @@ def list_modeling_reports() -> list[StoredModelingReport]:
         return list_saved_modeling_reports()
 
 
-@mcp.tool()
+@_mcp_tool()
 def search_modeling_reports(query: str) -> list[StoredModelingReport]:
     """Return saved markdown modeling reports whose file names match the query."""
 
@@ -600,7 +630,7 @@ def search_modeling_reports(query: str) -> list[StoredModelingReport]:
         return search_saved_modeling_reports(query=query)
 
 
-@mcp.tool()
+@_mcp_tool()
 def search_modeling_report_content(query: str) -> list[ReportSearchMatch]:
     """Return saved modeling reports whose markdown content matches the query."""
 
@@ -612,7 +642,7 @@ def search_modeling_report_content(query: str) -> list[ReportSearchMatch]:
         return search_saved_modeling_report_content(query=query)
 
 
-@mcp.tool()
+@_mcp_tool()
 def search_latest_modeling_report_content_tool(query: str) -> list[ReportSearchMatch]:
     """Return content matches from the newest saved modeling report."""
 
@@ -624,7 +654,7 @@ def search_latest_modeling_report_content_tool(query: str) -> list[ReportSearchM
         return search_latest_modeling_report_content(query=query)
 
 
-@mcp.tool()
+@_mcp_tool()
 def search_modeling_report_sections(query: str) -> list[ModelingReportSectionMatch]:
     """Search section headings across saved modeling reports."""
 
@@ -636,7 +666,7 @@ def search_modeling_report_sections(query: str) -> list[ModelingReportSectionMat
         return search_saved_modeling_report_sections(query=query)
 
 
-@mcp.tool()
+@_mcp_tool()
 def search_latest_modeling_report_sections_tool(query: str) -> list[ModelingReportSectionMatch]:
     """Search section headings inside the newest saved modeling report."""
 
@@ -648,7 +678,7 @@ def search_latest_modeling_report_sections_tool(query: str) -> list[ModelingRepo
         return search_latest_modeling_report_sections(query=query)
 
 
-@mcp.tool()
+@_mcp_tool()
 def summarize_modeling_report_sections() -> list[ModelingReportSectionSummary]:
     """Summarize recurring section headings across saved modeling reports."""
 
@@ -660,7 +690,7 @@ def summarize_modeling_report_sections() -> list[ModelingReportSectionSummary]:
         return summarize_saved_modeling_report_sections()
 
 
-@mcp.tool()
+@_mcp_tool()
 def list_recent_modeling_reports_tool(limit: int = 5) -> list[StoredModelingReport]:
     """Return the most recently modified saved modeling reports."""
 
@@ -672,7 +702,7 @@ def list_recent_modeling_reports_tool(limit: int = 5) -> list[StoredModelingRepo
         return list_recent_modeling_reports(limit=limit)
 
 
-@mcp.tool()
+@_mcp_tool()
 def summarize_modeling_report_catalog_tool(limit: int = 5) -> ModelingReportCatalogSummary:
     """Return a compact summary of saved modeling report artifacts."""
 
@@ -684,7 +714,7 @@ def summarize_modeling_report_catalog_tool(limit: int = 5) -> ModelingReportCata
         return summarize_modeling_report_catalog(limit=limit)
 
 
-@mcp.tool()
+@_mcp_tool()
 def read_modeling_report(output_name: str) -> ReadModelingReport:
     """Read one saved markdown modeling report from the local reports directory."""
 
@@ -696,7 +726,7 @@ def read_modeling_report(output_name: str) -> ReadModelingReport:
         return read_saved_modeling_report(output_name=output_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def list_modeling_report_sections(output_name: str) -> list[ModelingReportSection]:
     """List markdown sections discovered inside one saved modeling report."""
 
@@ -708,7 +738,7 @@ def list_modeling_report_sections(output_name: str) -> list[ModelingReportSectio
         return list_saved_modeling_report_sections(output_name=output_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def list_latest_modeling_report_sections_tool() -> list[ModelingReportSection]:
     """List markdown sections discovered inside the newest saved modeling report."""
 
@@ -720,7 +750,7 @@ def list_latest_modeling_report_sections_tool() -> list[ModelingReportSection]:
         return list_latest_modeling_report_sections()
 
 
-@mcp.tool()
+@_mcp_tool()
 def read_modeling_report_section(
     output_name: str,
     section_heading: str,
@@ -746,7 +776,7 @@ def read_modeling_report_section(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def read_latest_modeling_report_section_tool(
     section_heading: str,
 ) -> ReadModelingReportSection:
@@ -766,7 +796,7 @@ def read_latest_modeling_report_section_tool(
         return read_latest_modeling_report_section(section_heading=section_heading)
 
 
-@mcp.tool()
+@_mcp_tool()
 def save_modeling_report_section_tool(
     output_name: str,
     section_heading: str,
@@ -801,7 +831,7 @@ def save_modeling_report_section_tool(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def save_latest_modeling_report_section_tool(
     section_heading: str,
     new_output_name: str | None = None,
@@ -832,7 +862,7 @@ def save_latest_modeling_report_section_tool(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def compare_modeling_report_sections(
     output_name: str,
     other_output_name: str,
@@ -863,7 +893,7 @@ def compare_modeling_report_sections(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def compare_latest_modeling_report_sections_tool(
     section_heading: str,
 ) -> ComparedModelingReportSection:
@@ -883,7 +913,7 @@ def compare_latest_modeling_report_sections_tool(
         return compare_latest_modeling_report_sections(section_heading=section_heading)
 
 
-@mcp.tool()
+@_mcp_tool()
 def read_latest_modeling_report_tool() -> ReadModelingReport:
     """Read the most recently modified saved markdown modeling report."""
 
@@ -895,7 +925,7 @@ def read_latest_modeling_report_tool() -> ReadModelingReport:
         return read_latest_modeling_report()
 
 
-@mcp.tool()
+@_mcp_tool()
 def delete_modeling_report(output_name: str) -> DeletedModelingReport:
     """Delete one saved markdown modeling report from the local reports directory."""
 
@@ -907,7 +937,7 @@ def delete_modeling_report(output_name: str) -> DeletedModelingReport:
         return delete_saved_modeling_report(output_name=output_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def rename_modeling_report(
     output_name: str,
     new_output_name: str,
@@ -937,7 +967,7 @@ def rename_modeling_report(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def rename_latest_modeling_report_tool(
     new_output_name: str,
     overwrite: bool = False,
@@ -960,7 +990,7 @@ def rename_latest_modeling_report_tool(
         return rename_latest_modeling_report(new_output_name=new_output_name, overwrite=overwrite)
 
 
-@mcp.tool()
+@_mcp_tool()
 def copy_modeling_report(
     output_name: str,
     new_output_name: str,
@@ -990,7 +1020,7 @@ def copy_modeling_report(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def copy_latest_modeling_report_tool(
     new_output_name: str,
     overwrite: bool = False,
@@ -1013,7 +1043,7 @@ def copy_latest_modeling_report_tool(
         return copy_latest_modeling_report(new_output_name=new_output_name, overwrite=overwrite)
 
 
-@mcp.tool()
+@_mcp_tool()
 def inspect_modeling_report(output_name: str) -> ModelingReportMetadata:
     """Return metadata for one saved markdown modeling report."""
 
@@ -1025,7 +1055,7 @@ def inspect_modeling_report(output_name: str) -> ModelingReportMetadata:
         return inspect_saved_modeling_report(output_name=output_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def inspect_latest_modeling_report_tool() -> ModelingReportMetadata:
     """Return metadata for the most recently modified saved markdown modeling report."""
 
@@ -1037,7 +1067,7 @@ def inspect_latest_modeling_report_tool() -> ModelingReportMetadata:
         return inspect_latest_modeling_report()
 
 
-@mcp.tool()
+@_mcp_tool()
 def preview_modeling_report(output_name: str) -> PreviewModelingReport:
     """Return a bounded preview of one saved markdown modeling report."""
 
@@ -1049,7 +1079,7 @@ def preview_modeling_report(output_name: str) -> PreviewModelingReport:
         return preview_saved_modeling_report(output_name=output_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def compare_modeling_reports(
     output_name: str,
     other_output_name: str,
@@ -1075,7 +1105,7 @@ def compare_modeling_reports(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def compare_latest_modeling_reports_tool() -> ComparedModelingReport:
     """Return a bounded diff summary between the two most recent reports."""
 
@@ -1087,7 +1117,7 @@ def compare_latest_modeling_reports_tool() -> ComparedModelingReport:
         return compare_latest_modeling_reports()
 
 
-@mcp.tool()
+@_mcp_tool()
 def preview_latest_modeling_report_tool() -> PreviewModelingReport:
     """Return a bounded preview of the most recently modified modeling report."""
 
@@ -1099,7 +1129,7 @@ def preview_latest_modeling_report_tool() -> PreviewModelingReport:
         return preview_latest_modeling_report()
 
 
-@mcp.tool()
+@_mcp_tool()
 def query_csv_with_duckdb(
     file_name: str,
     sql: str,
@@ -1129,7 +1159,7 @@ def query_csv_with_duckdb(
         return query_csv_with_duckdb_dataset(file_name=file_name, sql=sql, limit=limit)
 
 
-@mcp.tool()
+@_mcp_tool()
 def list_sqlite_databases_tool() -> list[SQLiteDatabaseInfo]:
     """Return SQLite database files available in the configured data directory."""
 
@@ -1138,7 +1168,7 @@ def list_sqlite_databases_tool() -> list[SQLiteDatabaseInfo]:
         return [SQLiteDatabaseInfo(file_name=file_name) for file_name in list_sqlite_files()]
 
 
-@mcp.tool()
+@_mcp_tool()
 def list_sqlite_tables(file_name: str) -> list[str]:
     """List user tables from a SQLite database."""
 
@@ -1150,7 +1180,7 @@ def list_sqlite_tables(file_name: str) -> list[str]:
         return list_sqlite_tables_dataset(file_name=file_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def describe_sqlite_table(file_name: str, table_name: str) -> SQLiteTableSchema:
     """Describe a SQLite table schema."""
 
@@ -1170,7 +1200,7 @@ def describe_sqlite_table(file_name: str, table_name: str) -> SQLiteTableSchema:
         return describe_sqlite_table_dataset(file_name=file_name, table_name=table_name)
 
 
-@mcp.tool()
+@_mcp_tool()
 def query_sqlite(
     file_name: str,
     sql: str,
@@ -1186,7 +1216,7 @@ def query_sqlite(
         return query_sqlite_database(file_name=file_name, sql=sql, limit=limit)
 
 
-@mcp.tool()
+@_mcp_tool()
 def summarize_correlations(file_name: str, method: str = "pearson") -> CorrelationSummary:
     """Summarize the top absolute correlations among numeric columns."""
 
@@ -1206,7 +1236,7 @@ def summarize_correlations(file_name: str, method: str = "pearson") -> Correlati
         return summarize_correlations_dataset(file_name=file_name, method=method)
 
 
-@mcp.tool()
+@_mcp_tool()
 def detect_possible_target_leakage(file_name: str, target_column: str) -> LeakageSummary:
     """Return heuristic warnings about possible target leakage."""
 
@@ -1229,7 +1259,7 @@ def detect_possible_target_leakage(file_name: str, target_column: str) -> Leakag
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def validate_time_series_dataset_tool(
     file_name: str,
     time_column: str,
@@ -1264,7 +1294,7 @@ def validate_time_series_dataset_tool(
         )
 
 
-@mcp.tool()
+@_mcp_tool()
 def evaluate_baseline_model(
     file_name: str,
     target_column: str,
@@ -1309,7 +1339,7 @@ def evaluate_baseline_model(
         )
 
 
-@mcp.prompt()
+@_mcp_prompt()
 def dataset_analysis_prompt(file_name: str, objective: str = "exploratory analysis") -> str:
     """
     Create a reusable analysis prompt for a dataset.
@@ -1352,7 +1382,7 @@ Keep the analysis practical and reproducible.
 """.strip()
 
 
-@mcp.prompt()
+@_mcp_prompt()
 def modeling_report_review_prompt(
     output_name: str = "latest",
     focus: str = "model critique and next steps",
@@ -1450,7 +1480,7 @@ def main() -> None:
     settings = get_settings()
     configure_logging(settings)
     configure_tracing(settings)
-    server = create_mcp(settings)
+    server = create_mcp_server(settings)
     logger.info(
         "Starting MCP server transport=%s host=%s port=%s auth_enabled=%s",
         settings.mcp_transport,
