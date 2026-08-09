@@ -10,12 +10,14 @@
 
 Responsibilities:
 
-- constructs the FastMCP server
-- registers MCP resources, tools, and prompts
+- exposes `create_mcp_server(settings)` as the FastMCP application factory
+- registers MCP resources, tools, and prompts onto each server instance
 - wires in optional HTTP auth
 - configures logging and tracing at process startup
 
-This file is the public MCP entrypoint.
+This file is the public MCP entrypoint. The module-level `mcp` object remains available
+for import compatibility, while runtime startup and tests create fresh server instances
+through the factory.
 
 ### `cli.py`
 

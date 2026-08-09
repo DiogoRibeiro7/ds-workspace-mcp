@@ -16,6 +16,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added severity and confidence metadata to leakage warnings.
 - Added Docker report persistence wiring and a container smoke test.
 - Added transactional report storage with explicit overwrite controls and report content hashes.
+- Added a FastMCP application factory for isolated server construction.
 
 ### Changed
 
@@ -27,6 +28,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Feature selection now treats high correlation and target-name overlap as review evidence instead of automatic exclusion.
 - Docker builds now install from `poetry.lock`, run as a non-root user, and persist reports through `/app/reports`.
 - Saved, copied, and renamed modeling reports now fail on target collisions unless overwrite is explicitly requested.
+- Server startup now configures FastMCP through public constructor arguments instead of mutating private runtime state.
 
 ## [1.0.2] - 2026-08-09
 

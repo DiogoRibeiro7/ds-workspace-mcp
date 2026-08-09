@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 
 from pydantic import BaseModel
 
 from ds_workspace_mcp.cli import build_parser
+from ds_workspace_mcp.config import Settings
 from ds_workspace_mcp.core import DatasetIssue, DatasetPreview
 from ds_workspace_mcp.diagnostics import CorrelationSummary, LeakageSummary, LeakageWarning
 from ds_workspace_mcp.experiment_plan import ExperimentPlanResult
@@ -37,7 +39,7 @@ from ds_workspace_mcp.report_export import (
     SavedModelingReportSection,
     StoredModelingReport,
 )
-from ds_workspace_mcp.server import mcp
+from ds_workspace_mcp.server import create_mcp_server
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult
 from ds_workspace_mcp.sql.sqlite_engine import (
     SQLiteColumnInfo,
@@ -452,12 +454,23 @@ RESULT_MODELS: list[type[BaseModel]] = [
 
 
 def test_mcp_public_surface_snapshot() -> None:
-    resource_uris = sorted(str(uri) for uri in mcp._resource_manager._resources)
-    template_uris = sorted(str(uri) for uri in mcp._resource_manager._templates)
+    async def public_surface() -> tuple[list[str], list[str], list[str]]:
+        server = create_mcp_server(Settings(mcp_transport="stdio"))
+        resources = await server.list_resources()
+        resource_templates = await server.list_resource_templates()
+        tools = await server.list_tools()
+        prompts = await server.list_prompts()
+        resource_uris = sorted(str(resource.uri) for resource in resources)
+        template_uris = sorted(str(template.uriTemplate) for template in resource_templates)
+        tool_names = sorted(tool.name for tool in tools)
+        prompt_names = sorted(prompt.name for prompt in prompts)
+        return resource_uris + template_uris, tool_names, prompt_names
 
-    assert resource_uris + template_uris == EXPECTED_RESOURCE_URIS
-    assert sorted(mcp._tool_manager._tools) == EXPECTED_TOOL_NAMES
-    assert sorted(mcp._prompt_manager._prompts) == EXPECTED_PROMPT_NAMES
+    resource_uris, tool_names, prompt_names = asyncio.run(public_surface())
+
+    assert resource_uris == EXPECTED_RESOURCE_URIS
+    assert tool_names == EXPECTED_TOOL_NAMES
+    assert prompt_names == EXPECTED_PROMPT_NAMES
 
 
 def test_cli_command_snapshot() -> None:
