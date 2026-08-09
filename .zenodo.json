@@ -1,8 +1,8 @@
 {
   "title": "Data Science Workspace MCP Server",
   "upload_type": "software",
-  "version": "1.0.2",
-  "description": "Data Science Workspace MCP Server is a typed Python implementation of the Model Context Protocol for local, safety-conscious data science workflows. It gives MCP-compatible assistants structured access to analytical datasets without exposing arbitrary filesystem access: files are resolved inside configured workspace roots, supported operations are bounded, and SQL execution is restricted to read-only queries.\n\nThe software supports CSV, Parquet, JSON, Excel, and SQLite data sources, with tools for dataset discovery, previews, profiling, issue detection, safe aggregations, read-only DuckDB and SQLite querying, correlation summaries, leakage review, time-series readiness checks, baseline model evaluation, and reusable modeling-report generation. It also includes a local report artifact workflow for saving, searching, previewing, comparing, copying, renaming, and extracting sections from markdown modeling reports.\n\nThe repository is intended as both a reusable local MCP service and a reference implementation for AI-assisted analytical tooling. It emphasizes typed interfaces, deterministic tests, conservative path handling, bounded outputs, documented API contracts, Docker support, release metadata, and practical examples for connecting MCP clients over stdio or Streamable HTTP.",
+  "version": "1.1.0",
+  "description": "Data Science Workspace MCP Server is a typed Python implementation of the Model Context Protocol for local, safety-conscious data science workflows. It gives MCP-compatible assistants structured access to analytical datasets without exposing arbitrary filesystem access: files are resolved inside configured workspace roots, supported operations are bounded, and SQL execution is restricted through read-only engine configuration, relation allowlisting, and runtime limits.\n\nThe software supports CSV, Parquet, JSON, Excel, and SQLite data sources, with tools for dataset discovery, previews, profiling, issue detection, safe aggregations, read-only DuckDB and SQLite querying, schema-diff and drift diagnostics, correlation summaries, leakage review, time-series readiness checks, statistically valid dummy baselines, transparent forecast baselines, reproducible evaluation manifests, and reusable modeling-report generation. It also includes a local report artifact workflow for saving, searching, previewing, comparing, copying, renaming, deleting, and extracting sections from markdown modeling reports.\n\nThe repository is intended as both a reusable local MCP service and a reference implementation for AI-assisted analytical tooling. It emphasizes typed interfaces, deterministic tests, conservative path handling, bounded outputs, documented API contracts, Docker support, release metadata, reproducible evaluation provenance, and practical examples for connecting MCP clients over stdio or Streamable HTTP.",
   "creators": [
     {
       "name": "Ribeiro, Diogo",
@@ -19,6 +19,9 @@
     "python",
     "dataset-profiling",
     "safe-sql",
+    "dataset-drift",
+    "forecasting",
+    "evaluation-metadata",
     "modeling-reports",
     "ai-tooling"
   ],

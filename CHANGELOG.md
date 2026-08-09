@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-09
+
 ### Added
 
 - Added structural DuckDB SQL relation validation with explicit in-memory relation allowlisting.
