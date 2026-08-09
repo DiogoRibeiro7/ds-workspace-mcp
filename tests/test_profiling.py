@@ -107,3 +107,88 @@ def test_profile_csv_dataset_keeps_missing_value_metrics(
 
     assert profile.missing_values["mixed_missing"] == 2
     assert profile.missing_percentage["mixed_missing"] == 50.0
+
+
+def test_profile_csv_dataset_includes_richer_numeric_diagnostics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    pd.DataFrame({"value": [1] * 20 + [100]}).to_csv(tmp_path / "numeric.csv", index=False)
+
+    profile = profile_csv_dataset("numeric.csv")
+    numeric_profile = profile.numeric_columns[0]
+
+    assert numeric_profile.iqr == 0.0
+    assert numeric_profile.robust_spread == 0.0
+    assert numeric_profile.histogram
+    assert numeric_profile.skewness is not None
+    assert numeric_profile.z_score_outlier_count is None
+    assert any(signal.signal == "near_constant" for signal in numeric_profile.quality_signals)
+
+
+def test_profile_csv_dataset_includes_categorical_quality_diagnostics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    pd.DataFrame({"category": ["main"] * 20 + ["rare"]}).to_csv(
+        tmp_path / "categorical.csv",
+        index=False,
+    )
+
+    profile = profile_csv_dataset("categorical.csv")
+    categorical_profile = profile.categorical_columns[0]
+
+    assert categorical_profile.rare_category_count == 1
+    assert categorical_profile.rare_category_mass > 0
+    assert categorical_profile.entropy is not None
+    assert categorical_profile.normalized_entropy is not None
+    assert any(signal.signal == "near_constant" for signal in categorical_profile.quality_signals)
+
+
+def test_profile_csv_dataset_includes_dataset_quality_diagnostics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    pd.DataFrame(
+        {
+            "id": ["a", "b", "c", "d", "e"],
+            "group": ["x", "x", "y", "y", "y"],
+            "empty": [None, None, None, None, None],
+            "constant": ["same", "same", "same", "same", "same"],
+            "notes": [
+                "long narrative text value for one row",
+                "another long narrative text value",
+                "third long narrative text value",
+                "fourth long narrative text value",
+                "fourth long narrative text value",
+            ],
+        }
+    ).to_csv(tmp_path / "quality.csv", index=False)
+
+    profile = profile_csv_dataset("quality.csv")
+
+    assert profile.data_quality.duplicate_row_count == 0
+    assert [item.column for item in profile.data_quality.empty_columns] == ["empty"]
+    assert "constant" in {item.column for item in profile.data_quality.one_value_columns}
+    assert any(item.column == "notes" for item in profile.data_quality.probable_free_text_columns)
+    assert any(item.column == "id" for item in profile.data_quality.possible_identifier_columns)
+    assert any(item.columns == ["id", "group"] for item in profile.data_quality.candidate_keys)
+
+
+def test_profile_csv_dataset_reports_duplicate_rows(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    pd.DataFrame({"left": [1, 1, 2], "right": ["a", "a", "b"]}).to_csv(
+        tmp_path / "duplicates.csv",
+        index=False,
+    )
+
+    profile = profile_csv_dataset("duplicates.csv")
+
+    assert profile.data_quality.duplicate_row_count == 1
+    assert profile.data_quality.duplicate_row_percentage == pytest.approx(33.33)

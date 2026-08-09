@@ -84,6 +84,8 @@ Responsibilities:
 
 - converts a pandas `DataFrame` into a bounded structured profile
 - summarizes numeric, categorical, boolean, and datetime-like columns
+- adds bounded numeric distribution diagnostics, categorical entropy/rare-category summaries, and advisory quality signals
+- detects duplicate rows, empty and one-value columns, probable free-text fields, possible identifiers, and bounded candidate keys
 - records the runtime profiling limits applied to the result
 
 ### `aggregation.py`
