@@ -1421,6 +1421,8 @@ DuckDB query safety notes:
 
 - CSV files are resolved through the existing safe data-root checks before DuckDB sees any data.
 - Queries must be a single `SELECT` or `WITH` statement against the temporary `dataset` table.
+- DuckDB external access and extension autoload/autoinstall are disabled before user SQL executes.
+- Parsed SQL relation references must resolve only to the registered in-memory `dataset` relation.
 - Destructive or schema-changing SQL is rejected.
 - External file-reading functions such as `read_csv(...)` are rejected.
 - A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
