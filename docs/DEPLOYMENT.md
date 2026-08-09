@@ -14,6 +14,7 @@ For most local assistant integrations, `stdio` is the simplest and safest defaul
 - Python `3.11` or `3.12`
 - Poetry for local installs
 - a readable dataset directory for `MCP_DATA_ROOT`
+- a writable report directory for `MCP_REPORTS_ROOT` when saving modeling reports
 
 Optional:
 
@@ -48,6 +49,7 @@ poetry run ds-workspace-mcp serve
 Primary settings:
 
 - `MCP_DATA_ROOT`
+- `MCP_REPORTS_ROOT`
 - `MCP_TRANSPORT`
 - `MCP_HOST`
 - `MCP_PORT`
@@ -72,6 +74,7 @@ MCP_TRANSPORT=streamable-http
 MCP_HOST=127.0.0.1
 MCP_PORT=8000
 MCP_DATA_ROOT=./data
+MCP_REPORTS_ROOT=./reports
 MCP_LOG_LEVEL=INFO
 MCP_API_KEY=
 ```
@@ -83,6 +86,7 @@ MCP_TRANSPORT=streamable-http
 MCP_HOST=0.0.0.0
 MCP_PORT=8000
 MCP_DATA_ROOT=/app/data
+MCP_REPORTS_ROOT=/app/reports
 MCP_LOG_LEVEL=INFO
 MCP_API_KEY=<shared-secret>
 ```
@@ -103,14 +107,19 @@ docker run --rm \
   -e MCP_TRANSPORT=streamable-http \
   -e MCP_HOST=0.0.0.0 \
   -e MCP_PORT=8000 \
+  -e MCP_REPORTS_ROOT=/app/reports \
   -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/reports:/app/reports" \
   ds-workspace-mcp
 ```
 
 Notes:
 
 - the image defaults `MCP_DATA_ROOT` to `/app/data`
+- the image defaults `MCP_REPORTS_ROOT` to `/app/reports`
 - the image installs only main dependencies
+- the image installs dependency versions from `poetry.lock`
+- the runtime process runs as a non-root `app` user
 - the container exposes port `8000`
 
 ## Docker Compose
@@ -133,7 +142,11 @@ Compose behavior:
 - applies `.env` overrides when present
 - binds the app to `0.0.0.0`
 - mounts local `./data` into `/app/data`
+- mounts local `./reports` into `/app/reports`
 - publishes `${MCP_PORT:-8000}`
+
+If you run Docker on Linux with bind-mounted host directories, ensure `./reports` is writable
+by the container runtime user so saved modeling reports can persist.
 
 ## Health and Verification
 
@@ -150,6 +163,7 @@ Repo-level verification commands:
 poetry run ruff check .
 poetry run mypy
 poetry run pytest
+bash scripts/docker-smoke-test.sh
 ```
 
 ## Reverse Proxy Guidance
