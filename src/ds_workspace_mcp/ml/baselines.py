@@ -70,6 +70,7 @@ class ClassificationMetrics(BaseModel):
     accuracy: float
     balanced_accuracy: float
     macro_f1: float
+    weighted_f1: float
 
 
 class BaselineEvaluationResult(BaseModel):
@@ -82,6 +83,9 @@ class BaselineEvaluationResult(BaseModel):
     test_rows: int = Field(ge=0)
     regression_metrics: RegressionMetrics | None = None
     classification_metrics: ClassificationMetrics | None = None
+    class_counts: dict[str, int] | None = None
+    train_class_counts: dict[str, int] | None = None
+    test_class_counts: dict[str, int] | None = None
     validation: ValidationSplitMetadata
 
 
@@ -108,6 +112,16 @@ def evaluate_baseline_model_dataset(
         raise InsufficientDataError(
             f"Target column must have at least {MIN_BASELINE_ROWS} non-null rows for evaluation."
         )
+
+    class_counts = (
+        _validate_classification_target_support(
+            y=cleaned[target_column],
+            task_type=validated_task_type,
+            test_size=test_size,
+        )
+        if validated_task_type != "regression"
+        else None
+    )
 
     split_config = _build_validation_split_config(
         df=cleaned,
@@ -140,6 +154,7 @@ def evaluate_baseline_model_dataset(
             validation=split_metadata,
         )
 
+    assert class_counts is not None
     return _evaluate_classification(
         file_name=file_name,
         target_column=target_column,
@@ -149,6 +164,7 @@ def evaluate_baseline_model_dataset(
         y_train=y_train,
         y_test=y_test,
         validation=split_metadata,
+        class_counts=class_counts,
     )
 
 
@@ -412,17 +428,17 @@ def _evaluate_classification(
     y_train: pd.Series[Any],
     y_test: pd.Series[Any],
     validation: ValidationSplitMetadata,
+    class_counts: dict[str, int],
 ) -> BaselineEvaluationResult:
     """Evaluate a dummy classifier baseline."""
 
-    train_classes = pd.Series(y_train).dropna().unique().tolist()
-    test_classes = pd.Series(y_test).dropna().unique().tolist()
-    all_classes = sorted({str(value) for value in train_classes + test_classes})
-
-    if task_type == "binary_classification" and len(all_classes) != 2:
-        raise ValueError("Binary classification requires exactly 2 target classes.")
-    if task_type == "multiclass_classification" and len(all_classes) < 3:
-        raise ValueError("Multiclass classification requires at least 3 target classes.")
+    train_class_counts = _count_classes(y_train)
+    test_class_counts = _count_classes(y_test)
+    _validate_classification_split_representation(
+        class_counts=class_counts,
+        train_class_counts=train_class_counts,
+        test_class_counts=test_class_counts,
+    )
 
     model = DummyClassifier(strategy="most_frequent")
     model.fit(X_train, y_train)
@@ -432,7 +448,8 @@ def _evaluate_classification(
     metrics = ClassificationMetrics(
         accuracy=float(accuracy_score(y_true, predictions)),
         balanced_accuracy=float(balanced_accuracy_score(y_true, predictions)),
-        macro_f1=float(f1_score(y_true, predictions, average="macro")),
+        macro_f1=float(f1_score(y_true, predictions, average="macro", zero_division=0)),
+        weighted_f1=float(f1_score(y_true, predictions, average="weighted", zero_division=0)),
     )
     return BaselineEvaluationResult(
         file_name=file_name,
@@ -441,6 +458,9 @@ def _evaluate_classification(
         train_rows=len(X_train),
         test_rows=len(X_test),
         classification_metrics=metrics,
+        class_counts=class_counts,
+        train_class_counts=train_class_counts,
+        test_class_counts=test_class_counts,
         validation=validation,
     )
 
@@ -539,6 +559,46 @@ def _validate_stratification_feasibility(y: pd.Series[Any], test_size: float) ->
         raise InsufficientDataError(
             "stratified validation requires enough train and test rows for every class."
         )
+
+
+def _validate_classification_target_support(
+    y: pd.Series[Any],
+    task_type: TaskType,
+    test_size: float,
+) -> dict[str, int]:
+    """Validate class support before creating any classification split."""
+
+    class_counts = _count_classes(y)
+    class_count = len(class_counts)
+
+    if task_type == "binary_classification" and class_count != 2:
+        raise ValueError("Binary classification requires exactly 2 target classes.")
+    if task_type == "multiclass_classification" and class_count < 3:
+        raise ValueError("Multiclass classification requires at least 3 target classes.")
+
+    _validate_stratification_feasibility(y, test_size=test_size)
+    return class_counts
+
+
+def _validate_classification_split_representation(
+    class_counts: dict[str, int],
+    train_class_counts: dict[str, int],
+    test_class_counts: dict[str, int],
+) -> None:
+    """Ensure classification metrics are computed on representative holdouts."""
+
+    expected_classes = set(class_counts)
+    if set(train_class_counts) != expected_classes or set(test_class_counts) != expected_classes:
+        raise InsufficientDataError(
+            "classification validation requires every class in both train and test splits."
+        )
+
+
+def _count_classes(y: pd.Series[Any]) -> dict[str, int]:
+    """Return stable string-keyed class counts for JSON output."""
+
+    counts = y.map(str).value_counts(dropna=False).sort_index()
+    return {str(label): int(count) for label, count in counts.items()}
 
 
 def _can_stratify(y: pd.Series[Any], test_size: float) -> bool:

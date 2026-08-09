@@ -67,7 +67,11 @@ def test_evaluate_baseline_model_binary_classification(
     )
 
     assert result.classification_metrics is not None
+    assert result.classification_metrics.weighted_f1 >= 0
     assert result.regression_metrics is None
+    assert result.class_counts == {"no": 10, "yes": 10}
+    assert result.train_class_counts == {"no": 8, "yes": 8}
+    assert result.test_class_counts == {"no": 2, "yes": 2}
     assert result.validation.strategy == "stratified"
     assert result.validation.stratified is True
 
@@ -93,6 +97,9 @@ def test_evaluate_baseline_model_multiclass_classification(
 
     assert result.classification_metrics is not None
     assert result.task_type == "multiclass_classification"
+    assert result.class_counts == {"class_0": 10, "class_1": 10, "class_2": 10}
+    assert result.train_class_counts == {"class_0": 8, "class_1": 8, "class_2": 8}
+    assert result.test_class_counts == {"class_0": 2, "class_1": 2, "class_2": 2}
     assert result.validation.strategy == "stratified"
 
 
@@ -125,6 +132,64 @@ def test_random_validation_split_is_deterministic_for_fixed_seed(
     )
 
     assert first.model_dump() == second.model_dump()
+
+
+def test_classification_validation_split_is_deterministic_for_fixed_seed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    df = pd.DataFrame(
+        {
+            "feature": list(range(40)),
+            "target": ["yes" if value % 2 == 0 else "no" for value in range(40)],
+        }
+    )
+    write_baseline_dataset(tmp_path, "classification_deterministic.csv", df)
+
+    first = evaluate_baseline_model_dataset(
+        file_name="classification_deterministic.csv",
+        target_column="target",
+        task_type="binary_classification",
+        validation_strategy="stratified",
+        random_state=13,
+    )
+    second = evaluate_baseline_model_dataset(
+        file_name="classification_deterministic.csv",
+        target_column="target",
+        task_type="binary_classification",
+        validation_strategy="stratified",
+        random_state=13,
+    )
+
+    assert first.model_dump() == second.model_dump()
+
+
+def test_highly_imbalanced_binary_classification_reports_represented_holdout(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    df = pd.DataFrame(
+        {
+            "feature": list(range(50)),
+            "target": ["majority"] * 45 + ["minority"] * 5,
+        }
+    )
+    write_baseline_dataset(tmp_path, "imbalanced.csv", df)
+
+    result = evaluate_baseline_model_dataset(
+        file_name="imbalanced.csv",
+        target_column="target",
+        task_type="binary_classification",
+        test_size=0.2,
+        random_state=23,
+    )
+
+    assert result.validation.strategy == "stratified"
+    assert result.class_counts == {"majority": 45, "minority": 5}
+    assert result.train_class_counts == {"majority": 36, "minority": 4}
+    assert result.test_class_counts == {"majority": 9, "minority": 1}
 
 
 def test_stratified_classification_split_preserves_class_distribution() -> None:
@@ -294,7 +359,53 @@ def test_stratified_validation_rejects_impossible_class_support(
             file_name="singleton.csv",
             target_column="target",
             task_type="binary_classification",
-            validation_strategy="stratified",
+        )
+
+
+def test_classification_validation_rejects_test_size_too_small_for_classes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    df = pd.DataFrame(
+        {
+            "feature": list(range(20)),
+            "target": [f"class_{value % 4}" for value in range(20)],
+        }
+    )
+    write_baseline_dataset(tmp_path, "too_small_test.csv", df)
+
+    with pytest.raises(InsufficientDataError, match="enough train and test rows"):
+        evaluate_baseline_model_dataset(
+            file_name="too_small_test.csv",
+            target_column="target",
+            task_type="multiclass_classification",
+            test_size=0.1,
+        )
+
+
+def test_classification_validation_rejects_split_missing_test_classes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    df = pd.DataFrame(
+        {
+            "date": pd.date_range("2024-01-01", periods=30, freq="D"),
+            "feature": list(range(30)),
+            "target": ["class_a"] * 10 + ["class_b"] * 10 + ["class_c"] * 10,
+        }
+    )
+    write_baseline_dataset(tmp_path, "missing_test_classes.csv", df)
+
+    with pytest.raises(InsufficientDataError, match="every class in both train and test"):
+        evaluate_baseline_model_dataset(
+            file_name="missing_test_classes.csv",
+            target_column="target",
+            task_type="multiclass_classification",
+            validation_strategy="chronological",
+            time_column="date",
+            test_size=0.2,
         )
 
 

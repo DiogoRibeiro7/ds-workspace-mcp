@@ -98,6 +98,7 @@ Responsibilities:
 
 - evaluates dummy regression and classification baselines
 - resolves explicit validation strategies for random, stratified, chronological, and grouped train/test splits
+- checks classification class support before splitting and train/test class representation before reporting metrics
 - validates split-specific arguments and reports metadata explaining how metrics were produced
 - returns structured metrics for comparison against future models
 

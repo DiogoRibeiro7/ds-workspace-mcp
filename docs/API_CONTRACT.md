@@ -901,6 +901,9 @@ The following are considered non-breaking:
   - `test_rows: int`
   - `regression_metrics: RegressionMetrics | null`
   - `classification_metrics: ClassificationMetrics | null`
+  - `class_counts: dict[str, int] | null`
+  - `train_class_counts: dict[str, int] | null`
+  - `test_class_counts: dict[str, int] | null`
   - `validation: ValidationSplitMetadata`
 - Supported `validation_strategy` values:
   - `random`
@@ -930,9 +933,11 @@ The following are considered non-breaking:
   - `accuracy: float`
   - `balanced_accuracy: float`
   - `macro_f1: float`
+  - `weighted_f1: float`
 - Heuristic notes:
   - this tool uses dummy baselines only
   - classification defaults to stratified validation when class support and split size make it feasible
+  - classification validates class count, minimum class support, split size, and train/test representation before returning metrics
   - chronological validation requires `time_column`, sorts stably, never shuffles, and holds out the newest observations
   - grouped validation requires `group_column` and reports whether group membership overlaps across train and test
   - metric values are comparison baselines, not target production quality thresholds

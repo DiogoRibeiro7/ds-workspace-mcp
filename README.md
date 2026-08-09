@@ -1458,6 +1458,8 @@ Baseline model notes:
 - Only scikit-learn dummy baselines are used.
 - `regression`, `binary_classification`, and `multiclass_classification` are supported.
 - Validation can be `random`, `stratified`, `chronological`, or `grouped`; classification defaults to stratified validation when feasible.
+- Classification baselines report full, train, and test class counts and fail clearly when a split cannot represent every class.
+- Classification metrics include accuracy, balanced accuracy, macro F1, and weighted F1.
 - Chronological validation requires a parseable time column, never shuffles, and reports train/test time boundaries.
 - Grouped validation requires a group column and reports train/test group counts plus group-overlap status.
 - These metrics are reference baselines for comparison, not final model quality targets.
