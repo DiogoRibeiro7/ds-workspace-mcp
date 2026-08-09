@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
@@ -10,6 +10,29 @@ from pydantic import BaseModel, Field
 from ds_workspace_mcp.core import read_csv_dataset
 
 MIN_HISTORY_POINTS = 10
+APPROXIMATE_FREQUENCY_SUPPORT_THRESHOLD = 0.8
+MAX_GROUP_SUMMARIES = 20
+
+FrequencyKind = Literal[
+    "regular",
+    "approximately_regular",
+    "irregular",
+    "insufficient_data",
+    "heterogeneous",
+]
+
+
+class FrequencyInferenceResult(BaseModel):
+    """Structured frequency inference for one time series."""
+
+    frequency: str | None = None
+    frequency_kind: FrequencyKind
+    confidence: float = Field(ge=0.0, le=1.0)
+    support_ratio: float = Field(ge=0.0, le=1.0)
+    candidate_interval: str | None = None
+    is_regular: bool
+    is_irregular: bool
+    missing_interval_count: int = Field(ge=0)
 
 
 class TimeSeriesWarning(BaseModel):
@@ -28,6 +51,7 @@ class GroupTimeSeriesSummary(BaseModel):
     duplicate_timestamps: int = Field(ge=0)
     missing_intervals: int = Field(ge=0)
     inferred_frequency: str | None = None
+    frequency: FrequencyInferenceResult
 
 
 class TimeSeriesValidationResult(BaseModel):
@@ -43,6 +67,7 @@ class TimeSeriesValidationResult(BaseModel):
     is_sorted: bool
     inferred_frequency: str | None = None
     missing_intervals: int = Field(ge=0)
+    frequency: FrequencyInferenceResult
     missing_target_values: int | None = None
     group_summaries: list[GroupTimeSeriesSummary] = Field(default_factory=list)
     warnings: list[TimeSeriesWarning] = Field(default_factory=list)
@@ -84,15 +109,15 @@ def validate_time_series_dataset(
     if group_column is None:
         duplicate_timestamps = int(aligned[time_column].duplicated().sum())
         is_sorted = bool(aligned[time_column].is_monotonic_increasing)
-        inferred_frequency = _infer_frequency(aligned[time_column])
-        missing_intervals = _count_missing_intervals(aligned[time_column], inferred_frequency)
+        frequency = _infer_frequency(aligned[time_column])
+        inferred_frequency = frequency.frequency
+        missing_intervals = frequency.missing_interval_count
         group_summaries: list[GroupTimeSeriesSummary] = []
         warnings.extend(
             _build_series_warnings(
                 duplicate_timestamps=duplicate_timestamps,
                 is_sorted=is_sorted,
-                missing_intervals=missing_intervals,
-                inferred_frequency=inferred_frequency,
+                frequency=frequency,
                 row_count=len(aligned),
                 group=None,
             )
@@ -102,44 +127,52 @@ def validate_time_series_dataset(
         duplicate_timestamps = 0
         missing_intervals = 0
         sorted_flags: list[bool] = []
-        inferred_frequencies: list[str] = []
+        group_frequencies: list[FrequencyInferenceResult] = []
 
         for group_value, group_df in aligned.groupby(group_column, sort=True):
             group_timestamps = group_df[time_column]
             group_duplicates = int(group_timestamps.duplicated().sum())
             group_sorted = bool(group_timestamps.is_monotonic_increasing)
             group_frequency = _infer_frequency(group_timestamps)
-            group_missing_intervals = _count_missing_intervals(group_timestamps, group_frequency)
+            group_missing_intervals = group_frequency.missing_interval_count
 
             duplicate_timestamps += group_duplicates
             missing_intervals += group_missing_intervals
             sorted_flags.append(group_sorted)
-            if group_frequency is not None:
-                inferred_frequencies.append(group_frequency)
+            group_frequencies.append(group_frequency)
 
             group_label = str(group_value)
-            group_summaries.append(
-                GroupTimeSeriesSummary(
-                    group=group_label,
-                    row_count=len(group_df),
-                    duplicate_timestamps=group_duplicates,
-                    missing_intervals=group_missing_intervals,
-                    inferred_frequency=group_frequency,
+            if len(group_summaries) < MAX_GROUP_SUMMARIES:
+                group_summaries.append(
+                    GroupTimeSeriesSummary(
+                        group=group_label,
+                        row_count=len(group_df),
+                        duplicate_timestamps=group_duplicates,
+                        missing_intervals=group_missing_intervals,
+                        inferred_frequency=group_frequency.frequency,
+                        frequency=group_frequency,
+                    )
                 )
-            )
             warnings.extend(
                 _build_series_warnings(
                     duplicate_timestamps=group_duplicates,
                     is_sorted=group_sorted,
-                    missing_intervals=group_missing_intervals,
-                    inferred_frequency=group_frequency,
+                    frequency=group_frequency,
                     row_count=len(group_df),
                     group=group_label,
                 )
             )
 
         is_sorted = all(sorted_flags) if sorted_flags else True
-        inferred_frequency = _pick_dominant_frequency(inferred_frequencies)
+        frequency = _combine_group_frequencies(group_frequencies)
+        inferred_frequency = frequency.frequency
+        if frequency.frequency_kind == "heterogeneous":
+            warnings.append(
+                TimeSeriesWarning(
+                    warning_type="heterogeneous_frequencies",
+                    description="Grouped time series contain different inferred frequencies.",
+                )
+            )
 
     missing_target_values: int | None = None
     if target_column is not None:
@@ -174,6 +207,7 @@ def validate_time_series_dataset(
         is_sorted=is_sorted,
         inferred_frequency=inferred_frequency,
         missing_intervals=missing_intervals,
+        frequency=frequency,
         missing_target_values=missing_target_values,
         group_summaries=group_summaries,
         warnings=warnings,
@@ -199,38 +233,99 @@ def _coerce_timestamps(series: pd.Series[Any], column_name: str) -> pd.Series[An
     return parsed
 
 
-def _infer_frequency(timestamps: pd.Series[Any]) -> str | None:
-    """Infer the dominant timestamp step from sorted unique timestamps."""
+def _infer_frequency(timestamps: pd.Series[Any]) -> FrequencyInferenceResult:
+    """Infer regularity from sorted unique timestamps without manufacturing frequency."""
 
     cleaned = timestamps.dropna().sort_values().drop_duplicates()
     if len(cleaned) < 3:
-        return None
+        return FrequencyInferenceResult(
+            frequency=None,
+            frequency_kind="insufficient_data",
+            confidence=0.0,
+            support_ratio=0.0,
+            candidate_interval=None,
+            is_regular=False,
+            is_irregular=False,
+            missing_interval_count=0,
+        )
 
     diffs = cleaned.diff().dropna()
     if diffs.empty:
-        return None
+        return FrequencyInferenceResult(
+            frequency=None,
+            frequency_kind="insufficient_data",
+            confidence=0.0,
+            support_ratio=0.0,
+            candidate_interval=None,
+            is_regular=False,
+            is_irregular=False,
+            missing_interval_count=0,
+        )
 
-    dominant_diff = cast(pd.Timedelta, Counter(diffs).most_common(1)[0][0])
-    return _format_timedelta(dominant_diff)
+    inferred_alias = pd.infer_freq(cleaned)
+    unique_diffs = diffs.unique()
+    if len(unique_diffs) == 1:
+        interval = _format_timedelta(cast(pd.Timedelta, unique_diffs[0]))
+        return FrequencyInferenceResult(
+            frequency=interval,
+            frequency_kind="regular",
+            confidence=1.0,
+            support_ratio=1.0,
+            candidate_interval=interval,
+            is_regular=True,
+            is_irregular=False,
+            missing_interval_count=0,
+        )
+
+    if inferred_alias is not None:
+        return FrequencyInferenceResult(
+            frequency=inferred_alias,
+            frequency_kind="regular",
+            confidence=1.0,
+            support_ratio=1.0,
+            candidate_interval=inferred_alias,
+            is_regular=True,
+            is_irregular=False,
+            missing_interval_count=0,
+        )
+
+    dominant_diff, support_count = Counter(diffs).most_common(1)[0]
+    candidate_delta = cast(pd.Timedelta, dominant_diff)
+    support_ratio = support_count / len(diffs)
+    candidate_interval = _format_timedelta(candidate_delta)
+    if support_ratio >= APPROXIMATE_FREQUENCY_SUPPORT_THRESHOLD and candidate_interval is not None:
+        missing_interval_count = _count_missing_intervals_for_delta(diffs, candidate_delta)
+        return FrequencyInferenceResult(
+            frequency=candidate_interval,
+            frequency_kind="approximately_regular",
+            confidence=float(support_ratio),
+            support_ratio=float(support_ratio),
+            candidate_interval=candidate_interval,
+            is_regular=False,
+            is_irregular=False,
+            missing_interval_count=missing_interval_count,
+        )
+
+    return FrequencyInferenceResult(
+        frequency=None,
+        frequency_kind="irregular",
+        confidence=float(support_ratio),
+        support_ratio=float(support_ratio),
+        candidate_interval=candidate_interval,
+        is_regular=False,
+        is_irregular=True,
+        missing_interval_count=0,
+    )
 
 
-def _count_missing_intervals(timestamps: pd.Series[Any], frequency: str | None) -> int:
-    """Count missing intervals against an inferred dominant frequency."""
+def _count_missing_intervals_for_delta(diffs: pd.Series[Any], expected_delta: pd.Timedelta) -> int:
+    """Count missing intervals only after an expected fixed interval is established."""
 
-    if frequency is None:
-        return 0
-
-    cleaned = timestamps.dropna().sort_values().drop_duplicates()
-    if len(cleaned) < 3:
-        return 0
-
-    diffs = cleaned.diff().dropna()
-    dominant_diff = cast(pd.Timedelta, Counter(diffs).most_common(1)[0][0])
     missing_intervals = 0
     for raw_diff in diffs:
         diff = cast(pd.Timedelta, raw_diff)
-        if diff > dominant_diff:
-            ratio = int(diff / dominant_diff)
+        if diff > expected_delta:
+            ratio = int(diff / expected_delta)
             if ratio > 1:
                 missing_intervals += ratio - 1
     return missing_intervals
@@ -257,8 +352,7 @@ def _format_timedelta(delta: pd.Timedelta) -> str | None:
 def _build_series_warnings(
     duplicate_timestamps: int,
     is_sorted: bool,
-    missing_intervals: int,
-    inferred_frequency: str | None,
+    frequency: FrequencyInferenceResult,
     row_count: int,
     group: str | None,
 ) -> list[TimeSeriesWarning]:
@@ -285,7 +379,15 @@ def _build_series_warnings(
             )
         )
 
-    if inferred_frequency is None and row_count >= 3:
+    if frequency.frequency_kind == "irregular":
+        warnings.append(
+            TimeSeriesWarning(
+                warning_type="irregular_frequency",
+                description=f"{prefix} frequency appears irregular.",
+                group=group,
+            )
+        )
+    elif frequency.frequency is None and row_count >= 3:
         warnings.append(
             TimeSeriesWarning(
                 warning_type="unresolved_frequency",
@@ -294,11 +396,14 @@ def _build_series_warnings(
             )
         )
 
-    if missing_intervals > 0:
+    if frequency.missing_interval_count > 0:
         warnings.append(
             TimeSeriesWarning(
                 warning_type="missing_intervals",
-                description=f"{prefix} appears to have {missing_intervals} missing intervals.",
+                description=(
+                    f"{prefix} appears to have "
+                    f"{frequency.missing_interval_count} missing intervals."
+                ),
                 group=group,
             )
         )
@@ -306,9 +411,79 @@ def _build_series_warnings(
     return warnings
 
 
-def _pick_dominant_frequency(frequencies: list[str]) -> str | None:
-    """Pick the most common inferred group frequency."""
+def _combine_group_frequencies(
+    frequencies: list[FrequencyInferenceResult],
+) -> FrequencyInferenceResult:
+    """Combine per-group frequency results without hiding heterogeneity."""
 
     if not frequencies:
-        return None
-    return Counter(frequencies).most_common(1)[0][0]
+        return FrequencyInferenceResult(
+            frequency=None,
+            frequency_kind="insufficient_data",
+            confidence=0.0,
+            support_ratio=0.0,
+            candidate_interval=None,
+            is_regular=False,
+            is_irregular=False,
+            missing_interval_count=0,
+        )
+
+    established = [
+        frequency
+        for frequency in frequencies
+        if frequency.frequency_kind in {"regular", "approximately_regular"}
+    ]
+    unique_established = {
+        (frequency.frequency, frequency.frequency_kind) for frequency in established
+    }
+    if len(established) == len(frequencies) and len(unique_established) == 1:
+        first = established[0]
+        return FrequencyInferenceResult(
+            frequency=first.frequency,
+            frequency_kind=first.frequency_kind,
+            confidence=min(frequency.confidence for frequency in frequencies),
+            support_ratio=min(frequency.support_ratio for frequency in frequencies),
+            candidate_interval=first.candidate_interval,
+            is_regular=first.frequency_kind == "regular",
+            is_irregular=False,
+            missing_interval_count=sum(
+                frequency.missing_interval_count for frequency in frequencies
+            ),
+        )
+
+    if len(unique_established) > 1 or (established and len(established) != len(frequencies)):
+        return FrequencyInferenceResult(
+            frequency=None,
+            frequency_kind="heterogeneous",
+            confidence=0.0,
+            support_ratio=0.0,
+            candidate_interval=None,
+            is_regular=False,
+            is_irregular=True,
+            missing_interval_count=sum(
+                frequency.missing_interval_count for frequency in frequencies
+            ),
+        )
+
+    if all(frequency.frequency_kind == "insufficient_data" for frequency in frequencies):
+        return FrequencyInferenceResult(
+            frequency=None,
+            frequency_kind="insufficient_data",
+            confidence=0.0,
+            support_ratio=0.0,
+            candidate_interval=None,
+            is_regular=False,
+            is_irregular=False,
+            missing_interval_count=0,
+        )
+
+    return FrequencyInferenceResult(
+        frequency=None,
+        frequency_kind="irregular",
+        confidence=max(frequency.confidence for frequency in frequencies),
+        support_ratio=max(frequency.support_ratio for frequency in frequencies),
+        candidate_interval=None,
+        is_regular=False,
+        is_irregular=True,
+        missing_interval_count=0,
+    )
