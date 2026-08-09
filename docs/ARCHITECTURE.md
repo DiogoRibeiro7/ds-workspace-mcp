@@ -10,14 +10,31 @@
 
 Responsibilities:
 
-- exposes `create_mcp_server(settings)` as the FastMCP application factory
-- registers MCP resources, tools, and prompts onto each server instance
-- wires in optional HTTP auth
 - configures logging and tracing at process startup
+- creates the configured MCP server through `mcp/app.py`
+- runs the selected transport
 
-This file is the public MCP entrypoint. The module-level `mcp` object remains available
-for import compatibility, while runtime startup and tests create fresh server instances
-through the factory.
+This file is the public MCP entrypoint and remains intentionally small. It re-exports
+the existing wrapper names for import compatibility, while runtime startup and tests
+create fresh server instances through the factory.
+
+### `mcp/app.py`
+
+Responsibilities:
+
+- exposes `create_mcp_server(settings)` as the FastMCP application factory
+- wires optional HTTP auth through public FastMCP constructor arguments
+- records resource, tool, and prompt decorator registrations so each server instance
+  receives the same public MCP surface
+
+### `mcp/resources/`, `mcp/tools/`, and `mcp/prompts/`
+
+Responsibilities:
+
+- contain MCP-facing wrappers grouped by domain
+- preserve logging and tracing at MCP boundaries
+- delegate data access, modeling, SQL, report, and diagnostic behavior to domain modules
+- avoid embedding business logic in transport registration code
 
 ### `cli.py`
 

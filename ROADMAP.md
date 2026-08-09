@@ -62,6 +62,7 @@
 - [x] Make Docker builds lockfile-driven and persist report storage through Compose.
 - [x] Make report save, copy, and rename operations transactional with explicit overwrite semantics.
 - [x] Create isolated FastMCP server instances through a public application factory.
+- [x] Split MCP resource, tool, and prompt registrations into domain modules.
 - [ ] Cache DuckDB query results by file fingerprint and normalized SQL, mirroring the profile cache.
 - [ ] Add explicit handling and tests for malformed, empty, and mixed-encoding CSV edge cases.
 - [ ] Surface per-tool resource limits (rows, columns, bytes) in error messages consistently.
