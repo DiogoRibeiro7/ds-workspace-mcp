@@ -5,21 +5,32 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Release](https://img.shields.io/github/v/release/DiogoRibeiro7/ds-workspace-mcp?include_prereleases)
 
-A practical **Model Context Protocol (MCP)** server for data science workflows.
+A local-first **Model Context Protocol (MCP)** server for data science workspaces.
 
-It lets an MCP-compatible assistant safely inspect local CSV, Parquet, JSON, and Excel datasets through:
+`ds-workspace-mcp` gives MCP-compatible assistants structured access to analytical data
+without handing them arbitrary filesystem or database control. It exposes a guarded local
+workspace where an assistant can discover datasets, inspect schemas, profile columns, run
+bounded read-only queries, evaluate baseline modeling readiness, and create reusable
+markdown modeling reports.
 
-- **Resources** for dataset discovery.
-- **Overview tools** for fast first-pass dataset understanding.
-- **Tools** for dataset preview, profiling, safe aggregation, SQL access, diagnostics, and baseline evaluation.
-- **Report artifact tools** for saving, searching, comparing, extracting, and reusing modeling reports.
-- **Prompts** for reusable dataset analysis instructions.
+The project is built as a practical reference implementation for AI-assisted data tooling:
+typed Python, bounded outputs, path traversal protection, read-only SQL guardrails,
+release metadata, Docker support, and CI-backed documentation.
 
-This project is designed as a portfolio-ready MCP product: focused, typed, tested, documented, and safe by default.
+## At a glance
+
+| Area | What this server provides |
+| --- | --- |
+| Dataset access | Safe reads for CSV, Parquet, JSON, Excel, SQLite, and DuckDB-backed CSV queries |
+| Exploration | Preview, profiling, missingness summaries, categorical summaries, correlations, and issue detection |
+| Modeling readiness | Target suggestions, feature review, leakage checks, time-series validation, and dummy baselines |
+| Report workflow | Generate, save, search, preview, compare, copy, rename, delete, and extract markdown report sections |
+| MCP integration | Resources, tools, prompts, stdio transport, Streamable HTTP transport, and runnable client examples |
+| Safety controls | Configured data/report roots, path traversal rejection, size limits, row limits, query length limits, and SQL timeouts |
 
 ## Current scope
 
-Today the repository covers four practical workflows:
+Today the repository covers five practical workflows:
 
 - Safe local dataset access for CSV, Parquet, JSON, Excel, and SQLite sources.
 - Structured aggregations for common EDA without free-form SQL.
@@ -31,16 +42,52 @@ Today the repository covers four practical workflows:
 
 ## Why this project exists
 
-Many AI assistants can reason well, but they need controlled access to real data and real tools.
+Many AI assistants can reason well, but useful analytical work needs controlled access to
+real data and real tools.
 
 This MCP server exposes a local analytical workspace without giving the model arbitrary file-system access. The server only reads supported dataset files from a configured data directory, and saved modeling reports live under a separate configured reports directory.
 
 Good use cases:
 
-- quick dataset inspection;
-- exploratory data analysis planning;
-- data-quality checks;
-- building a portfolio example around AI tooling and data science infrastructure.
+- connecting an MCP client to a local data science workspace;
+- inspecting unfamiliar datasets before deeper analysis;
+- creating first-pass EDA, readiness, and baseline modeling reports;
+- preserving reusable markdown report artifacts from assistant-led analysis;
+- demonstrating AI tooling, data engineering, and security-minded local service design.
+
+## Quick start
+
+Install dependencies:
+
+```bash
+poetry install
+```
+
+Generate a sample dataset:
+
+```bash
+poetry run generate-sample-healthcare-data
+```
+
+Start the MCP server over Streamable HTTP:
+
+```bash
+MCP_TRANSPORT=streamable-http poetry run ds-workspace-mcp serve
+```
+
+Open the MCP Inspector and connect to:
+
+```text
+http://localhost:8000/mcp
+```
+
+Useful first tool calls:
+
+- `summarize_dataset` for a compact dataset overview.
+- `profile_csv` for detailed column summaries.
+- `aggregate_dataset` for allowlisted grouped metrics.
+- `assess_modeling_readiness` for target, feature, leakage, and next-step guidance.
+- `save_modeling_report` for a reusable markdown report artifact.
 
 ---
 
@@ -626,6 +673,47 @@ Arguments:
 ```json
 {
   "file_name": "sample_clinic_usage.csv"
+}
+```
+
+#### `aggregate_dataset`
+
+Run a bounded allowlisted aggregation over any supported tabular dataset without accepting
+free-form executable expressions.
+
+Arguments:
+
+```json
+{
+  "request": {
+    "file_name": "sample_clinic_usage.csv",
+    "group_by": ["clinic_id"],
+    "metrics": [
+      {
+        "operation": "mean",
+        "column": "appointments_completed",
+        "output_name": "avg_completed"
+      },
+      {
+        "operation": "count",
+        "output_name": "row_count"
+      }
+    ],
+    "filters": [
+      {
+        "column": "appointments_scheduled",
+        "operation": "gt",
+        "value": 0
+      }
+    ],
+    "order_by": [
+      {
+        "column": "avg_completed",
+        "direction": "desc"
+      }
+    ],
+    "limit": 10
+  }
 }
 ```
 
@@ -1427,7 +1515,8 @@ The server does not read arbitrary files.
 
 All dataset paths are resolved inside `MCP_DATA_ROOT`, which defaults to `./data`. Path traversal attempts such as `../secret.csv` are rejected.
 
-Only `.csv` files are supported in this first version.
+Supported tabular files are CSV, Parquet, JSON, and Excel. SQLite database files are
+supported through the dedicated read-only SQLite tools.
 
 DuckDB query safety notes:
 
