@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from ds_workspace_mcp.core import profile_csv_dataset
+from ds_workspace_mcp.core import profile_csv_dataset, profile_dataset
 from ds_workspace_mcp.diagnostics import (
     CorrelationSummary,
     LeakageSummary,
@@ -34,6 +34,18 @@ def profile_csv(file_name: str) -> DatasetProfile:
     ):
         logger.info("Tool profile_csv invoked file_name=%s", file_name)
         return profile_csv_dataset(file_name=file_name)
+
+
+@_mcp_tool()
+def profile_dataset_file(file_name: str) -> DatasetProfile:
+    """Profile any supported tabular dataset."""
+
+    with traced_operation(
+        "tool.profile_dataset_file",
+        {"tool.name": "profile_dataset_file", "dataset.file_name": file_name},
+    ):
+        logger.info("Tool profile_dataset_file invoked file_name=%s", file_name)
+        return profile_dataset(file_name=file_name)
 
 
 @_mcp_tool()

@@ -13,8 +13,10 @@ from ds_workspace_mcp.config import get_settings
 from ds_workspace_mcp.datasets import (
     CsvDatasetReader,
     DatasetFormat,
+    DatasetMetadata,
     DatasetRef,
     DatasetRegistry,
+    ParquetDatasetReader,
     ResolvedDataset,
 )
 from ds_workspace_mcp.exceptions import (
@@ -68,7 +70,7 @@ def get_dataset_registry() -> DatasetRegistry:
     settings = get_settings()
     return DatasetRegistry(
         data_root=settings.mcp_data_root,
-        readers=(CsvDatasetReader(),),
+        readers=(CsvDatasetReader(), ParquetDatasetReader()),
         max_dataset_bytes=settings.mcp_max_dataset_bytes,
     )
 
@@ -111,6 +113,33 @@ def list_csv_files() -> list[str]:
     return files
 
 
+def list_dataset_files() -> list[str]:
+    """List all supported tabular datasets available in the configured data root."""
+
+    files = get_dataset_registry().list()
+    logger.info("Listed %s supported datasets from configured data root", len(files))
+    return files
+
+
+def inspect_dataset(file_name: str) -> DatasetMetadata:
+    """Return path-free metadata for one supported dataset."""
+
+    resolved = _resolve_dataset(file_name)
+    return resolved.reader.inspect(resolved.ref, resolved.path)
+
+
+def read_dataset_frame(file_name: str, nrows: int | None = None) -> pd.DataFrame:
+    """Read a supported dataset into a pandas frame, optionally bounded by rows."""
+
+    with traced_operation(
+        "dataset.read",
+        {"dataset.file_name": file_name, "dataset.nrows": nrows},
+    ):
+        resolved = _resolve_dataset(file_name)
+        logger.info("Reading dataset file_name=%s nrows=%s", file_name, nrows)
+        return resolved.reader.load_frame(resolved.path, nrows=nrows)
+
+
 def read_csv_dataset(file_name: str, nrows: int | None = None) -> pd.DataFrame:
     """
     Read a CSV dataset from the safe data root.
@@ -132,6 +161,14 @@ def read_csv_dataset(file_name: str, nrows: int | None = None) -> pd.DataFrame:
         return resolved.reader.load_frame(resolved.path, nrows=nrows)
 
 
+def preview_dataset(file_name: str, rows: int = 5) -> DatasetPreview:
+    """Preview the first rows of any supported tabular dataset."""
+
+    _validate_preview_rows(file_name=file_name, rows=rows)
+    df = read_dataset_frame(file_name=file_name, nrows=rows)
+    return _build_dataset_preview(file_name=file_name, df=df)
+
+
 def preview_csv_dataset(file_name: str, rows: int = 5) -> DatasetPreview:
     """
     Preview the first rows of a CSV dataset.
@@ -144,31 +181,9 @@ def preview_csv_dataset(file_name: str, rows: int = 5) -> DatasetPreview:
         A structured dataset preview.
     """
 
-    if not isinstance(rows, int):
-        logger.warning("Rejected preview request because rows was not an integer.")
-        raise TypeError("rows must be an integer.")
-
-    max_preview_rows = get_settings().mcp_max_preview_rows
-    if rows < 1 or rows > max_preview_rows:
-        logger.warning(
-            "Rejected preview request for file_name=%s because rows=%s exceeded max=%s",
-            file_name,
-            rows,
-            max_preview_rows,
-        )
-        raise ValueError(f"rows must be between 1 and {max_preview_rows}.")
-
+    _validate_preview_rows(file_name=file_name, rows=rows)
     df = read_csv_dataset(file_name=file_name, nrows=rows)
-    records = cast(list[dict[str, object]], df.astype(object).to_dict(orient="records"))
-    clean_rows = [
-        {column: _normalize_preview_value(value) for column, value in row.items()}
-        for row in records
-    ]
-
-    preview = DatasetPreview(
-        file_name=file_name,
-        rows=clean_rows,
-    )
+    preview = _build_dataset_preview(file_name=file_name, df=df)
     logger.info("Built dataset preview for file_name=%s rows=%s", file_name, len(preview.rows))
     return preview
 
@@ -184,9 +199,32 @@ def profile_csv_dataset(file_name: str) -> DatasetProfile:
         A structured profile containing shape, columns, dtypes, and missing values.
     """
 
+    return _profile_dataset(
+        file_name,
+        expected_format=DatasetFormat.CSV,
+        unsupported_message="Only CSV files are supported.",
+    )
+
+
+def profile_dataset(file_name: str) -> DatasetProfile:
+    """Profile any supported tabular dataset."""
+
+    return _profile_dataset(file_name)
+
+
+def _profile_dataset(
+    file_name: str,
+    *,
+    expected_format: DatasetFormat | None = None,
+    unsupported_message: str | None = None,
+) -> DatasetProfile:
     with traced_operation("dataset.profile", {"dataset.file_name": file_name}):
         settings = get_settings()
-        resolved = _resolve_csv_dataset(file_name)
+        resolved = _resolve_dataset(
+            file_name,
+            expected_format=expected_format,
+            unsupported_message=unsupported_message,
+        )
         fingerprint = resolved.reader.fingerprint(resolved.path)
         cache_key = ProfileCacheKey(
             path=resolved.path,
@@ -206,7 +244,7 @@ def profile_csv_dataset(file_name: str) -> DatasetProfile:
             return cached_profile
 
         try:
-            logger.info("Reading CSV dataset file_name=%s nrows=%s", file_name, None)
+            logger.info("Reading dataset file_name=%s nrows=%s", file_name, None)
             df = resolved.reader.load_frame(resolved.path)
             profile = build_dataset_profile(df=df, file_name=file_name)
         except Exception as exc:  # pragma: no cover - exercised by targeted tests
@@ -265,12 +303,53 @@ def detect_csv_dataset_issues(file_name: str) -> list[DatasetIssue]:
 
 
 def _resolve_csv_dataset(file_name: str) -> ResolvedDataset:
+    return _resolve_dataset(
+        file_name,
+        expected_format=DatasetFormat.CSV,
+        unsupported_message="Only CSV files are supported.",
+    )
+
+
+def _resolve_dataset(
+    file_name: str,
+    *,
+    expected_format: DatasetFormat | None = None,
+    unsupported_message: str | None = None,
+) -> ResolvedDataset:
     with traced_operation("dataset.resolve", {"dataset.file_name": file_name}):
         ref = DatasetRef(file_name=file_name)
         resolved = get_dataset_registry().resolve(
             ref,
-            expected_format=DatasetFormat.CSV,
-            unsupported_message="Only CSV files are supported.",
+            expected_format=expected_format,
+            unsupported_message=unsupported_message,
         )
         logger.info("Resolved dataset path for file_name=%s", file_name)
         return resolved
+
+
+def _build_dataset_preview(file_name: str, df: pd.DataFrame) -> DatasetPreview:
+    records = cast(list[dict[str, object]], df.astype(object).to_dict(orient="records"))
+    clean_rows = [
+        {column: _normalize_preview_value(value) for column, value in row.items()}
+        for row in records
+    ]
+    return DatasetPreview(
+        file_name=file_name,
+        rows=clean_rows,
+    )
+
+
+def _validate_preview_rows(file_name: str, rows: int) -> None:
+    if not isinstance(rows, int):
+        logger.warning("Rejected preview request because rows was not an integer.")
+        raise TypeError("rows must be an integer.")
+
+    max_preview_rows = get_settings().mcp_max_preview_rows
+    if rows < 1 or rows > max_preview_rows:
+        logger.warning(
+            "Rejected preview request for file_name=%s because rows=%s exceeded max=%s",
+            file_name,
+            rows,
+            max_preview_rows,
+        )
+        raise ValueError(f"rows must be between 1 and {max_preview_rows}.")

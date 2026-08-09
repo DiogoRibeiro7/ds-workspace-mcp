@@ -6,7 +6,13 @@ import pandas as pd
 
 from ds_workspace_mcp.exceptions import DatasetReadError
 
-from .models import DatasetFingerprint, DatasetFormat, DatasetMetadata, DatasetRef
+from .models import (
+    DatasetColumnMetadata,
+    DatasetFingerprint,
+    DatasetFormat,
+    DatasetMetadata,
+    DatasetRef,
+)
 
 
 class CsvDatasetReader:
@@ -37,6 +43,10 @@ class CsvDatasetReader:
         """Return path-free metadata for one CSV file."""
 
         fingerprint = self.fingerprint(path)
+        try:
+            header_frame = pd.read_csv(path, nrows=0)
+        except (UnicodeDecodeError, pd.errors.ParserError) as exc:
+            raise DatasetReadError(f"Could not read dataset: {path.name}") from exc
         return DatasetMetadata(
             file_name=ref.file_name,
             format=self.format,
@@ -44,4 +54,9 @@ class CsvDatasetReader:
             modified_time_ns=fingerprint.modified_time_ns,
             fingerprint=fingerprint.cache_token,
             can_query=self.can_query,
+            column_count=len(header_frame.columns),
+            columns=[
+                DatasetColumnMetadata(name=str(column), data_type=str(dtype))
+                for column, dtype in header_frame.dtypes.items()
+            ],
         )

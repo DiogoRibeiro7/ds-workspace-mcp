@@ -47,6 +47,13 @@ class DatasetFingerprint:
         return f"{self.size_bytes}:{self.modified_time_ns}"
 
 
+class DatasetColumnMetadata(BaseModel):
+    """Path-free metadata for one dataset column."""
+
+    name: str
+    data_type: str
+
+
 class DatasetMetadata(BaseModel):
     """Path-free metadata for one resolved dataset."""
 
@@ -56,3 +63,6 @@ class DatasetMetadata(BaseModel):
     modified_time_ns: int = Field(ge=0)
     fingerprint: str
     can_query: bool
+    row_count: int | None = Field(default=None, ge=0)
+    column_count: int | None = Field(default=None, ge=0)
+    columns: list[DatasetColumnMetadata] = Field(default_factory=list)

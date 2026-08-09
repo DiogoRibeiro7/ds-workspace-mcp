@@ -3,7 +3,13 @@ from __future__ import annotations
 import logging
 
 from ds_workspace_mcp.mcp.app import _mcp_tool
-from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult, query_csv_with_duckdb_dataset
+from ds_workspace_mcp.sql.duckdb_engine import (
+    DuckDBQueryResult,
+    query_csv_with_duckdb_dataset,
+)
+from ds_workspace_mcp.sql.duckdb_engine import (
+    query_dataset_with_duckdb as query_dataset_with_duckdb_dataset,
+)
 from ds_workspace_mcp.sql.sqlite_engine import (
     SQLiteDatabaseInfo,
     SQLiteQueryResult,
@@ -50,6 +56,30 @@ def query_csv_with_duckdb(
             limit,
         )
         return query_csv_with_duckdb_dataset(file_name=file_name, sql=sql, limit=limit)
+
+
+@_mcp_tool()
+def query_dataset_with_duckdb(
+    file_name: str,
+    sql: str,
+    limit: int | None = None,
+) -> DuckDBQueryResult:
+    """Run a safe read-only DuckDB query against any supported tabular dataset."""
+
+    with traced_operation(
+        "tool.query_dataset_with_duckdb",
+        {
+            "tool.name": "query_dataset_with_duckdb",
+            "dataset.file_name": file_name,
+            "tool.limit": limit,
+        },
+    ):
+        logger.info(
+            "Tool query_dataset_with_duckdb invoked file_name=%s limit=%s",
+            file_name,
+            limit,
+        )
+        return query_dataset_with_duckdb_dataset(file_name=file_name, sql=sql, limit=limit)
 
 
 @_mcp_tool()

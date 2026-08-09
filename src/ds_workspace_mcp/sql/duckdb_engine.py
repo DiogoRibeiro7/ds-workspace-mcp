@@ -15,7 +15,8 @@ from sqlglot import exp
 from sqlglot.errors import ParseError
 
 from ds_workspace_mcp.config import get_settings
-from ds_workspace_mcp.core import read_csv_dataset
+from ds_workspace_mcp.core import get_dataset_registry
+from ds_workspace_mcp.datasets import DatasetFormat, DatasetRef
 from ds_workspace_mcp.exceptions import InvalidSQLError, QueryTimeoutError
 from ds_workspace_mcp.tracing import traced_operation
 
@@ -70,6 +71,25 @@ def query_csv_with_duckdb_dataset(
 ) -> DuckDBQueryResult:
     """Run a bounded read-only DuckDB query against a resolved CSV dataset."""
 
+    return query_dataset_with_duckdb(
+        file_name=file_name,
+        sql=sql,
+        limit=limit,
+        expected_format=DatasetFormat.CSV,
+        unsupported_message="Only CSV files are supported.",
+    )
+
+
+def query_dataset_with_duckdb(
+    file_name: str,
+    sql: str,
+    limit: int | None = None,
+    *,
+    expected_format: DatasetFormat | None = None,
+    unsupported_message: str | None = None,
+) -> DuckDBQueryResult:
+    """Run a bounded read-only DuckDB query against a resolved dataset."""
+
     if not isinstance(sql, str):
         logger.warning("Rejected DuckDB query because sql was not a string.")
         raise InvalidSQLError("sql must be a string.")
@@ -84,7 +104,12 @@ def query_csv_with_duckdb_dataset(
         sql,
         max_sql_query_length=settings.mcp_max_sql_query_length,
     )
-    df = read_csv_dataset(file_name=file_name)
+    resolved = get_dataset_registry().resolve(
+        DatasetRef(file_name=file_name),
+        expected_format=expected_format,
+        unsupported_message=unsupported_message,
+    )
+    df = resolved.reader.load_frame(resolved.path)
 
     logger.info(
         "Executing DuckDB query for file_name=%s requested_limit=%s applied_limit=%s",
