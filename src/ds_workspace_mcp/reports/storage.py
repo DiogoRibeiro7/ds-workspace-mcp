@@ -170,23 +170,25 @@ class ReportStorage:
         return candidate_path.resolve()
 
     def _write_temp_file(self, target_path: Path, content: str) -> Path:
-        temp_file = tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=self.root,
-            prefix=f".{target_path.name}.",
-            suffix=".tmp",
-            delete=False,
-        )
+        temp_path: Path | None = None
         try:
-            with temp_file:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=self.root,
+                prefix=f".{target_path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as temp_file:
+                temp_path = Path(temp_file.name)
                 temp_file.write(content)
                 temp_file.flush()
                 os.fsync(temp_file.fileno())
         except Exception:
-            Path(temp_file.name).unlink(missing_ok=True)
+            if temp_path is not None:
+                temp_path.unlink(missing_ok=True)
             raise
-        return Path(temp_file.name)
+        return temp_path
 
     def _commit_temp_file(self, temp_path: Path, target_path: Path, *, overwrite: bool) -> None:
         if overwrite:

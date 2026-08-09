@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalError
 
 
-class DatasetFormat(str, Enum):
+class DatasetFormat(StrEnum):
     """Dataset formats supported by the dataset registry."""
 
     CSV = "csv"

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from enum import Enum
+from enum import StrEnum
 from typing import Any, cast
 
 import pandas as pd
@@ -13,7 +13,7 @@ from ds_workspace_mcp.core import read_dataset_frame
 from ds_workspace_mcp.exceptions import InvalidAggregationError
 
 
-class AggregateOperation(str, Enum):
+class AggregateOperation(StrEnum):
     COUNT = "count"
     COUNT_DISTINCT = "count_distinct"
     SUM = "sum"
@@ -24,7 +24,7 @@ class AggregateOperation(str, Enum):
     STD = "std"
 
 
-class FilterOperation(str, Enum):
+class FilterOperation(StrEnum):
     EQ = "eq"
     NE = "ne"
     LT = "lt"
@@ -38,7 +38,7 @@ class FilterOperation(str, Enum):
     BETWEEN = "between"
 
 
-class SortDirection(str, Enum):
+class SortDirection(StrEnum):
     ASC = "asc"
     DESC = "desc"
 
