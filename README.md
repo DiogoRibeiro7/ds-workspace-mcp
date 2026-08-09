@@ -776,7 +776,8 @@ Arguments:
 
 #### `build_experiment_plan`
 
-Build a concrete first-pass modeling plan with starter models, validation guidance, risks, metrics, and next steps.
+Build a concrete first-pass modeling plan with starter models, validation guidance, risks,
+metrics, next steps, and a reproducible evaluation manifest.
 
 Arguments:
 
@@ -789,7 +790,10 @@ Arguments:
 
 #### `build_modeling_report`
 
-Build a compact markdown report artifact for review or handoff.
+Build a compact markdown report artifact for review or handoff. The structured result includes
+an `evaluation_manifest`, and the markdown includes a compact manifest section with provenance
+details such as dataset fingerprint, executable validation strategy, selected feature counts,
+runtime versions, and generation time.
 
 Arguments:
 
@@ -1385,10 +1389,15 @@ Arguments:
 The result includes last-value naive and drift baselines, plus seasonal naive when the
 frequency and history support a seasonal period. Metrics include MAE, RMSE, MASE when
 the training denominator is valid, and sMAPE with both-zero terms contributing `0`.
+The structured result also includes an evaluation manifest with dataset fingerprint,
+rolling-origin validation metadata, metric definitions, and runtime bounds.
 
 #### `evaluate_baseline_model`
 
 Evaluate a dummy baseline model for regression, binary classification, or multiclass classification.
+The result includes an evaluation manifest with the dataset fingerprint, selected features,
+split metadata, baseline definition, metric definitions, package version, Python version,
+and relevant configuration bounds.
 
 Arguments:
 

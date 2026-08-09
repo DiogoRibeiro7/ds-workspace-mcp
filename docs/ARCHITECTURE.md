@@ -157,6 +157,14 @@ Responsibilities:
 - supports bounded grouped series and reports per-group plus aggregate metrics
 - documents MAE, RMSE, MASE, and sMAPE conventions in the structured result
 
+### `evaluation_manifest.py`
+
+Responsibilities:
+
+- builds path-free reproducibility metadata for plans, reports, and baseline evaluations
+- records dataset fingerprints, selected/review/excluded features, validation design, baseline and metric definitions, runtime versions, and relevant configuration bounds
+- keeps wall-clock generation time explicit so deterministic tests can exclude it intentionally
+
 ### `ml/baselines.py`
 
 Responsibilities:
@@ -201,6 +209,7 @@ Responsibilities:
    - `sql/duckdb_engine.py` for SQL
    - `timeseries.py` for forecasting-readiness checks
    - `forecasting.py` for transparent forecast baseline evaluation
+   - `evaluation_manifest.py` for provenance metadata on plans, reports, and baselines
    - `ml/baselines.py` for dummy model evaluation
 5. Structured results are returned through FastMCP as JSON.
 

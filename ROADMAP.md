@@ -82,6 +82,7 @@
 - [x] Add duplicate-row detection and key-candidate suggestions.
 - [ ] Add time-series resampling and missing-interval fill suggestions.
 - [x] Add a seasonal-naive forecast baseline alongside the existing validator.
+- [x] Add reproducible evaluation manifests for modeling reports and baseline evaluations.
 
 ## v2.0 — Workspace and extensibility
 

@@ -52,6 +52,12 @@ def test_evaluate_forecast_baselines_regular_daily_series(
     assert seasonal.training_end < seasonal.test_start
     assert seasonal.metrics.mase is not None
     assert seasonal.metrics.smape >= 0
+    assert result.evaluation_manifest.dataset_name == "daily.csv"
+    assert result.evaluation_manifest.selected_target == "target"
+    assert result.evaluation_manifest.validation_strategy == "chronological_rolling_origin"
+    assert result.evaluation_manifest.time_column == "date"
+    assert result.evaluation_manifest.train_test_boundaries.evaluated_points == 7
+    assert "smape" in result.evaluation_manifest.metric_definitions
 
 
 def test_evaluate_forecast_baselines_supports_grouped_series(
@@ -83,6 +89,8 @@ def test_evaluate_forecast_baselines_supports_grouped_series(
     assert result.frequency.frequency == "1D"
     assert len(result.group_results) == 2
     assert {group.group for group in result.group_results} == {"a", "b"}
+    assert result.evaluation_manifest.group_column == "clinic"
+    assert result.evaluation_manifest.train_test_boundaries.evaluated_points == 12
     assert {baseline.baseline_name for baseline in result.baselines} == {
         "drift",
         "last_value_naive",
@@ -154,4 +162,5 @@ def test_cli_evaluate_forecast_baselines_outputs_json(
     assert exit_code == 0
     assert payload["file_name"] == "cli.csv"
     assert payload["target_column"] == "target"
+    assert payload["evaluation_manifest"]["dataset_name"] == "cli.csv"
     assert any(item["baseline_name"] == "last_value_naive" for item in payload["baselines"])

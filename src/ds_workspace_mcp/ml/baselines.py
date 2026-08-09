@@ -19,6 +19,11 @@ from sklearn.model_selection import (  # type: ignore[import-untyped]
 )
 
 from ds_workspace_mcp.core import read_csv_dataset
+from ds_workspace_mcp.evaluation_manifest import (
+    EvaluationManifest,
+    ManifestTrainTestBoundaries,
+    build_evaluation_manifest,
+)
 from ds_workspace_mcp.exceptions import InsufficientDataError
 
 TaskType = Literal["regression", "binary_classification", "multiclass_classification"]
@@ -87,6 +92,7 @@ class BaselineEvaluationResult(BaseModel):
     train_class_counts: dict[str, int] | None = None
     test_class_counts: dict[str, int] | None = None
     validation: ValidationSplitMetadata
+    evaluation_manifest: EvaluationManifest
 
 
 def evaluate_baseline_model_dataset(
@@ -416,6 +422,14 @@ def _evaluate_regression(
         test_rows=len(X_test),
         regression_metrics=metrics,
         validation=validation,
+        evaluation_manifest=_build_baseline_manifest(
+            file_name=file_name,
+            target_column=target_column,
+            task_type="regression",
+            X_train=X_train,
+            X_test=X_test,
+            validation=validation,
+        ),
     )
 
 
@@ -462,7 +476,67 @@ def _evaluate_classification(
         train_class_counts=train_class_counts,
         test_class_counts=test_class_counts,
         validation=validation,
+        evaluation_manifest=_build_baseline_manifest(
+            file_name=file_name,
+            target_column=target_column,
+            task_type=task_type,
+            X_train=X_train,
+            X_test=X_test,
+            validation=validation,
+        ),
     )
+
+
+def _build_baseline_manifest(
+    *,
+    file_name: str,
+    target_column: str,
+    task_type: TaskType,
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
+    validation: ValidationSplitMetadata,
+) -> EvaluationManifest:
+    return build_evaluation_manifest(
+        file_name=file_name,
+        selected_target=target_column,
+        selected_features=[str(column) for column in X_train.columns],
+        task_type=task_type,
+        validation_strategy=validation.strategy,
+        random_seed=validation.random_state,
+        time_column=validation.time_column,
+        group_column=validation.group_column,
+        train_test_boundaries=ManifestTrainTestBoundaries(
+            train_start_time=validation.train_start_time,
+            train_end_time=validation.train_end_time,
+            test_start_time=validation.test_start_time,
+            test_end_time=validation.test_end_time,
+            train_rows=len(X_train),
+            test_rows=len(X_test),
+        ),
+        baseline_definition=_baseline_definition(task_type),
+        metric_definitions=_baseline_metric_definitions(task_type),
+    )
+
+
+def _baseline_definition(task_type: TaskType) -> str:
+    if task_type == "regression":
+        return "DummyRegressor(strategy='mean') fitted on the training target values."
+    return "DummyClassifier(strategy='most_frequent') fitted on the training target labels."
+
+
+def _baseline_metric_definitions(task_type: TaskType) -> dict[str, str]:
+    if task_type == "regression":
+        return {
+            "mae": "Mean absolute error on the holdout rows.",
+            "rmse": "Root mean squared error on the holdout rows.",
+            "r2": "Coefficient of determination on the holdout rows.",
+        }
+    return {
+        "accuracy": "Share of correctly classified holdout rows.",
+        "balanced_accuracy": "Average recall across classes on the holdout.",
+        "macro_f1": "Unweighted mean of per-class F1 scores on the holdout.",
+        "weighted_f1": "Support-weighted mean of per-class F1 scores on the holdout.",
+    }
 
 
 def _validate_task_type(task_type: str) -> TaskType:

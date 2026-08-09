@@ -7,6 +7,11 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 from ds_workspace_mcp.core import read_csv_dataset
+from ds_workspace_mcp.evaluation_manifest import (
+    EvaluationManifest,
+    ManifestTrainTestBoundaries,
+    build_evaluation_manifest,
+)
 from ds_workspace_mcp.exceptions import InsufficientDataError
 from ds_workspace_mcp.timeseries import FrequencyInferenceResult, _infer_frequency
 
@@ -74,6 +79,7 @@ class ForecastBaselineEvaluationResult(BaseModel):
     group_results: list[GroupForecastBaselineResult] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     metric_notes: ForecastMetricNotes
+    evaluation_manifest: EvaluationManifest
 
 
 class _BaselinePointSet(BaseModel):
@@ -125,6 +131,8 @@ def evaluate_forecast_baselines_dataset(
             seasonal_period=seasonal_period,
             group=None,
         )
+        baselines = series_result.group_result.baselines
+        evaluated_points = max(item.evaluated_points for item in baselines)
         return ForecastBaselineEvaluationResult(
             file_name=file_name,
             time_column=time_column,
@@ -133,14 +141,20 @@ def evaluate_forecast_baselines_dataset(
             frequency=series_result.group_result.frequency,
             forecast_horizon=forecast_horizon,
             test_size=test_size,
-            seasonal_period=_resolved_result_seasonal_period(series_result.group_result.baselines),
-            evaluated_points=max(
-                item.evaluated_points for item in series_result.group_result.baselines
-            ),
-            baselines=series_result.group_result.baselines,
+            seasonal_period=_resolved_result_seasonal_period(baselines),
+            evaluated_points=evaluated_points,
+            baselines=baselines,
             group_results=[],
             warnings=[],
             metric_notes=_metric_notes(),
+            evaluation_manifest=_build_forecast_manifest(
+                file_name=file_name,
+                target_column=target_column,
+                time_column=time_column,
+                group_column=None,
+                baselines=baselines,
+                evaluated_points=evaluated_points,
+            ),
         )
 
     group_count = int(aligned[group_column].nunique())
@@ -160,6 +174,13 @@ def evaluate_forecast_baselines_dataset(
         for group_value, group_df in aligned.groupby(group_column, sort=True)
     ]
     group_results = [item.group_result for item in series_evaluations]
+    baselines = _aggregate_group_baselines(
+        series_evaluations,
+        forecast_horizon=forecast_horizon,
+    )
+    evaluated_points = sum(
+        max(baseline.evaluated_points for baseline in item.baselines) for item in group_results
+    )
     return ForecastBaselineEvaluationResult(
         file_name=file_name,
         time_column=time_column,
@@ -171,16 +192,19 @@ def evaluate_forecast_baselines_dataset(
         seasonal_period=_resolved_result_seasonal_period(
             [baseline for item in group_results for baseline in item.baselines]
         ),
-        evaluated_points=sum(
-            max(baseline.evaluated_points for baseline in item.baselines) for item in group_results
-        ),
-        baselines=_aggregate_group_baselines(
-            series_evaluations,
-            forecast_horizon=forecast_horizon,
-        ),
+        evaluated_points=evaluated_points,
+        baselines=baselines,
         group_results=group_results,
         warnings=[],
         metric_notes=_metric_notes(),
+        evaluation_manifest=_build_forecast_manifest(
+            file_name=file_name,
+            target_column=target_column,
+            time_column=time_column,
+            group_column=group_column,
+            baselines=baselines,
+            evaluated_points=evaluated_points,
+        ),
     )
 
 
@@ -684,6 +708,44 @@ def _metric_notes() -> ForecastMetricNotes:
             "200*abs(actual-prediction)/(abs(actual)+abs(prediction)); terms with both "
             "actual and prediction equal to zero contribute 0."
         ),
+    )
+
+
+def _build_forecast_manifest(
+    *,
+    file_name: str,
+    target_column: str,
+    time_column: str,
+    group_column: str | None,
+    baselines: list[ForecastBaselineResult],
+    evaluated_points: int,
+) -> EvaluationManifest:
+    return build_evaluation_manifest(
+        file_name=file_name,
+        selected_target=target_column,
+        selected_features=[],
+        task_type="forecast_regression",
+        validation_strategy="chronological_rolling_origin",
+        random_seed=None,
+        time_column=time_column,
+        group_column=group_column,
+        train_test_boundaries=ManifestTrainTestBoundaries(
+            train_start_time=min(item.training_start for item in baselines),
+            train_end_time=max(item.training_end for item in baselines),
+            test_start_time=min(item.test_start for item in baselines),
+            test_end_time=max(item.test_end for item in baselines),
+            evaluated_points=evaluated_points,
+        ),
+        baseline_definition=_forecast_manifest_baseline_definition(baselines),
+        metric_definitions=_metric_notes().model_dump(),
+    )
+
+
+def _forecast_manifest_baseline_definition(
+    baselines: list[ForecastBaselineResult],
+) -> str:
+    return "; ".join(
+        f"{baseline.baseline_name}: {baseline.baseline_definition}" for baseline in baselines
     )
 
 
