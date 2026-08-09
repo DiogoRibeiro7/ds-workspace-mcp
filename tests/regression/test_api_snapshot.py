@@ -9,7 +9,11 @@ from ds_workspace_mcp.core import DatasetIssue, DatasetPreview
 from ds_workspace_mcp.diagnostics import CorrelationSummary, LeakageSummary
 from ds_workspace_mcp.experiment_plan import ExperimentPlanResult
 from ds_workspace_mcp.feature_selection import FeatureSelectionResult
-from ds_workspace_mcp.ml.baselines import BaselineEvaluationResult, ValidationSplitMetadata
+from ds_workspace_mcp.ml.baselines import (
+    BaselineEvaluationResult,
+    ClassificationMetrics,
+    ValidationSplitMetadata,
+)
 from ds_workspace_mcp.modeling_readiness import ModelingReadinessResult
 from ds_workspace_mcp.modeling_report import ModelingReportResult
 from ds_workspace_mcp.overview import DatasetOverview
@@ -162,8 +166,12 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "test_rows",
         "regression_metrics",
         "classification_metrics",
+        "class_counts",
+        "train_class_counts",
+        "test_class_counts",
         "validation",
     ],
+    "ClassificationMetrics": ["accuracy", "balanced_accuracy", "macro_f1", "weighted_f1"],
     "ComparedModelingReport": [
         "output_name",
         "other_output_name",
@@ -368,6 +376,7 @@ EXPECTED_RESULT_MODEL_FIELDS = {
 
 RESULT_MODELS: list[type[BaseModel]] = [
     BaselineEvaluationResult,
+    ClassificationMetrics,
     ComparedModelingReport,
     ComparedModelingReportSection,
     CopiedModelingReport,

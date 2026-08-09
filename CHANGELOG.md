@@ -11,12 +11,14 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added structural DuckDB SQL relation validation with explicit in-memory relation allowlisting.
 - Added adversarial DuckDB tests for external file, URL, extension, attachment, and relation-name bypass attempts.
 - Added typed baseline validation split support for random, stratified, chronological, and grouped holdouts.
+- Added classification baseline class-count metadata and weighted F1.
 
 ### Changed
 
 - Hardened DuckDB query connections by disabling external access, extension autoload/autoinstall, community extensions, persistent secrets, and runtime configuration changes before user SQL executes.
 - Strengthened SQL timeout handling so SQLite timeout protection remains active during result fetching and both SQL engines log/trace timeout, cancellation, elapsed-time, and result-row metadata.
 - Modeling readiness and experiment plans now return executable validation recommendations for baseline evaluation.
+- Classification baselines now reject unsupported or unrepresentative train/test splits instead of returning misleading metrics.
 
 ## [1.0.2] - 2026-08-09
 
