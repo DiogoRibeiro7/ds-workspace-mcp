@@ -64,9 +64,13 @@ def test_build_modeling_report_returns_markdown_sections(
     assert "# " in result.markdown
     assert "## Summary" in result.markdown
     assert "## Baseline Models" in result.markdown
+    assert "## Evaluation Manifest" in result.markdown
+    assert "Dataset fingerprint" in result.markdown
     assert "## Risks" in result.markdown
     assert "## Next Steps" in result.markdown
     assert "`revenue`" in result.markdown
+    assert result.evaluation_manifest.dataset_name == "reporting.csv"
+    assert result.evaluation_manifest.selected_target == "revenue"
 
 
 def test_build_modeling_report_respects_requested_target(
@@ -84,3 +88,4 @@ def test_build_modeling_report_respects_requested_target(
     assert result.target_column == "segment"
     assert "multiclass_classification" in result.markdown
     assert "requested" in result.markdown
+    assert result.evaluation_manifest.selected_target == "segment"

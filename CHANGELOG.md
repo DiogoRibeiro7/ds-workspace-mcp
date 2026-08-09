@@ -21,6 +21,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added dataset schema diff and drift diagnostics across CSV, Parquet, JSON, JSONL, Excel, and SQLite datasets.
 - Added richer bounded profiling diagnostics for numeric distributions, categorical quality, duplicate rows, identifiers, free-text columns, and candidate keys.
 - Added chronological forecast baseline evaluation with last-value, seasonal-naive, and drift baselines plus documented MAE, RMSE, MASE, and sMAPE metrics.
+- Added reproducible evaluation manifests to experiment plans, modeling reports, dummy baselines, and forecast baselines.
 
 ### Changed
 

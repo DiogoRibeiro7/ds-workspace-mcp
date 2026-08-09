@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from pydantic import BaseModel
 
 from ds_workspace_mcp.exceptions import InsufficientDataError
 from ds_workspace_mcp.ml.baselines import (
@@ -19,6 +20,16 @@ def write_baseline_dataset(root: Path, name: str, df: pd.DataFrame) -> Path:
     path = root / name
     df.to_csv(path, index=False)
     return path
+
+
+def dump_without_manifest_timestamp(result: BaseModel) -> dict[str, object]:
+    """Return a result payload without intentionally variable manifest timestamp."""
+
+    payload = result.model_dump()
+    manifest = payload["evaluation_manifest"]
+    assert isinstance(manifest, dict)
+    manifest.pop("generated_at")
+    return payload
 
 
 def test_evaluate_baseline_model_regression(
@@ -45,6 +56,14 @@ def test_evaluate_baseline_model_regression(
     assert result.test_rows > 0
     assert result.validation.strategy == "random"
     assert result.validation.random_state == 42
+    assert result.evaluation_manifest.dataset_name == "regression.csv"
+    assert result.evaluation_manifest.selected_target == "target"
+    assert result.evaluation_manifest.selected_features == ["feature"]
+    assert result.evaluation_manifest.validation_strategy == "random"
+    assert result.evaluation_manifest.random_seed == 42
+    assert result.evaluation_manifest.train_test_boundaries.train_rows == result.train_rows
+    assert result.evaluation_manifest.train_test_boundaries.test_rows == result.test_rows
+    assert "mae" in result.evaluation_manifest.metric_definitions
 
 
 def test_evaluate_baseline_model_binary_classification(
@@ -131,7 +150,7 @@ def test_random_validation_split_is_deterministic_for_fixed_seed(
         random_state=7,
     )
 
-    assert first.model_dump() == second.model_dump()
+    assert dump_without_manifest_timestamp(first) == dump_without_manifest_timestamp(second)
 
 
 def test_classification_validation_split_is_deterministic_for_fixed_seed(
@@ -162,7 +181,7 @@ def test_classification_validation_split_is_deterministic_for_fixed_seed(
         random_state=13,
     )
 
-    assert first.model_dump() == second.model_dump()
+    assert dump_without_manifest_timestamp(first) == dump_without_manifest_timestamp(second)
 
 
 def test_highly_imbalanced_binary_classification_reports_represented_holdout(

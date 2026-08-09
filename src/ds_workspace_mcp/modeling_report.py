@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from ds_workspace_mcp.evaluation_manifest import EvaluationManifest
 from ds_workspace_mcp.experiment_plan import ExperimentPlanResult, build_experiment_plan_dataset
 
 
@@ -12,6 +13,7 @@ class ModelingReportResult(BaseModel):
     target_column: str
     headline: str
     markdown: str
+    evaluation_manifest: EvaluationManifest
 
 
 def build_modeling_report_dataset(
@@ -30,6 +32,7 @@ def build_modeling_report_dataset(
         target_column=plan.target_column,
         headline=headline,
         markdown=_build_markdown(plan, headline),
+        evaluation_manifest=plan.evaluation_manifest,
     )
 
 
@@ -77,11 +80,34 @@ def _build_markdown(plan: ExperimentPlanResult, headline: str) -> str:
             "## Evaluation Metrics",
             f"- Metrics: {metrics}",
             "",
+            "## Evaluation Manifest",
+            _format_manifest(plan),
+            "",
             "## Risks",
             risks,
             "",
             "## Next Steps",
             next_steps,
+        ]
+    )
+
+
+def _format_manifest(plan: ExperimentPlanResult) -> str:
+    """Render compact provenance details for saved markdown reports."""
+
+    manifest = plan.evaluation_manifest
+    return "\n".join(
+        [
+            f"- Dataset fingerprint: `{manifest.dataset_fingerprint}`",
+            f"- Executable validation strategy: `{manifest.validation_strategy}`",
+            f"- Random seed: `{manifest.random_seed}`",
+            f"- Time column: `{manifest.time_column}`",
+            f"- Group column: `{manifest.group_column}`",
+            f"- Selected features: {len(manifest.selected_features)}",
+            f"- Review features: {len(manifest.review_features)}",
+            f"- Excluded features: {len(manifest.excluded_features)}",
+            f"- Package/Python: `{manifest.package_version}` / `{manifest.python_version}`",
+            f"- Generated at: `{manifest.generated_at}`",
         ]
     )
 

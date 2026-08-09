@@ -275,6 +275,7 @@ The following are considered non-breaking:
   - `baseline_models: list[ModelCandidate]`
   - `evaluation_metrics: list[str]`
   - `next_steps: list[str]`
+  - `evaluation_manifest: EvaluationManifest`
   - `summary: str`
 - Stable model-candidate fields:
   - `name: str`
@@ -294,10 +295,59 @@ The following are considered non-breaking:
   - `target_column: str`
   - `headline: str`
   - `markdown: str`
+  - `evaluation_manifest: EvaluationManifest`
 - Heuristic notes:
   - markdown wording may evolve across patch and minor releases
   - the report is intended for human review and handoff rather than machine parsing
+  - markdown includes a compact evaluation-manifest section, while the structured result carries the full manifest object
   - when `target_column` is omitted, the report uses the top suggested target candidate
+
+#### `EvaluationManifest`
+
+- Purpose: path-free metadata for reconstructing an evaluation design or report provenance
+- Stable result fields:
+  - `dataset_fingerprint: str`
+  - `dataset_name: str`
+  - `selected_target: str`
+  - `selected_features: list[str]`
+  - `review_features: list[ManifestFeatureDecision]`
+  - `excluded_features: list[ManifestFeatureDecision]`
+  - `task_type: str`
+  - `validation_strategy: str`
+  - `random_seed: int | null`
+  - `time_column: str | null`
+  - `group_column: str | null`
+  - `train_test_boundaries: ManifestTrainTestBoundaries`
+  - `baseline_definition: str`
+  - `metric_definitions: dict[str, str]`
+  - `package_version: str`
+  - `python_version: str`
+  - `config_bounds: ManifestConfigBounds`
+  - `generated_at: str`
+- Stable feature-decision fields:
+  - `column: str`
+  - `decision: str`
+  - `reasons: list[str]`
+- Stable train/test boundary fields:
+  - `train_start_time: str | null`
+  - `train_end_time: str | null`
+  - `test_start_time: str | null`
+  - `test_end_time: str | null`
+  - `train_rows: int | null`
+  - `test_rows: int | null`
+  - `evaluated_points: int | null`
+- Stable config-bound fields:
+  - `max_preview_rows: int`
+  - `max_sql_rows: int`
+  - `max_sql_query_length: int`
+  - `sql_timeout_ms: int`
+  - `max_categorical_values: int`
+  - `max_dataset_bytes: int`
+  - `profile_cache_enabled: bool`
+  - `profile_cache_max_entries: int`
+- Contract notes:
+  - manifests do not include dataset records or absolute local paths
+  - `generated_at` is intentionally wall-clock metadata and should be excluded from deterministic equality checks
 
 #### `save_modeling_report(file_name: str, target_column: str | None = None, output_name: str | None = None, overwrite: bool = False)`
 
@@ -984,6 +1034,7 @@ The following are considered non-breaking:
   - `group_results: list[GroupForecastBaselineResult]`
   - `warnings: list[str]`
   - `metric_notes: ForecastMetricNotes`
+  - `evaluation_manifest: EvaluationManifest`
 - Stable baseline result fields:
   - `baseline_name: str`
   - `baseline_definition: str`
@@ -1038,6 +1089,7 @@ The following are considered non-breaking:
   - `train_class_counts: dict[str, int] | null`
   - `test_class_counts: dict[str, int] | null`
   - `validation: ValidationSplitMetadata`
+  - `evaluation_manifest: EvaluationManifest`
 - Supported `validation_strategy` values:
   - `random`
   - `stratified`

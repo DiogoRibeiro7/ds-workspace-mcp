@@ -85,6 +85,12 @@ def test_build_experiment_plan_uses_suggested_target(
     assert "mae" in result.evaluation_metrics
     assert any("Datetime context" in risk for risk in result.risks)
     assert any("chronological validation" in step for step in result.next_steps)
+    assert result.evaluation_manifest.dataset_name == "modeling_readiness.csv"
+    assert result.evaluation_manifest.selected_target == "revenue"
+    assert result.evaluation_manifest.validation_strategy == "chronological"
+    assert result.evaluation_manifest.time_column == "date"
+    assert any(item.column == "record_id" for item in result.evaluation_manifest.excluded_features)
+    assert "mae" in result.evaluation_manifest.metric_definitions
     assert "seasonal_naive_baseline" in result.summary
 
 
@@ -109,4 +115,6 @@ def test_build_experiment_plan_respects_requested_target(
     assert result.recommended_group_column is None
     assert result.baseline_models[0].name == "dummy_classifier_most_frequent"
     assert "macro_f1" in result.evaluation_metrics
+    assert result.evaluation_manifest.validation_strategy == "stratified"
+    assert result.evaluation_manifest.random_seed == 42
     assert any("leakage" in step for step in result.next_steps)
