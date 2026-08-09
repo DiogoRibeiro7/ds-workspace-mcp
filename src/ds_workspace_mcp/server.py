@@ -1239,6 +1239,10 @@ def evaluate_baseline_model(
     task_type: str,
     test_size: float = 0.2,
     random_state: int = 42,
+    validation_strategy: str | None = None,
+    time_column: str | None = None,
+    group_column: str | None = None,
+    shuffle: bool | None = None,
 ) -> BaselineEvaluationResult:
     """Evaluate a dummy baseline model for a supervised learning task."""
 
@@ -1249,13 +1253,16 @@ def evaluate_baseline_model(
             "dataset.file_name": file_name,
             "tool.target_column": target_column,
             "tool.task_type": task_type,
+            "tool.validation_strategy": validation_strategy,
         },
     ):
         logger.info(
-            "Tool evaluate_baseline_model invoked file_name=%s target_column=%s task_type=%s",
+            "Tool evaluate_baseline_model invoked file_name=%s target_column=%s "
+            "task_type=%s validation_strategy=%s",
             file_name,
             target_column,
             task_type,
+            validation_strategy,
         )
         return evaluate_baseline_model_dataset(
             file_name=file_name,
@@ -1263,6 +1270,10 @@ def evaluate_baseline_model(
             task_type=task_type,
             test_size=test_size,
             random_state=random_state,
+            validation_strategy=validation_strategy,
+            time_column=time_column,
+            group_column=group_column,
+            shuffle=shuffle,
         )
 
 

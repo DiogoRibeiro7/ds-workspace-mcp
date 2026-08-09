@@ -77,6 +77,9 @@ def test_assess_modeling_readiness_uses_top_suggested_target(
     assert result.target_source == "suggested"
     assert result.suggested_task_type == "regression"
     assert result.validation_strategy == "time_series_review"
+    assert result.recommended_validation_strategy == "chronological"
+    assert result.recommended_time_column == "date"
+    assert result.recommended_group_column is None
     assert "validate_time_series_dataset" in result.recommended_next_tools
     assert "evaluate_baseline_model" in result.recommended_next_tools
     assert "record_id" in result.feature_selection.exclude_columns
@@ -101,6 +104,9 @@ def test_assess_modeling_readiness_respects_requested_target(
     assert result.target_source == "requested"
     assert result.suggested_task_type == "binary_classification"
     assert result.validation_strategy == "standard_train_test_split"
+    assert result.recommended_validation_strategy == "stratified"
+    assert result.recommended_time_column is None
+    assert result.recommended_group_column is None
     assert "validate_time_series_dataset" not in result.recommended_next_tools
     assert "detect_possible_target_leakage" in result.recommended_next_tools
     assert "date" in result.feature_selection.review_columns

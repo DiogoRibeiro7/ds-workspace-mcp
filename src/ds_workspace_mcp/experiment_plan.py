@@ -23,6 +23,9 @@ class ExperimentPlanResult(BaseModel):
     target_source: str
     suggested_task_type: str
     validation_strategy: str
+    recommended_validation_strategy: str
+    recommended_time_column: str | None = None
+    recommended_group_column: str | None = None
     feature_columns: list[str] = Field(default_factory=list)
     review_columns: list[str] = Field(default_factory=list)
     risks: list[str] = Field(default_factory=list)
@@ -54,6 +57,9 @@ def build_experiment_plan_dataset(
         target_source=readiness.target_source,
         suggested_task_type=readiness.suggested_task_type,
         validation_strategy=readiness.validation_strategy,
+        recommended_validation_strategy=readiness.recommended_validation_strategy,
+        recommended_time_column=readiness.recommended_time_column,
+        recommended_group_column=readiness.recommended_group_column,
         feature_columns=readiness.feature_selection.include_columns,
         review_columns=readiness.feature_selection.review_columns,
         risks=risks,
@@ -200,9 +206,15 @@ def _build_next_steps(readiness: ModelingReadinessResult) -> list[str]:
         steps.append("Review and transform flagged columns before training.")
 
     if readiness.validation_strategy == "time_series_review":
-        steps.append("Validate a chronological split and engineer lag or calendar features.")
+        steps.append(
+            "Run the built-in baseline evaluation with chronological validation and then "
+            "engineer lag or calendar features."
+        )
 
-    steps.append("Run the built-in baseline evaluation for the chosen target.")
+    steps.append(
+        "Run the built-in baseline evaluation for the chosen target using "
+        f"`{readiness.recommended_validation_strategy}` validation."
+    )
     steps.append("Compare the baseline against one linear model and one tree-based model.")
 
     if readiness.leakage_warnings:

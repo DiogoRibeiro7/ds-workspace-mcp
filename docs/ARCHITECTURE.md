@@ -97,6 +97,8 @@ Responsibilities:
 Responsibilities:
 
 - evaluates dummy regression and classification baselines
+- resolves explicit validation strategies for random, stratified, chronological, and grouped train/test splits
+- validates split-specific arguments and reports metadata explaining how metrics were produced
 - returns structured metrics for comparison against future models
 
 ### Supporting modules
@@ -161,6 +163,7 @@ Responsibilities:
 - DuckDB SQL validation combines engine settings, parsed relation allowlisting, and defense-in-depth statement/function rejection before query execution
 - SQLite SQL validation happens before query execution and SQLite databases are opened read-only
 - SQL timeout guards cover execution and result materialization, and timeout/cancellation metadata is logged and attached to tracing spans when tracing is enabled
+- baseline validation split configuration rejects incoherent strategy, time-column, group-column, and shuffle combinations before model evaluation
 
 ### Observability
 

@@ -30,6 +30,9 @@ class ModelingReadinessResult(BaseModel):
     target_source: Literal["requested", "suggested"]
     suggested_task_type: str
     validation_strategy: ValidationStrategy
+    recommended_validation_strategy: str
+    recommended_time_column: str | None = None
+    recommended_group_column: str | None = None
     target_candidate: TargetCandidate | None = None
     target_suggestions: list[TargetCandidate] = Field(default_factory=list)
     feature_selection: FeatureSelectionResult
@@ -69,6 +72,13 @@ def assess_modeling_readiness_dataset(
         if has_datetime_context and suggested_task_type == "regression"
         else "standard_train_test_split"
     )
+    recommended_time_column = (
+        profile.datetime_columns[0].column if validation_strategy == "time_series_review" else None
+    )
+    recommended_validation_strategy = _build_recommended_validation_strategy(
+        suggested_task_type=suggested_task_type,
+        validation_strategy=validation_strategy,
+    )
     recommended_next_tools = _build_recommended_next_tools(
         suggested_task_type=suggested_task_type,
         validation_strategy=validation_strategy,
@@ -82,6 +92,9 @@ def assess_modeling_readiness_dataset(
         target_source=target_source,
         suggested_task_type=suggested_task_type,
         validation_strategy=validation_strategy,
+        recommended_validation_strategy=recommended_validation_strategy,
+        recommended_time_column=recommended_time_column,
+        recommended_group_column=None,
         target_candidate=target_candidate,
         target_suggestions=target_suggestions.candidates,
         feature_selection=feature_selection,
@@ -95,6 +108,7 @@ def assess_modeling_readiness_dataset(
             review_feature_count=len(feature_selection.review_columns),
             leakage_warning_count=len(leakage_summary.warnings),
             validation_strategy=validation_strategy,
+            recommended_validation_strategy=recommended_validation_strategy,
         ),
     )
 
@@ -140,6 +154,19 @@ def _build_recommended_next_tools(
     return recommendations
 
 
+def _build_recommended_validation_strategy(
+    suggested_task_type: str,
+    validation_strategy: ValidationStrategy,
+) -> str:
+    """Map advisory readiness language to an executable baseline split strategy."""
+
+    if validation_strategy == "time_series_review":
+        return "chronological"
+    if suggested_task_type in {"binary_classification", "multiclass_classification"}:
+        return "stratified"
+    return "random"
+
+
 def _build_summary(
     target_column: str,
     target_source: Literal["requested", "suggested"],
@@ -148,6 +175,7 @@ def _build_summary(
     review_feature_count: int,
     leakage_warning_count: int,
     validation_strategy: ValidationStrategy,
+    recommended_validation_strategy: str,
 ) -> str:
     """Create a short human-readable readiness summary."""
 
@@ -157,5 +185,6 @@ def _build_summary(
         f"with {include_feature_count} included features, "
         f"{review_feature_count} features to review, "
         f"{leakage_warning_count} leakage warnings, "
-        f"and {validation_strategy} as the validation default."
+        f"and {validation_strategy} as the validation default "
+        f"mapped to `{recommended_validation_strategy}` baseline evaluation."
     )

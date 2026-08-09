@@ -1233,7 +1233,9 @@ Arguments:
   "target_column": "appointments_completed",
   "task_type": "regression",
   "test_size": 0.2,
-  "random_state": 42
+  "random_state": 42,
+  "validation_strategy": "chronological",
+  "time_column": "date"
 }
 ```
 
@@ -1455,6 +1457,9 @@ Baseline model notes:
 
 - Only scikit-learn dummy baselines are used.
 - `regression`, `binary_classification`, and `multiclass_classification` are supported.
+- Validation can be `random`, `stratified`, `chronological`, or `grouped`; classification defaults to stratified validation when feasible.
+- Chronological validation requires a parseable time column, never shuffles, and reports train/test time boundaries.
+- Grouped validation requires a group column and reports train/test group counts plus group-overlap status.
 - These metrics are reference baselines for comparison, not final model quality targets.
 
 ---
