@@ -151,6 +151,41 @@ The following are considered non-breaking:
   - `summary` is intentionally human-readable and may change wording without changing the contract
   - issue highlights and recommended next tools are guidance, not strict prescriptions
 
+#### `compare_datasets(left_file_name: str, right_file_name: str)`
+
+- Stable name: `compare_datasets`
+- Purpose: compare two supported datasets for schema changes and lightweight drift diagnostics
+- Stable result fields:
+  - `left_file_name: str`
+  - `right_file_name: str`
+  - `schema_diff: DatasetSchemaDiff`
+  - `drift: DatasetDriftDiagnostics`
+  - `sampling: DatasetComparisonSampling`
+- Stable schema-diff fields:
+  - `added_columns: list[str]`
+  - `removed_columns: list[str]`
+  - `dtype_changes: list[ColumnTypeChange]`
+  - `null_rate_changes: list[NullRateChange]`
+  - `row_count: RowCountChange`
+  - `cardinality_changes: list[CardinalityChange]`
+- Stable drift fields:
+  - `numeric: list[NumericDrift]`
+  - `categorical: list[CategoricalDrift]`
+  - `timestamp_ranges: list[TimestampRangeChange]`
+- Stable sampling fields:
+  - `strategy: str`
+  - `max_rows_per_dataset: int`
+  - `left_rows_analyzed: int`
+  - `right_rows_analyzed: int`
+  - `left_truncated: bool`
+  - `right_truncated: bool`
+  - `note: str`
+- Heuristic notes:
+  - schema changes and drift diagnostics are separate concepts
+  - numeric drift reports effect sizes and sample-size evidence, not causal conclusions
+  - categorical drift aligns a bounded set of categories and may include an `__other__` bucket
+  - large datasets are bounded by the configured SQL row limit and disclose truncation
+
 #### `suggest_target_columns(file_name: str)`
 
 - Stable name: `suggest_target_columns`
@@ -1016,6 +1051,8 @@ The `ds-workspace-mcp` console script is public.
   - prints CSV file names, one per line
 - `ds-workspace-mcp profile-dataset <file_name>`
   - prints the `profile_csv` result as JSON
+- `ds-workspace-mcp compare-datasets <left_file_name> <right_file_name>`
+  - prints the `compare_datasets` result as JSON
 - `ds-workspace-mcp plan-modeling <file_name> [--target-column]`
   - prints the `build_experiment_plan` result as JSON
 - `ds-workspace-mcp report-modeling <file_name> [--target-column]`

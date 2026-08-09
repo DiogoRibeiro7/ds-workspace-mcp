@@ -69,11 +69,11 @@
 
 ## v1.2 — Broader data access
 
-- [ ] Support Parquet datasets through the existing safe data-root checks.
-- [ ] Support Excel (`.xlsx`) and JSON datasets for preview and profiling.
-- [ ] Add a safe `group_by` aggregation tool so assistants avoid hand-writing SQL.
+- [x] Support Parquet datasets through the existing safe data-root checks.
+- [x] Support Excel (`.xlsx`) and JSON datasets for preview and profiling.
+- [x] Add a safe `group_by` aggregation tool so assistants avoid hand-writing SQL.
 - [ ] Add a bounded query-result export tool that writes a new CSV back into the data directory.
-- [ ] Add a dataset comparison / schema-diff tool for column and dtype drift.
+- [x] Add a dataset comparison / schema-diff tool for column and dtype drift.
 
 ## v1.3 — Richer analytics
 

@@ -18,6 +18,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added transactional report storage with explicit overwrite controls and report content hashes.
 - Added a FastMCP application factory for isolated server construction.
 - Added domain-specific MCP registration modules for resources, tools, and prompts.
+- Added dataset schema diff and drift diagnostics across CSV, Parquet, JSON, JSONL, Excel, and SQLite datasets.
 
 ### Changed
 
