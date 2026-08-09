@@ -7,7 +7,7 @@ authors:
     given-names: Diogo
     affiliation: "School of Media Arts and Design, Polytechnic of Porto, Portugal"
     orcid: "https://orcid.org/0009-0001-2022-7072"
-abstract: "A Model Context Protocol server for safely inspecting and profiling local analytical datasets."
+abstract: "A Model Context Protocol server for safe local analytical dataset access, profiling, drift diagnostics, baseline evaluation, forecast baselines, modeling reports, and reproducible evaluation metadata."
 keywords:
   - model-context-protocol
   - mcp
@@ -15,6 +15,11 @@ keywords:
   - analytics
   - python
   - dataset-profiling
+  - safe-sql
+  - dataset-drift
+  - forecasting
+  - evaluation-metadata
+  - modeling-reports
 license: MIT
 repository-code: "https://github.com/DiogoRibeiro7/ds-workspace-mcp"
 url: "https://github.com/DiogoRibeiro7/ds-workspace-mcp"
