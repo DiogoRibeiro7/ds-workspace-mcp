@@ -72,7 +72,9 @@ Responsibilities:
 - models dataset references as relative names under an approved data root
 - centralizes path containment, format dispatch, file-size checks, metadata, and fingerprints
 - exposes a small `DatasetReader` protocol for format-specific frame loading and metadata
-- keeps CSV support behind `CsvDatasetReader` while preserving existing CSV-specific APIs
+- keeps CSV support behind `CsvDatasetReader` and Parquet support behind `ParquetDatasetReader`
+- inspects Parquet schema and row counts through DuckDB without materializing full files
+- preserves existing CSV-specific APIs while exposing additive generalized dataset tools
 
 ### `profiling.py`
 
@@ -223,6 +225,7 @@ Responsibilities:
 ## Design Tradeoffs
 
 - pandas-first CSV handling keeps the implementation simple, but very large files may still be expensive
+- Parquet metadata and preview use DuckDB-backed bounded reads; generalized SQL still registers a safe in-memory `dataset` relation before user SQL executes
 - DuckDB SQL validation uses structural parsing for relation access, but query complexity and resource exhaustion still require operational limits and cancellation handling
 - auth is intentionally minimal to support local and small self-hosted use without introducing a full identity layer
 - heuristics are exposed because analytical guidance is useful, but they are documented as non-authoritative

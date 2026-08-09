@@ -7,11 +7,11 @@
 
 A practical **Model Context Protocol (MCP)** server for data science workflows.
 
-It lets an MCP-compatible assistant safely inspect local CSV datasets through:
+It lets an MCP-compatible assistant safely inspect local CSV and Parquet datasets through:
 
 - **Resources** for dataset discovery.
 - **Overview tools** for fast first-pass dataset understanding.
-- **Tools** for CSV preview, profiling, SQL access, diagnostics, and baseline evaluation.
+- **Tools** for dataset preview, profiling, SQL access, diagnostics, and baseline evaluation.
 - **Report artifact tools** for saving, searching, comparing, extracting, and reusing modeling reports.
 - **Prompts** for reusable dataset analysis instructions.
 
@@ -21,7 +21,7 @@ This project is designed as a portfolio-ready MCP product: focused, typed, teste
 
 Today the repository covers four practical workflows:
 
-- Safe local dataset access for CSV and SQLite sources.
+- Safe local dataset access for CSV, Parquet, and SQLite sources.
 - Lightweight analytical diagnostics, including leakage review, correlations, and time-series checks.
 - Baseline modeling planning and markdown report generation.
 - Saved report lifecycle management, including cataloging, search, section extraction, section export, and section-aware diffs.
@@ -32,7 +32,7 @@ Today the repository covers four practical workflows:
 
 Many AI assistants can reason well, but they need controlled access to real data and real tools.
 
-This MCP server exposes a local analytical workspace without giving the model arbitrary file-system access. The server only reads CSV files from a configured data directory, and saved modeling reports live under a separate configured reports directory.
+This MCP server exposes a local analytical workspace without giving the model arbitrary file-system access. The server only reads supported dataset files from a configured data directory, and saved modeling reports live under a separate configured reports directory.
 
 Good use cases:
 
@@ -128,7 +128,7 @@ The server reads configuration from environment variables or a local `.env` file
 - `MCP_MAX_SQL_QUERY_LENGTH`: maximum allowed SQL text length for query tools. Defaults to `20000`.
 - `MCP_SQL_TIMEOUT_MS`: maximum SQL execution time before interruption. Defaults to `5000`.
 - `MCP_MAX_CATEGORICAL_VALUES`: maximum top-value examples returned per categorical column in `profile_csv`. Defaults to `5`.
-- `MCP_MAX_DATASET_BYTES`: maximum readable CSV dataset size in bytes. Defaults to `25000000`.
+- `MCP_MAX_DATASET_BYTES`: maximum readable dataset size in bytes. Defaults to `25000000`.
 - `MCP_PROFILE_CACHE_ENABLED`: enable or disable in-memory profile caching. Defaults to `true`.
 - `MCP_PROFILE_CACHE_MAX_ENTRIES`: maximum cached profile entries. Defaults to `128`.
 - `MCP_LOG_LEVEL`: server log level. Defaults to `INFO`.
@@ -201,7 +201,7 @@ If tracing is enabled without the optional dependencies installed, the server co
 ## Troubleshooting
 
 - `Dataset not found: ...`: the file name must exist inside `MCP_DATA_ROOT`, and the server only sees files under that directory.
-- `Only CSV files are supported.` or `Only SQLite files are supported.`: the requested file extension is not allowed for that tool.
+- `Only CSV files are supported.`, `Only SQLite files are supported.`, or `Unsupported dataset format: ...`: the requested file extension is not allowed for that tool.
 - `Access outside the configured data directory is not allowed.`: the request attempted path traversal such as `../...`.
 - `Could not profile dataset: ...`: the file could be opened but could not be profiled safely; validate the CSV structure and encoding.
 - `Could not read dataset: ...`: the CSV could not be decoded or parsed safely.

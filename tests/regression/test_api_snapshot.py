@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from ds_workspace_mcp.cli import build_parser
 from ds_workspace_mcp.config import Settings
 from ds_workspace_mcp.core import DatasetIssue, DatasetPreview
+from ds_workspace_mcp.datasets import DatasetColumnMetadata, DatasetMetadata
 from ds_workspace_mcp.diagnostics import CorrelationSummary, LeakageSummary, LeakageWarning
 from ds_workspace_mcp.experiment_plan import ExperimentPlanResult
 from ds_workspace_mcp.feature_selection import FeatureSelectionResult
@@ -57,6 +58,7 @@ from ds_workspace_mcp.timeseries import (
 EXPECTED_RESOURCE_URIS = [
     "databases://sqlite",
     "datasets://catalog",
+    "datasets://catalog/all",
     "reports://modeling",
     "reports://modeling/latest",
     "reports://modeling/latest/sections",
@@ -81,6 +83,7 @@ EXPECTED_TOOL_NAMES = [
     "detect_csv_issues",
     "detect_possible_target_leakage",
     "evaluate_baseline_model",
+    "inspect_dataset_file",
     "inspect_latest_modeling_report_tool",
     "inspect_modeling_report",
     "list_latest_modeling_report_sections_tool",
@@ -90,10 +93,13 @@ EXPECTED_TOOL_NAMES = [
     "list_sqlite_databases_tool",
     "list_sqlite_tables",
     "preview_csv",
+    "preview_dataset_file",
     "preview_latest_modeling_report_tool",
     "preview_modeling_report",
     "profile_csv",
+    "profile_dataset_file",
     "query_csv_with_duckdb",
+    "query_dataset_with_duckdb",
     "query_sqlite",
     "read_latest_modeling_report_section_tool",
     "read_latest_modeling_report_tool",
@@ -203,6 +209,18 @@ EXPECTED_RESULT_MODEL_FIELDS = {
     ],
     "CorrelationSummary": ["file_name", "method", "numeric_columns", "top_correlations"],
     "DatasetIssue": ["column", "issue_type", "description"],
+    "DatasetColumnMetadata": ["name", "data_type"],
+    "DatasetMetadata": [
+        "file_name",
+        "format",
+        "size_bytes",
+        "modified_time_ns",
+        "fingerprint",
+        "can_query",
+        "row_count",
+        "column_count",
+        "columns",
+    ],
     "DatasetOverview": [
         "file_name",
         "row_count",
@@ -416,7 +434,9 @@ RESULT_MODELS: list[type[BaseModel]] = [
     ComparedModelingReportSection,
     CopiedModelingReport,
     CorrelationSummary,
+    DatasetColumnMetadata,
     DatasetIssue,
+    DatasetMetadata,
     DatasetOverview,
     DatasetPreview,
     DatasetProfile,

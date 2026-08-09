@@ -6,8 +6,11 @@ from ds_workspace_mcp.core import (
     DatasetIssue,
     DatasetPreview,
     detect_csv_dataset_issues,
+    inspect_dataset,
     preview_csv_dataset,
+    preview_dataset,
 )
+from ds_workspace_mcp.datasets import DatasetMetadata
 from ds_workspace_mcp.mcp.app import _mcp_tool
 from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.tracing import traced_operation
@@ -34,6 +37,34 @@ def preview_csv(file_name: str, rows: int = 5) -> DatasetPreview:
     ):
         logger.info("Tool preview_csv invoked file_name=%s rows=%s", file_name, rows)
         return preview_csv_dataset(file_name=file_name, rows=rows)
+
+
+@_mcp_tool()
+def preview_dataset_file(file_name: str, rows: int = 5) -> DatasetPreview:
+    """Preview the first rows of any supported tabular dataset."""
+
+    with traced_operation(
+        "tool.preview_dataset_file",
+        {
+            "tool.name": "preview_dataset_file",
+            "dataset.file_name": file_name,
+            "tool.rows": rows,
+        },
+    ):
+        logger.info("Tool preview_dataset_file invoked file_name=%s rows=%s", file_name, rows)
+        return preview_dataset(file_name=file_name, rows=rows)
+
+
+@_mcp_tool()
+def inspect_dataset_file(file_name: str) -> DatasetMetadata:
+    """Inspect path-free metadata for any supported tabular dataset."""
+
+    with traced_operation(
+        "tool.inspect_dataset_file",
+        {"tool.name": "inspect_dataset_file", "dataset.file_name": file_name},
+    ):
+        logger.info("Tool inspect_dataset_file invoked file_name=%s", file_name)
+        return inspect_dataset(file_name=file_name)
 
 
 @_mcp_tool()

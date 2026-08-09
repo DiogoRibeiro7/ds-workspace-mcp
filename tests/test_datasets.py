@@ -70,6 +70,7 @@ def test_dataset_registry_dispatches_by_format(tmp_path: Path) -> None:
 
     assert csv_metadata.format is DatasetFormat.CSV
     assert csv_metadata.can_query is True
+    assert csv_metadata.column_count == 1
     assert json_metadata.format is DatasetFormat.JSON
     assert json_metadata.can_query is False
     assert registry.load_frame(DatasetRef("sample.json"), nrows=1).to_dict("records") == [
