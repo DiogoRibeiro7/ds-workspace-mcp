@@ -4,6 +4,7 @@ import logging
 import math
 import re
 import threading
+import time
 from typing import cast
 
 import duckdb
@@ -97,19 +98,30 @@ def query_csv_with_duckdb_dataset(
             "sql.duckdb.query",
             {
                 "dataset.file_name": file_name,
+                "sql.engine": "duckdb",
                 "sql.limit": safe_limit,
+                "sql.timeout_ms": settings.mcp_sql_timeout_ms,
             },
-        ),
+        ) as trace,
         duckdb.connect(database=":memory:") as connection,
     ):
         _configure_duckdb_security_policy(connection)
         connection.register(SAFE_DATASET_TABLE, df)
         query = f"SELECT * FROM ({normalized_sql}) AS safe_query LIMIT {safe_limit}"
-        result_frame = _execute_query_with_timeout(
-            connection=connection,
-            query=query,
-            timeout_ms=settings.mcp_sql_timeout_ms,
-        )
+        query_started_at = time.monotonic()
+        try:
+            result_frame = _execute_query_with_timeout(
+                connection=connection,
+                query=query,
+                timeout_ms=settings.mcp_sql_timeout_ms,
+            )
+        except QueryTimeoutError:
+            trace.set_attribute("sql.cancelled", True)
+            trace.set_attribute("sql.elapsed_ms", _elapsed_ms(query_started_at))
+            raise
+        trace.set_attribute("sql.cancelled", False)
+        trace.set_attribute("sql.elapsed_ms", _elapsed_ms(query_started_at))
+        trace.set_attribute("sql.result_row_count", len(result_frame))
 
     records = cast(list[dict[str, object]], result_frame.astype(object).to_dict(orient="records"))
     clean_rows = [
@@ -124,10 +136,11 @@ def query_csv_with_duckdb_dataset(
         limit_applied=safe_limit,
     )
     logger.info(
-        "Completed DuckDB query for file_name=%s result_rows=%s columns=%s",
+        "Completed DuckDB query for file_name=%s result_rows=%s columns=%s timeout_ms=%s",
         file_name,
         result.row_count,
         len(result.columns),
+        settings.mcp_sql_timeout_ms,
     )
     return result
 
@@ -289,6 +302,7 @@ def _execute_query_with_timeout(
     result_frame: pd.DataFrame | None = None
     captured_error: BaseException | None = None
     completed = threading.Event()
+    started_at = time.monotonic()
 
     def run_query() -> None:
         nonlocal result_frame, captured_error
@@ -303,9 +317,21 @@ def _execute_query_with_timeout(
     worker.start()
 
     if not completed.wait(timeout_ms / 1000):
-        logger.warning("Interrupted DuckDB query after timeout_ms=%s", timeout_ms)
+        elapsed_ms = _elapsed_ms(started_at)
+        logger.warning(
+            "Interrupted DuckDB query timeout_ms=%s elapsed_ms=%s cancelled=true",
+            timeout_ms,
+            elapsed_ms,
+        )
         connection.interrupt()
-        worker.join(timeout=1.0)
+        worker.join(timeout=min(max(timeout_ms / 1000, 0.1), 1.0))
+        if worker.is_alive():
+            logger.error(
+                "DuckDB worker did not stop promptly after cancellation timeout_ms=%s "
+                "elapsed_ms=%s",
+                timeout_ms,
+                _elapsed_ms(started_at),
+            )
         raise QueryTimeoutError(f"SQL query exceeded the timeout of {timeout_ms} ms.")
 
     worker.join()
@@ -313,4 +339,16 @@ def _execute_query_with_timeout(
         raise captured_error
     if result_frame is None:
         raise RuntimeError("DuckDB query finished without a result frame.")
+    logger.debug(
+        "DuckDB query completed timeout_ms=%s elapsed_ms=%s result_rows=%s cancelled=false",
+        timeout_ms,
+        _elapsed_ms(started_at),
+        len(result_frame),
+    )
     return result_frame
+
+
+def _elapsed_ms(started_at: float) -> int:
+    """Return elapsed monotonic time in milliseconds."""
+
+    return int((time.monotonic() - started_at) * 1000)

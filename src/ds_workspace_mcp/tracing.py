@@ -23,6 +23,22 @@ class _TracingState:
     warning_emitted: bool = False
 
 
+@dataclass
+class TraceHandle:
+    """Handle for setting optional span attributes inside an operation."""
+
+    span: Any | None = None
+
+    def set_attribute(self, key: str, value: object) -> None:
+        """Set a span attribute when tracing is active."""
+
+        if self.span is None:
+            return
+        normalized = _normalize_attribute(value)
+        if normalized is not None:
+            self.span.set_attribute(key, normalized)
+
+
 _STATE = _TracingState()
 
 
@@ -70,7 +86,7 @@ def configure_tracing(settings: Settings | None = None) -> None:
 def traced_operation(
     name: str,
     attributes: dict[str, object] | None = None,
-) -> Iterator[None]:
+) -> Iterator[TraceHandle]:
     """Run a block inside an optional tracing span."""
 
     if not _STATE.configured:
@@ -78,17 +94,16 @@ def traced_operation(
 
     tracer = _STATE.tracer
     if tracer is None:
-        yield
+        yield TraceHandle()
         return
 
     with tracer.start_as_current_span(name) as span:
+        handle = TraceHandle(span=span)
         for key, value in (attributes or {}).items():
-            normalized = _normalize_attribute(value)
-            if normalized is not None:
-                span.set_attribute(key, normalized)
+            handle.set_attribute(key, value)
 
         try:
-            yield
+            yield handle
         except Exception as exc:
             span.record_exception(exc)
             raise

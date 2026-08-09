@@ -1427,7 +1427,7 @@ DuckDB query safety notes:
 - External file-reading functions such as `read_csv(...)` are rejected.
 - A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
 - SQL text is bounded by `MCP_MAX_SQL_QUERY_LENGTH`.
-- Best-effort interruption is attempted when execution exceeds `MCP_SQL_TIMEOUT_MS`.
+- Interruption is requested when execution or result materialization exceeds `MCP_SQL_TIMEOUT_MS`.
 
 SQLite safety notes:
 
@@ -1437,7 +1437,7 @@ SQLite safety notes:
 - Query execution is limited to a single `SELECT` or `WITH` statement.
 - A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
 - SQL text is bounded by `MCP_MAX_SQL_QUERY_LENGTH`.
-- Long-running queries are interrupted via SQLite progress handlers when they exceed `MCP_SQL_TIMEOUT_MS`.
+- Long-running queries and result fetching are interrupted via SQLite progress handlers when they exceed `MCP_SQL_TIMEOUT_MS`.
 
 Diagnostics notes:
 

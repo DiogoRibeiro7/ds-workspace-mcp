@@ -53,7 +53,7 @@
 
 ## v1.1 — Hardening and reliability
 
-- [ ] Enforce query timeouts and cancellation for DuckDB and SQLite execution.
+- [x] Enforce query timeouts and cancellation for DuckDB and SQLite execution.
 - [x] Replace the regex SQL blocklist with DuckDB read-only/sandbox configuration as the primary control, keeping pattern checks as defense in depth.
 - [ ] Cache DuckDB query results by file fingerprint and normalized SQL, mirroring the profile cache.
 - [ ] Add explicit handling and tests for malformed, empty, and mixed-encoding CSV edge cases.
