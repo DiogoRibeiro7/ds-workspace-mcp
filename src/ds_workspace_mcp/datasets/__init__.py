@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from .csv_reader import CsvDatasetReader
+from .excel_reader import ExcelDatasetReader
+from .json_reader import JsonDatasetReader
 from .models import (
     DatasetColumnMetadata,
     DatasetFingerprint,
@@ -20,6 +22,8 @@ __all__ = [
     "DatasetReader",
     "DatasetRef",
     "DatasetRegistry",
+    "ExcelDatasetReader",
+    "JsonDatasetReader",
     "ParquetDatasetReader",
     "ResolvedDataset",
 ]

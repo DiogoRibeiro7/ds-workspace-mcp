@@ -72,8 +72,10 @@ Responsibilities:
 - models dataset references as relative names under an approved data root
 - centralizes path containment, format dispatch, file-size checks, metadata, and fingerprints
 - exposes a small `DatasetReader` protocol for format-specific frame loading and metadata
-- keeps CSV support behind `CsvDatasetReader` and Parquet support behind `ParquetDatasetReader`
+- keeps CSV, Parquet, JSON, and Excel support behind format-specific readers
 - inspects Parquet schema and row counts through DuckDB without materializing full files
+- accepts JSON arrays of records and NDJSON records, rejecting nested structures instead of flattening silently
+- supports `.xlsx` workbooks through `openpyxl`; multi-sheet workbooks require `file.xlsx#SheetName` after sheet discovery
 - preserves existing CSV-specific APIs while exposing additive generalized dataset tools
 
 ### `profiling.py`

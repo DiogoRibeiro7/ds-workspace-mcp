@@ -16,6 +16,8 @@ from ds_workspace_mcp.datasets import (
     DatasetMetadata,
     DatasetRef,
     DatasetRegistry,
+    ExcelDatasetReader,
+    JsonDatasetReader,
     ParquetDatasetReader,
     ResolvedDataset,
 )
@@ -70,7 +72,12 @@ def get_dataset_registry() -> DatasetRegistry:
     settings = get_settings()
     return DatasetRegistry(
         data_root=settings.mcp_data_root,
-        readers=(CsvDatasetReader(), ParquetDatasetReader()),
+        readers=(
+            CsvDatasetReader(),
+            ParquetDatasetReader(),
+            JsonDatasetReader(),
+            ExcelDatasetReader(),
+        ),
         max_dataset_bytes=settings.mcp_max_dataset_bytes,
     )
 
@@ -128,6 +135,19 @@ def inspect_dataset(file_name: str) -> DatasetMetadata:
     return resolved.reader.inspect(resolved.ref, resolved.path)
 
 
+def list_excel_sheets(file_name: str) -> list[str]:
+    """List sheet names for one `.xlsx` dataset without loading sheet contents."""
+
+    resolved = _resolve_dataset(
+        file_name,
+        expected_format=DatasetFormat.EXCEL,
+        unsupported_message="Only Excel .xlsx files are supported.",
+    )
+    if not isinstance(resolved.reader, ExcelDatasetReader):
+        raise TypeError("Resolved Excel dataset did not use the Excel reader.")
+    return resolved.reader.list_sheets(resolved.path)
+
+
 def read_dataset_frame(file_name: str, nrows: int | None = None) -> pd.DataFrame:
     """Read a supported dataset into a pandas frame, optionally bounded by rows."""
 
@@ -137,7 +157,7 @@ def read_dataset_frame(file_name: str, nrows: int | None = None) -> pd.DataFrame
     ):
         resolved = _resolve_dataset(file_name)
         logger.info("Reading dataset file_name=%s nrows=%s", file_name, nrows)
-        return resolved.reader.load_frame(resolved.path, nrows=nrows)
+        return resolved.reader.load_frame(resolved.ref, resolved.path, nrows=nrows)
 
 
 def read_csv_dataset(file_name: str, nrows: int | None = None) -> pd.DataFrame:
@@ -158,7 +178,7 @@ def read_csv_dataset(file_name: str, nrows: int | None = None) -> pd.DataFrame:
     ):
         resolved = _resolve_csv_dataset(file_name)
         logger.info("Reading CSV dataset file_name=%s nrows=%s", file_name, nrows)
-        return resolved.reader.load_frame(resolved.path, nrows=nrows)
+        return resolved.reader.load_frame(resolved.ref, resolved.path, nrows=nrows)
 
 
 def preview_dataset(file_name: str, rows: int = 5) -> DatasetPreview:
@@ -245,7 +265,7 @@ def _profile_dataset(
 
         try:
             logger.info("Reading dataset file_name=%s nrows=%s", file_name, None)
-            df = resolved.reader.load_frame(resolved.path)
+            df = resolved.reader.load_frame(resolved.ref, resolved.path)
             profile = build_dataset_profile(df=df, file_name=file_name)
         except Exception as exc:  # pragma: no cover - exercised by targeted tests
             logger.exception("Profiling failed for file_name=%s", file_name)

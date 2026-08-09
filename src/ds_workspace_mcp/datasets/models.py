@@ -29,8 +29,25 @@ class DatasetRef:
             raise InvalidDatasetNameError("file_name must be a string.")
         if not self.file_name.strip():
             raise InvalidDatasetNameError("file_name must be a non-empty string.")
-        if Path(self.file_name).is_absolute():
+        if not self.path_name:
+            raise InvalidDatasetNameError("file_name must include a dataset file name.")
+        if Path(self.path_name).is_absolute():
             raise PathTraversalError("Access outside the configured data directory is not allowed.")
+
+    @property
+    def path_name(self) -> str:
+        """Return the relative filesystem component without an optional selector."""
+
+        return self.file_name.split("#", maxsplit=1)[0].strip()
+
+    @property
+    def selector(self) -> str | None:
+        """Return an optional format-specific selector such as an Excel sheet name."""
+
+        if "#" not in self.file_name:
+            return None
+        selector = self.file_name.split("#", maxsplit=1)[1].strip()
+        return selector or None
 
 
 @dataclass(frozen=True)
@@ -66,3 +83,4 @@ class DatasetMetadata(BaseModel):
     row_count: int | None = Field(default=None, ge=0)
     column_count: int | None = Field(default=None, ge=0)
     columns: list[DatasetColumnMetadata] = Field(default_factory=list)
+    format_metadata: dict[str, object] = Field(default_factory=dict)

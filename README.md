@@ -7,7 +7,7 @@
 
 A practical **Model Context Protocol (MCP)** server for data science workflows.
 
-It lets an MCP-compatible assistant safely inspect local CSV and Parquet datasets through:
+It lets an MCP-compatible assistant safely inspect local CSV, Parquet, JSON, and Excel datasets through:
 
 - **Resources** for dataset discovery.
 - **Overview tools** for fast first-pass dataset understanding.
@@ -21,7 +21,7 @@ This project is designed as a portfolio-ready MCP product: focused, typed, teste
 
 Today the repository covers four practical workflows:
 
-- Safe local dataset access for CSV, Parquet, and SQLite sources.
+- Safe local dataset access for CSV, Parquet, JSON, Excel, and SQLite sources.
 - Lightweight analytical diagnostics, including leakage review, correlations, and time-series checks.
 - Baseline modeling planning and markdown report generation.
 - Saved report lifecycle management, including cataloging, search, section extraction, section export, and section-aware diffs.
@@ -85,6 +85,7 @@ ds-workspace-mcp/
 
 - Python 3.11+
 - Poetry
+- `openpyxl` is installed as a runtime dependency for `.xlsx` ingestion.
 - Node.js, only if you want to use the MCP Inspector through `npx`
 
 ---
