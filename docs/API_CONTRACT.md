@@ -264,7 +264,7 @@ The following are considered non-breaking:
   - the report is intended for human review and handoff rather than machine parsing
   - when `target_column` is omitted, the report uses the top suggested target candidate
 
-#### `save_modeling_report(file_name: str, target_column: str | None = None, output_name: str | None = None)`
+#### `save_modeling_report(file_name: str, target_column: str | None = None, output_name: str | None = None, overwrite: bool = False)`
 
 - Stable name: `save_modeling_report`
 - Purpose: persist a markdown modeling report into the local `reports/` directory
@@ -276,6 +276,7 @@ The following are considered non-breaking:
 - Stable behavior:
   - output is always written inside the local `reports/` directory
   - `output_name`, when provided, must be a single markdown file name ending in `.md`
+  - existing reports are not overwritten unless `overwrite` is explicitly true
 - Heuristic notes:
   - when `target_column` is omitted, the saved report uses the top suggested target candidate
   - default output names are derived from the dataset name and selected target
@@ -289,6 +290,9 @@ The following are considered non-breaking:
   - `output_name: str`
   - `output_path: str`
   - `size_bytes: int`
+  - `created_at: str`
+  - `modified_at: str`
+  - `content_sha256: str | None`
 
 #### `search_modeling_reports(query: str)`
 
@@ -299,6 +303,9 @@ The following are considered non-breaking:
   - `output_name: str`
   - `output_path: str`
   - `size_bytes: int`
+  - `created_at: str`
+  - `modified_at: str`
+  - `content_sha256: str | None`
 - Stable behavior:
   - `query` must be a non-empty string
 
@@ -387,7 +394,9 @@ The following are considered non-breaking:
   - `output_name: str`
   - `output_path: str`
   - `size_bytes: int`
+  - `created_at: str`
   - `modified_at: str`
+  - `content_sha256: str | None`
 - Stable behavior:
   - `limit` must be greater than 0
 
@@ -471,7 +480,7 @@ The following are considered non-breaking:
   - fails clearly when no saved modeling reports exist
   - fails clearly when the requested section is not present
 
-#### `save_modeling_report_section(output_name: str, section_heading: str, new_output_name: str | None = None)`
+#### `save_modeling_report_section(output_name: str, section_heading: str, new_output_name: str | None = None, overwrite: bool = False)`
 
 - Stable name: `save_modeling_report_section`
 - Implementation note: the Python function is named `save_modeling_report_section_tool`
@@ -484,9 +493,10 @@ The following are considered non-breaking:
   - `output_name` must be a single markdown file name inside `reports/`
   - `section_heading` must be a non-empty string
   - `new_output_name`, when provided, must be a single markdown file name inside `reports/`
-  - fails clearly when the requested section is not present or the target output already exists
+  - fails clearly when the requested section is not present
+  - existing reports are not overwritten unless `overwrite` is explicitly true
 
-#### `save_latest_modeling_report_section(section_heading: str, new_output_name: str | None = None)`
+#### `save_latest_modeling_report_section(section_heading: str, new_output_name: str | None = None, overwrite: bool = False)`
 
 - Stable name: `save_latest_modeling_report_section`
 - Implementation note: the Python function is named `save_latest_modeling_report_section_tool`
@@ -499,7 +509,8 @@ The following are considered non-breaking:
   - `section_heading` must be a non-empty string
   - `new_output_name`, when provided, must be a single markdown file name inside `reports/`
   - fails clearly when no saved modeling reports exist
-  - fails clearly when the requested section is not present or the target output already exists
+  - fails clearly when the requested section is not present
+  - existing reports are not overwritten unless `overwrite` is explicitly true
 
 #### `compare_modeling_report_sections(output_name: str, other_output_name: str, section_heading: str)`
 
@@ -561,7 +572,7 @@ The following are considered non-breaking:
   - `output_name` must be a single markdown file name inside `reports/`
   - traversal-style paths are rejected
 
-#### `rename_modeling_report(output_name: str, new_output_name: str)`
+#### `rename_modeling_report(output_name: str, new_output_name: str, overwrite: bool = False)`
 
 - Stable name: `rename_modeling_report`
 - Purpose: rename one markdown modeling report saved in the local `reports/` directory
@@ -573,8 +584,9 @@ The following are considered non-breaking:
 - Stable behavior:
   - `output_name` and `new_output_name` must be single markdown file names inside `reports/`
   - traversal-style paths are rejected
+  - existing reports are not overwritten unless `overwrite` is explicitly true
 
-#### `rename_latest_modeling_report(new_output_name: str)`
+#### `rename_latest_modeling_report(new_output_name: str, overwrite: bool = False)`
 
 - Stable name: `rename_latest_modeling_report`
 - Implementation note: the Python function is named `rename_latest_modeling_report_tool`
@@ -587,9 +599,9 @@ The following are considered non-breaking:
 - Stable behavior:
   - `new_output_name` must be a single markdown file name inside `reports/`
   - fails clearly when no saved modeling reports exist
-  - fails clearly when the target output already exists
+  - existing reports are not overwritten unless `overwrite` is explicitly true
 
-#### `copy_modeling_report(output_name: str, new_output_name: str)`
+#### `copy_modeling_report(output_name: str, new_output_name: str, overwrite: bool = False)`
 
 - Stable name: `copy_modeling_report`
 - Purpose: copy one markdown modeling report saved in the local `reports/` directory
@@ -600,7 +612,7 @@ The following are considered non-breaking:
   - `new_output_path: str`
 - Stable behavior:
   - `output_name` and `new_output_name` must be single markdown file names inside `reports/`
-  - fails clearly when the target output already exists
+  - existing reports are not overwritten unless `overwrite` is explicitly true
   - traversal-style paths are rejected
 
 #### `inspect_modeling_report(output_name: str)`
@@ -611,8 +623,10 @@ The following are considered non-breaking:
   - `output_name: str`
   - `output_path: str`
   - `size_bytes: int`
+  - `created_at: str`
   - `metadata_changed_at: str`
   - `modified_at: str`
+  - `content_sha256: str`
 - Stable behavior:
   - `output_name` must be a single markdown file name inside `reports/`
   - traversal-style paths are rejected
@@ -626,12 +640,14 @@ The following are considered non-breaking:
   - `output_name: str`
   - `output_path: str`
   - `size_bytes: int`
+  - `created_at: str`
   - `metadata_changed_at: str`
   - `modified_at: str`
+  - `content_sha256: str`
 - Stable behavior:
   - fails clearly when no saved modeling reports exist
 
-#### `copy_latest_modeling_report(new_output_name: str)`
+#### `copy_latest_modeling_report(new_output_name: str, overwrite: bool = False)`
 
 - Stable name: `copy_latest_modeling_report`
 - Implementation note: the Python function is named `copy_latest_modeling_report_tool`
@@ -644,7 +660,7 @@ The following are considered non-breaking:
 - Stable behavior:
   - `new_output_name` must be a single markdown file name inside `reports/`
   - fails clearly when no saved modeling reports exist
-  - fails clearly when the target output already exists
+  - existing reports are not overwritten unless `overwrite` is explicitly true
 
 #### `preview_modeling_report(output_name: str)`
 

@@ -321,6 +321,10 @@ Save a markdown modeling report into `reports/`:
 poetry run ds-workspace-mcp save-modeling-report sample_clinic_usage.csv --target-column appointments_completed --output-name clinic-usage-report.md
 ```
 
+Saved reports, copied reports, renamed reports, and saved report sections fail when the
+target file already exists unless `--overwrite` is passed or the MCP tool argument
+`overwrite` is set to `true`.
+
 List saved modeling reports:
 
 ```bash

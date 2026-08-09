@@ -60,6 +60,7 @@
 - [x] Replace modal-delta time-series frequency inference with structured regular, approximate, irregular, and heterogeneous outcomes.
 - [x] Separate leakage evidence from feature exclusion decisions for high correlation and target-name overlap.
 - [x] Make Docker builds lockfile-driven and persist report storage through Compose.
+- [x] Make report save, copy, and rename operations transactional with explicit overwrite semantics.
 - [ ] Cache DuckDB query results by file fingerprint and normalized SQL, mirroring the profile cache.
 - [ ] Add explicit handling and tests for malformed, empty, and mixed-encoding CSV edge cases.
 - [ ] Surface per-tool resource limits (rows, columns, bytes) in error messages consistently.

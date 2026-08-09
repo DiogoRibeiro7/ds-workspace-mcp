@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from difflib import unified_diff
 from pathlib import Path
 
 from pydantic import BaseModel
 
 from ds_workspace_mcp.config import get_settings
-from ds_workspace_mcp.exceptions import InvalidDatasetNameError, PathTraversalError
+from ds_workspace_mcp.exceptions import InvalidDatasetNameError
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
+from ds_workspace_mcp.report_storage import ReportStorage
 
 
 class SavedModelingReport(BaseModel):
@@ -26,7 +26,9 @@ class StoredModelingReport(BaseModel):
     output_name: str
     output_path: str
     size_bytes: int
+    created_at: str
     modified_at: str
+    content_sha256: str | None = None
 
 
 class ReadModelingReport(BaseModel):
@@ -68,8 +70,10 @@ class ModelingReportMetadata(BaseModel):
     output_name: str
     output_path: str
     size_bytes: int
+    created_at: str
     metadata_changed_at: str
     modified_at: str
+    content_sha256: str
 
 
 class PreviewModelingReport(BaseModel):
@@ -496,6 +500,7 @@ def save_modeling_report_section(
     output_name: str,
     section_heading: str,
     new_output_name: str | None = None,
+    overwrite: bool = False,
 ) -> SavedModelingReportSection:
     """Persist one extracted report section as a new markdown artifact."""
 
@@ -507,11 +512,11 @@ def save_modeling_report_section(
         output_name=output_name,
         section_heading=section.heading,
     )
-    target_path = resolve_report_target_path(target_output_name)
-    if target_path.exists():
-        raise InvalidDatasetNameError(f"Modeling report already exists: {target_output_name}")
-
-    target_path.write_text(section.markdown, encoding="utf-8")
+    target_path = _get_report_storage().write_text(
+        target_output_name,
+        section.markdown,
+        overwrite=overwrite,
+    )
     return SavedModelingReportSection(
         source_output_name=section.output_name,
         section_heading=section.heading,
@@ -522,6 +527,7 @@ def save_modeling_report_section(
 def save_latest_modeling_report_section(
     section_heading: str,
     new_output_name: str | None = None,
+    overwrite: bool = False,
 ) -> SavedModelingReportSection:
     """Persist one section from the newest saved report as a markdown artifact."""
 
@@ -530,6 +536,7 @@ def save_latest_modeling_report_section(
         output_name=latest_report.output_name,
         section_heading=section_heading,
         new_output_name=new_output_name,
+        overwrite=overwrite,
     )
 
 
@@ -628,6 +635,7 @@ def save_modeling_report_dataset(
     file_name: str,
     target_column: str | None = None,
     output_name: str | None = None,
+    overwrite: bool = False,
 ) -> SavedModelingReport:
     """Build and persist a modeling report inside the local reports directory."""
 
@@ -640,8 +648,11 @@ def save_modeling_report_dataset(
         target_column=report.target_column,
         output_name=output_name,
     )
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(report.markdown, encoding="utf-8")
+    output_path = _get_report_storage().write_text(
+        output_path.name,
+        report.markdown,
+        overwrite=overwrite,
+    )
     return SavedModelingReport(
         file_name=file_name,
         target_column=report.target_column,
@@ -653,21 +664,17 @@ def save_modeling_report_dataset(
 def list_saved_modeling_reports() -> list[StoredModelingReport]:
     """List markdown modeling reports saved inside the local reports directory."""
 
-    reports_root = _get_reports_root()
-    reports: list[StoredModelingReport] = []
-    for path in sorted(reports_root.glob("*.md")):
-        if not path.is_file():
-            continue
-        stat = path.stat()
-        reports.append(
-            StoredModelingReport(
-                output_name=path.name,
-                output_path=str(path.resolve()),
-                size_bytes=stat.st_size,
-                modified_at=_format_timestamp(stat.st_mtime),
-            )
+    return [
+        StoredModelingReport(
+            output_name=report.output_name,
+            output_path=report.output_path,
+            size_bytes=report.size_bytes,
+            created_at=report.created_at,
+            modified_at=report.modified_at,
+            content_sha256=report.content_sha256,
         )
-    return reports
+        for report in _get_report_storage().list_markdown_reports()
+    ]
 
 
 def read_saved_modeling_report(output_name: str) -> ReadModelingReport:
@@ -684,8 +691,7 @@ def read_saved_modeling_report(output_name: str) -> ReadModelingReport:
 def delete_saved_modeling_report(output_name: str) -> DeletedModelingReport:
     """Delete one saved markdown modeling report from the local reports directory."""
 
-    path = resolve_existing_report_path(output_name)
-    path.unlink()
+    path = _get_report_storage().delete(output_name)
     return DeletedModelingReport(
         output_name=path.name,
         output_path=str(path),
@@ -695,15 +701,16 @@ def delete_saved_modeling_report(output_name: str) -> DeletedModelingReport:
 def rename_saved_modeling_report(
     output_name: str,
     new_output_name: str,
+    overwrite: bool = False,
 ) -> RenamedModelingReport:
     """Rename one saved markdown modeling report inside the local reports directory."""
 
     source_path = resolve_existing_report_path(output_name)
-    target_path = resolve_report_target_path(new_output_name)
-    if target_path.exists():
-        raise InvalidDatasetNameError(f"Modeling report already exists: {new_output_name}")
-
-    source_path.rename(target_path)
+    target_path = _get_report_storage().rename(
+        output_name,
+        new_output_name,
+        overwrite=overwrite,
+    )
     return RenamedModelingReport(
         old_output_name=source_path.name,
         new_output_name=target_path.name,
@@ -712,28 +719,33 @@ def rename_saved_modeling_report(
     )
 
 
-def rename_latest_modeling_report(new_output_name: str) -> RenamedModelingReport:
+def rename_latest_modeling_report(
+    new_output_name: str,
+    overwrite: bool = False,
+) -> RenamedModelingReport:
     """Rename the most recently modified saved markdown modeling report."""
 
     latest_report = _get_latest_saved_report()
     return rename_saved_modeling_report(
         output_name=latest_report.output_name,
         new_output_name=new_output_name,
+        overwrite=overwrite,
     )
 
 
 def copy_saved_modeling_report(
     output_name: str,
     new_output_name: str,
+    overwrite: bool = False,
 ) -> CopiedModelingReport:
     """Copy one saved markdown modeling report inside the local reports directory."""
 
     source_path = resolve_existing_report_path(output_name)
-    target_path = resolve_report_target_path(new_output_name)
-    if target_path.exists():
-        raise InvalidDatasetNameError(f"Modeling report already exists: {new_output_name}")
-
-    target_path.write_text(source_path.read_text(encoding="utf-8"), encoding="utf-8")
+    target_path = _get_report_storage().copy(
+        output_name,
+        new_output_name,
+        overwrite=overwrite,
+    )
     return CopiedModelingReport(
         source_output_name=source_path.name,
         new_output_name=target_path.name,
@@ -742,27 +754,32 @@ def copy_saved_modeling_report(
     )
 
 
-def copy_latest_modeling_report(new_output_name: str) -> CopiedModelingReport:
+def copy_latest_modeling_report(
+    new_output_name: str,
+    overwrite: bool = False,
+) -> CopiedModelingReport:
     """Copy the most recently modified saved markdown modeling report."""
 
     latest_report = _get_latest_saved_report()
     return copy_saved_modeling_report(
         output_name=latest_report.output_name,
         new_output_name=new_output_name,
+        overwrite=overwrite,
     )
 
 
 def inspect_saved_modeling_report(output_name: str) -> ModelingReportMetadata:
     """Return metadata for one saved markdown modeling report."""
 
-    path = resolve_existing_report_path(output_name)
-    stat = path.stat()
+    metadata = _get_report_storage().metadata(output_name, include_hash=True)
     return ModelingReportMetadata(
-        output_name=path.name,
-        output_path=str(path),
-        size_bytes=stat.st_size,
-        metadata_changed_at=_format_timestamp(stat.st_ctime),
-        modified_at=_format_timestamp(stat.st_mtime),
+        output_name=metadata.output_name,
+        output_path=metadata.output_path,
+        size_bytes=metadata.size_bytes,
+        created_at=metadata.created_at,
+        metadata_changed_at=metadata.metadata_changed_at,
+        modified_at=metadata.modified_at,
+        content_sha256=metadata.content_sha256 or "",
     )
 
 
@@ -791,58 +808,20 @@ def resolve_report_output_path(
 ) -> Path:
     """Resolve a safe markdown output path inside the reports directory."""
 
-    reports_root = _get_reports_root()
-
     candidate_name = output_name or _default_output_name(file_name, target_column)
-    if not isinstance(candidate_name, str) or not candidate_name.strip():
-        raise InvalidDatasetNameError("output_name must be a non-empty string.")
-    if Path(candidate_name).name != candidate_name:
-        raise PathTraversalError("Report output must stay inside the reports directory.")
-    if not candidate_name.lower().endswith(".md"):
-        raise InvalidDatasetNameError("Report output_name must end with .md.")
-
-    resolved = (reports_root / candidate_name).resolve()
-    if resolved.parent != reports_root:
-        raise PathTraversalError("Report output must stay inside the reports directory.")
-    return resolved
+    return _get_report_storage().resolve_target(candidate_name)
 
 
 def resolve_existing_report_path(output_name: str) -> Path:
     """Resolve one existing markdown report inside the reports directory."""
 
-    reports_root = _get_reports_root()
-
-    if not isinstance(output_name, str) or not output_name.strip():
-        raise InvalidDatasetNameError("output_name must be a non-empty string.")
-    if Path(output_name).name != output_name:
-        raise PathTraversalError("Report output must stay inside the reports directory.")
-    if not output_name.lower().endswith(".md"):
-        raise InvalidDatasetNameError("Report output_name must end with .md.")
-
-    resolved = (reports_root / output_name).resolve()
-    if resolved.parent != reports_root:
-        raise PathTraversalError("Report output must stay inside the reports directory.")
-    if not resolved.exists():
-        raise InvalidDatasetNameError(f"Modeling report not found: {output_name}")
-    return resolved
+    return _get_report_storage().resolve_existing(output_name)
 
 
 def resolve_report_target_path(output_name: str) -> Path:
     """Resolve a target markdown report path inside the reports directory."""
 
-    reports_root = _get_reports_root()
-
-    if not isinstance(output_name, str) or not output_name.strip():
-        raise InvalidDatasetNameError("output_name must be a non-empty string.")
-    if Path(output_name).name != output_name:
-        raise PathTraversalError("Report output must stay inside the reports directory.")
-    if not output_name.lower().endswith(".md"):
-        raise InvalidDatasetNameError("Report output_name must end with .md.")
-
-    resolved = (reports_root / output_name).resolve()
-    if resolved.parent != reports_root:
-        raise PathTraversalError("Report output must stay inside the reports directory.")
-    return resolved
+    return _get_report_storage().resolve_target(output_name)
 
 
 def _default_output_name(file_name: str, target_column: str) -> str:
@@ -871,12 +850,6 @@ def _slugify(value: str) -> str:
     return collapsed or "report"
 
 
-def _format_timestamp(timestamp: float) -> str:
-    """Convert filesystem timestamps into UTC ISO-8601 strings."""
-
-    return datetime.fromtimestamp(timestamp, tz=UTC).isoformat()
-
-
 def _extract_headline(lines: list[str]) -> str:
     """Extract a human-readable report headline from markdown lines."""
 
@@ -891,6 +864,12 @@ def _get_reports_root() -> Path:
     """Return the configured reports root."""
 
     return get_settings().mcp_reports_root
+
+
+def _get_report_storage() -> ReportStorage:
+    """Return storage configured for the current reports root."""
+
+    return ReportStorage(_get_reports_root())
 
 
 def _get_latest_saved_report() -> StoredModelingReport:
