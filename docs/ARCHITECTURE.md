@@ -80,7 +80,8 @@ Responsibilities:
 Responsibilities:
 
 - computes bounded correlation summaries
-- emits heuristic target-leakage warnings
+- emits heuristic target-leakage warnings with severity and confidence
+- treats high correlation and name overlap as review evidence rather than proof of leakage
 
 These outputs are intentionally advisory rather than definitive.
 

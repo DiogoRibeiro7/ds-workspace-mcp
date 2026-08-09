@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from ds_workspace_mcp.cli import build_parser
 from ds_workspace_mcp.core import DatasetIssue, DatasetPreview
-from ds_workspace_mcp.diagnostics import CorrelationSummary, LeakageSummary
+from ds_workspace_mcp.diagnostics import CorrelationSummary, LeakageSummary, LeakageWarning
 from ds_workspace_mcp.experiment_plan import ExperimentPlanResult
 from ds_workspace_mcp.feature_selection import FeatureSelectionResult
 from ds_workspace_mcp.ml.baselines import (
@@ -279,6 +279,7 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "frequency",
     ],
     "LeakageSummary": ["file_name", "target_column", "warnings"],
+    "LeakageWarning": ["column", "warning_type", "description", "severity", "confidence"],
     "ModelingReadinessResult": [
         "file_name",
         "target_column",
@@ -415,6 +416,7 @@ RESULT_MODELS: list[type[BaseModel]] = [
     FrequencyInferenceResult,
     GroupTimeSeriesSummary,
     LeakageSummary,
+    LeakageWarning,
     ModelingReadinessResult,
     ModelingReportCatalogSummary,
     ModelingReportMetadata,

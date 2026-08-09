@@ -91,7 +91,7 @@ def _build_target_candidate(df: pd.DataFrame, column: object) -> TargetCandidate
         score -= 1.0
         reasons.append("high missingness")
 
-    if _is_identifier_like(series):
+    if _is_identifier_like(series, column_name=column_name):
         score -= 3.0
         reasons.append("looks like an identifier rather than an outcome")
 
@@ -169,14 +169,30 @@ def _is_boolean_like(series: pd.Series[Any]) -> bool:
     return all(value in {"true", "false", "yes", "no", "0", "1"} for value in values)
 
 
-def _is_identifier_like(series: pd.Series[Any]) -> bool:
+def _is_identifier_like(series: pd.Series[Any], column_name: str) -> bool:
     """Return whether a column looks more like an identifier than an outcome."""
 
     non_null = series.dropna()
     if non_null.empty:
         return False
     unique_ratio = float(non_null.nunique() / max(len(series), 1))
-    return unique_ratio > 0.95
+    if unique_ratio <= 0.95:
+        return False
+    if _has_identifier_name_marker(column_name):
+        return True
+    return not _is_numeric_like(series)
+
+
+def _has_identifier_name_marker(column_name: str) -> bool:
+    """Return whether a column name carries identifier semantics."""
+
+    normalized = "".join(character for character in column_name.lower() if character.isalnum())
+    return (
+        normalized in {"id", "uuid", "key"}
+        or normalized.endswith("id")
+        or normalized.endswith("uuid")
+        or normalized.endswith("key")
+    )
 
 
 def _is_datetime_like(series: pd.Series[Any]) -> bool:

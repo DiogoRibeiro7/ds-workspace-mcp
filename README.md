@@ -1444,8 +1444,9 @@ SQLite safety notes:
 Diagnostics notes:
 
 - Correlation summaries are limited to numeric columns and return only the top ranked pairs.
-- Leakage warnings are heuristic, not proof of leakage.
-- Name overlap, strong numeric correlation, identifier-like columns, duplicate values, and datetime-like columns are treated as review signals.
+- Leakage warnings include severity and confidence, and remain review signals rather than proof.
+- Exact target duplicates and likely identifiers are strong exclusion evidence for baseline feature selection.
+- Name overlap and strong numeric correlation are review evidence by themselves, not automatic exclusion proof.
 
 Time-series validation notes:
 
