@@ -869,6 +869,7 @@ The following are considered non-breaking:
   - `is_sorted: bool`
   - `inferred_frequency: str | null`
   - `missing_intervals: int`
+  - `frequency: FrequencyInferenceResult`
   - `missing_target_values: int | null`
   - `group_summaries: list[GroupTimeSeriesSummary]`
   - `warnings: list[TimeSeriesWarning]`
@@ -878,12 +879,24 @@ The following are considered non-breaking:
   - `duplicate_timestamps: int`
   - `missing_intervals: int`
   - `inferred_frequency: str | null`
+  - `frequency: FrequencyInferenceResult`
+- Stable frequency inference fields:
+  - `frequency: str | null`
+  - `frequency_kind: str`
+  - `confidence: float`
+  - `support_ratio: float`
+  - `candidate_interval: str | null`
+  - `is_regular: bool`
+  - `is_irregular: bool`
+  - `missing_interval_count: int`
 - Stable warning fields:
   - `warning_type: str`
   - `description: str`
   - `group: str | null`
 - Heuristic notes:
-  - inferred frequency and missing-interval counts are best-effort summaries
+  - `frequency_kind` distinguishes `regular`, `approximately_regular`, `irregular`, `insufficient_data`, and grouped `heterogeneous` outcomes
+  - missing intervals are counted only for regular or approximately regular fixed-interval series
+  - grouped validation infers frequency per group and does not force one global frequency when groups disagree
   - history sufficiency warnings are baseline-readiness guidance, not modeling guarantees
 
 #### `evaluate_baseline_model(file_name: str, target_column: str, task_type: str, test_size: float = 0.2, random_state: int = 42, validation_strategy: str | None = None, time_column: str | None = None, group_column: str | None = None, shuffle: bool | None = None)`

@@ -46,7 +46,11 @@ from ds_workspace_mcp.sql.sqlite_engine import (
     SQLiteTableSchema,
 )
 from ds_workspace_mcp.targeting import TargetSuggestionResult
-from ds_workspace_mcp.timeseries import TimeSeriesValidationResult
+from ds_workspace_mcp.timeseries import (
+    FrequencyInferenceResult,
+    GroupTimeSeriesSummary,
+    TimeSeriesValidationResult,
+)
 
 EXPECTED_RESOURCE_URIS = [
     "databases://sqlite",
@@ -256,6 +260,24 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "suggestions",
         "summary",
     ],
+    "FrequencyInferenceResult": [
+        "frequency",
+        "frequency_kind",
+        "confidence",
+        "support_ratio",
+        "candidate_interval",
+        "is_regular",
+        "is_irregular",
+        "missing_interval_count",
+    ],
+    "GroupTimeSeriesSummary": [
+        "group",
+        "row_count",
+        "duplicate_timestamps",
+        "missing_intervals",
+        "inferred_frequency",
+        "frequency",
+    ],
     "LeakageSummary": ["file_name", "target_column", "warnings"],
     "ModelingReadinessResult": [
         "file_name",
@@ -352,6 +374,7 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "is_sorted",
         "inferred_frequency",
         "missing_intervals",
+        "frequency",
         "missing_target_values",
         "group_summaries",
         "warnings",
@@ -389,6 +412,8 @@ RESULT_MODELS: list[type[BaseModel]] = [
     DuckDBQueryResult,
     ExperimentPlanResult,
     FeatureSelectionResult,
+    FrequencyInferenceResult,
+    GroupTimeSeriesSummary,
     LeakageSummary,
     ModelingReadinessResult,
     ModelingReportCatalogSummary,

@@ -57,6 +57,7 @@
 - [x] Replace the regex SQL blocklist with DuckDB read-only/sandbox configuration as the primary control, keeping pattern checks as defense in depth.
 - [x] Add explicit baseline validation split strategies for random, stratified, chronological, and grouped holdouts.
 - [x] Reject classification baseline splits that cannot represent every class in train and test data.
+- [x] Replace modal-delta time-series frequency inference with structured regular, approximate, irregular, and heterogeneous outcomes.
 - [ ] Cache DuckDB query results by file fingerprint and normalized SQL, mirroring the profile cache.
 - [ ] Add explicit handling and tests for malformed, empty, and mixed-encoding CSV edge cases.
 - [ ] Surface per-tool resource limits (rows, columns, bytes) in error messages consistently.

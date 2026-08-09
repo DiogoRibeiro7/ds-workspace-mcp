@@ -1451,6 +1451,9 @@ Time-series validation notes:
 
 - Timestamp parsing is conservative and fails if the declared time column cannot be parsed at all.
 - The validator checks sorting, duplicate timestamps, inferred frequency, missing intervals, grouped gaps, and missing target values.
+- Frequency inference reports a structured kind: `regular`, `approximately_regular`, `irregular`, `insufficient_data`, or grouped `heterogeneous`.
+- Missing intervals are counted only after a regular or sufficiently supported approximate fixed interval is established.
+- Grouped series infer frequency per group and avoid reporting one global frequency when groups disagree.
 - History-length warnings are heuristic and intended for baseline forecasting readiness, not strict modeling requirements.
 
 Baseline model notes:

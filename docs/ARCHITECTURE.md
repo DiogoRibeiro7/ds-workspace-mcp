@@ -89,7 +89,8 @@ These outputs are intentionally advisory rather than definitive.
 Responsibilities:
 
 - validates timestamp parsing
-- inspects sorting, duplicates, inferred frequency, and missing intervals
+- inspects sorting, duplicates, structured frequency confidence, and missing intervals
+- classifies time series as regular, approximately regular, irregular, insufficient, or grouped heterogeneous before counting missing intervals
 - emits baseline-readiness warnings for time-series workflows
 
 ### `ml/baselines.py`
