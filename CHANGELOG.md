@@ -17,6 +17,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added Docker report persistence wiring and a container smoke test.
 - Added transactional report storage with explicit overwrite controls and report content hashes.
 - Added a FastMCP application factory for isolated server construction.
+- Added domain-specific MCP registration modules for resources, tools, and prompts.
 
 ### Changed
 
@@ -29,6 +30,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Docker builds now install from `poetry.lock`, run as a non-root user, and persist reports through `/app/reports`.
 - Saved, copied, and renamed modeling reports now fail on target collisions unless overwrite is explicitly requested.
 - Server startup now configures FastMCP through public constructor arguments instead of mutating private runtime state.
+- `server.py` is now a thin startup/composition module with MCP wrappers split by domain.
 
 ## [1.0.2] - 2026-08-09
 
