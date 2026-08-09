@@ -15,6 +15,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added structured time-series frequency inference with regularity kind, confidence, support ratio, and missing-interval metadata.
 - Added severity and confidence metadata to leakage warnings.
 - Added Docker report persistence wiring and a container smoke test.
+- Added transactional report storage with explicit overwrite controls and report content hashes.
 
 ### Changed
 
@@ -25,6 +26,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Time-series validation now reports irregular gap patterns without fabricating a dominant frequency or missing-interval count.
 - Feature selection now treats high correlation and target-name overlap as review evidence instead of automatic exclusion.
 - Docker builds now install from `poetry.lock`, run as a non-root user, and persist reports through `/app/reports`.
+- Saved, copied, and renamed modeling reports now fail on target collisions unless overwrite is explicitly requested.
 
 ## [1.0.2] - 2026-08-09
 

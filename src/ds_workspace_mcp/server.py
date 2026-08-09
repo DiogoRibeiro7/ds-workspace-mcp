@@ -538,6 +538,7 @@ def save_modeling_report(
     file_name: str,
     target_column: str | None = None,
     output_name: str | None = None,
+    overwrite: bool = False,
 ) -> SavedModelingReport:
     """
     Save a modeling report artifact into the local reports directory.
@@ -546,6 +547,7 @@ def save_modeling_report(
         file_name: CSV file name inside the configured data directory.
         target_column: Optional target override. When omitted, the top suggested target is used.
         output_name: Optional markdown file name inside `reports/`.
+        overwrite: Replace an existing report with the same output name when true.
 
     Returns:
         Metadata about the saved report artifact.
@@ -558,18 +560,22 @@ def save_modeling_report(
             "dataset.file_name": file_name,
             "tool.target_column": target_column,
             "tool.output_name": output_name,
+            "tool.overwrite": overwrite,
         },
     ):
         logger.info(
-            "Tool save_modeling_report invoked file_name=%s target_column=%s output_name=%s",
+            "Tool save_modeling_report invoked file_name=%s target_column=%s "
+            "output_name=%s overwrite=%s",
             file_name,
             target_column,
             output_name,
+            overwrite,
         )
         return save_modeling_report_dataset(
             file_name=file_name,
             target_column=target_column,
             output_name=output_name,
+            overwrite=overwrite,
         )
 
 
@@ -765,6 +771,7 @@ def save_modeling_report_section_tool(
     output_name: str,
     section_heading: str,
     new_output_name: str | None = None,
+    overwrite: bool = False,
 ) -> SavedModelingReportSection:
     """Save one markdown section from a report as a new markdown artifact."""
 
@@ -775,19 +782,22 @@ def save_modeling_report_section_tool(
             "tool.output_name": output_name,
             "tool.section_heading": section_heading,
             "tool.new_output_name": new_output_name,
+            "tool.overwrite": overwrite,
         },
     ):
         logger.info(
             "Tool save_modeling_report_section_tool invoked "
-            "output_name=%s section_heading=%s new_output_name=%s",
+            "output_name=%s section_heading=%s new_output_name=%s overwrite=%s",
             output_name,
             section_heading,
             new_output_name,
+            overwrite,
         )
         return save_modeling_report_section(
             output_name=output_name,
             section_heading=section_heading,
             new_output_name=new_output_name,
+            overwrite=overwrite,
         )
 
 
@@ -795,6 +805,7 @@ def save_modeling_report_section_tool(
 def save_latest_modeling_report_section_tool(
     section_heading: str,
     new_output_name: str | None = None,
+    overwrite: bool = False,
 ) -> SavedModelingReportSection:
     """Save one section from the newest report as a new markdown artifact."""
 
@@ -804,17 +815,20 @@ def save_latest_modeling_report_section_tool(
             "tool.name": "save_latest_modeling_report_section",
             "tool.section_heading": section_heading,
             "tool.new_output_name": new_output_name,
+            "tool.overwrite": overwrite,
         },
     ):
         logger.info(
             "Tool save_latest_modeling_report_section_tool invoked "
-            "section_heading=%s new_output_name=%s",
+            "section_heading=%s new_output_name=%s overwrite=%s",
             section_heading,
             new_output_name,
+            overwrite,
         )
         return save_latest_modeling_report_section(
             section_heading=section_heading,
             new_output_name=new_output_name,
+            overwrite=overwrite,
         )
 
 
@@ -897,6 +911,7 @@ def delete_modeling_report(output_name: str) -> DeletedModelingReport:
 def rename_modeling_report(
     output_name: str,
     new_output_name: str,
+    overwrite: bool = False,
 ) -> RenamedModelingReport:
     """Rename one saved markdown modeling report inside the local reports directory."""
 
@@ -906,21 +921,27 @@ def rename_modeling_report(
             "tool.name": "rename_modeling_report",
             "tool.output_name": output_name,
             "tool.new_output_name": new_output_name,
+            "tool.overwrite": overwrite,
         },
     ):
         logger.info(
-            "Tool rename_modeling_report invoked output_name=%s new_output_name=%s",
+            "Tool rename_modeling_report invoked output_name=%s new_output_name=%s " "overwrite=%s",
             output_name,
             new_output_name,
+            overwrite,
         )
         return rename_saved_modeling_report(
             output_name=output_name,
             new_output_name=new_output_name,
+            overwrite=overwrite,
         )
 
 
 @mcp.tool()
-def rename_latest_modeling_report_tool(new_output_name: str) -> RenamedModelingReport:
+def rename_latest_modeling_report_tool(
+    new_output_name: str,
+    overwrite: bool = False,
+) -> RenamedModelingReport:
     """Rename the most recently modified saved markdown modeling report."""
 
     with traced_operation(
@@ -928,19 +949,22 @@ def rename_latest_modeling_report_tool(new_output_name: str) -> RenamedModelingR
         {
             "tool.name": "rename_latest_modeling_report",
             "tool.new_output_name": new_output_name,
+            "tool.overwrite": overwrite,
         },
     ):
         logger.info(
-            "Tool rename_latest_modeling_report_tool invoked new_output_name=%s",
+            "Tool rename_latest_modeling_report_tool invoked new_output_name=%s overwrite=%s",
             new_output_name,
+            overwrite,
         )
-        return rename_latest_modeling_report(new_output_name=new_output_name)
+        return rename_latest_modeling_report(new_output_name=new_output_name, overwrite=overwrite)
 
 
 @mcp.tool()
 def copy_modeling_report(
     output_name: str,
     new_output_name: str,
+    overwrite: bool = False,
 ) -> CopiedModelingReport:
     """Copy one saved markdown modeling report inside the local reports directory."""
 
@@ -950,21 +974,27 @@ def copy_modeling_report(
             "tool.name": "copy_modeling_report",
             "tool.output_name": output_name,
             "tool.new_output_name": new_output_name,
+            "tool.overwrite": overwrite,
         },
     ):
         logger.info(
-            "Tool copy_modeling_report invoked output_name=%s new_output_name=%s",
+            "Tool copy_modeling_report invoked output_name=%s new_output_name=%s overwrite=%s",
             output_name,
             new_output_name,
+            overwrite,
         )
         return copy_saved_modeling_report(
             output_name=output_name,
             new_output_name=new_output_name,
+            overwrite=overwrite,
         )
 
 
 @mcp.tool()
-def copy_latest_modeling_report_tool(new_output_name: str) -> CopiedModelingReport:
+def copy_latest_modeling_report_tool(
+    new_output_name: str,
+    overwrite: bool = False,
+) -> CopiedModelingReport:
     """Copy the most recently modified saved markdown modeling report."""
 
     with traced_operation(
@@ -972,13 +1002,15 @@ def copy_latest_modeling_report_tool(new_output_name: str) -> CopiedModelingRepo
         {
             "tool.name": "copy_latest_modeling_report",
             "tool.new_output_name": new_output_name,
+            "tool.overwrite": overwrite,
         },
     ):
         logger.info(
-            "Tool copy_latest_modeling_report_tool invoked new_output_name=%s",
+            "Tool copy_latest_modeling_report_tool invoked new_output_name=%s overwrite=%s",
             new_output_name,
+            overwrite,
         )
-        return copy_latest_modeling_report(new_output_name=new_output_name)
+        return copy_latest_modeling_report(new_output_name=new_output_name, overwrite=overwrite)
 
 
 @mcp.tool()

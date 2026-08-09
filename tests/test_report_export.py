@@ -41,6 +41,7 @@ from ds_workspace_mcp.report_export import (
     summarize_modeling_report_catalog,
     summarize_saved_modeling_report_sections,
 )
+from ds_workspace_mcp.report_storage import ReportStorage
 
 
 def write_report_export_dataset(root: Path, name: str = "report_export.csv") -> Path:
@@ -74,6 +75,65 @@ def test_resolve_report_output_path_rejects_non_markdown_name() -> None:
         )
 
 
+def test_report_storage_atomic_write_cleans_up_after_interrupted_commit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reports_dir = tmp_path / "reports"
+    storage = ReportStorage(reports_dir)
+
+    def fail_commit(_temp_path: Path, _target_path: Path, *, overwrite: bool) -> None:
+        raise RuntimeError("simulated commit failure")
+
+    monkeypatch.setattr(storage, "_commit_temp_file", fail_commit)
+
+    with pytest.raises(RuntimeError, match="simulated commit failure"):
+        storage.write_text("atomic.md", "# Partial")
+
+    assert not (reports_dir / "atomic.md").exists()
+    assert list(reports_dir.glob(".atomic.md.*.tmp")) == []
+
+
+def test_report_storage_failed_overwrite_keeps_existing_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    target = reports_dir / "atomic.md"
+    target.write_text("# Existing", encoding="utf-8")
+    storage = ReportStorage(reports_dir)
+
+    def fail_commit(_temp_path: Path, _target_path: Path, *, overwrite: bool) -> None:
+        raise RuntimeError("simulated commit failure")
+
+    monkeypatch.setattr(storage, "_commit_temp_file", fail_commit)
+
+    with pytest.raises(RuntimeError, match="simulated commit failure"):
+        storage.write_text("atomic.md", "# Replacement", overwrite=True)
+
+    assert target.read_text(encoding="utf-8") == "# Existing"
+    assert list(reports_dir.glob(".atomic.md.*.tmp")) == []
+
+
+def test_report_storage_rejects_report_symlink_escape(tmp_path: Path) -> None:
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    outside = tmp_path / "outside.md"
+    outside.write_text("# Outside", encoding="utf-8")
+    link = reports_dir / "linked.md"
+    try:
+        link.symlink_to(outside)
+    except OSError as error:
+        pytest.skip(f"symlink creation is unavailable: {error}")
+
+    storage = ReportStorage(reports_dir)
+
+    with pytest.raises(PathTraversalError, match="inside the reports directory"):
+        storage.read_text("linked.md")
+    assert storage.list_markdown_reports() == []
+
+
 def test_save_modeling_report_dataset_writes_file(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -95,6 +155,52 @@ def test_save_modeling_report_dataset_writes_file(
     assert "## Summary" in saved_path.read_text(encoding="utf-8")
 
 
+def test_save_modeling_report_dataset_rejects_duplicate_output_name(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    write_report_export_dataset(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    existing = reports_dir / "custom-report.md"
+    existing.write_text("# Existing", encoding="utf-8")
+
+    with pytest.raises(InvalidDatasetNameError, match="already exists"):
+        save_modeling_report_dataset(
+            "report_export.csv",
+            target_column="target",
+            output_name="custom-report.md",
+        )
+
+    assert existing.read_text(encoding="utf-8") == "# Existing"
+
+
+def test_save_modeling_report_dataset_supports_explicit_overwrite(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    write_report_export_dataset(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    existing = reports_dir / "custom-report.md"
+    existing.write_text("# Existing", encoding="utf-8")
+
+    result = save_modeling_report_dataset(
+        "report_export.csv",
+        target_column="target",
+        output_name="custom-report.md",
+        overwrite=True,
+    )
+
+    assert Path(result.output_path) == existing.resolve()
+    assert "## Summary" in existing.read_text(encoding="utf-8")
+    assert "# Existing" not in existing.read_text(encoding="utf-8")
+
+
 def test_list_saved_modeling_reports_returns_sorted_reports(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -109,6 +215,8 @@ def test_list_saved_modeling_reports_returns_sorted_reports(
 
     assert [report.output_name for report in reports] == ["a-report.md", "b-report.md"]
     assert reports[0].size_bytes == 2
+    assert reports[0].created_at.endswith("+00:00")
+    assert reports[0].modified_at.endswith("+00:00")
 
 
 def test_list_saved_modeling_reports_uses_configured_reports_root(
@@ -343,6 +451,31 @@ def test_save_modeling_report_section_rejects_existing_output_name(
             "summary",
             new_output_name="summary-only.md",
         )
+
+
+def test_save_modeling_report_section_supports_explicit_overwrite(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    (reports_dir / "source-report.md").write_text(
+        "# Source\n\n## Summary\nFresh body",
+        encoding="utf-8",
+    )
+    target = reports_dir / "summary-only.md"
+    target.write_text("existing", encoding="utf-8")
+
+    saved_section = save_modeling_report_section(
+        "source-report.md",
+        "summary",
+        new_output_name="summary-only.md",
+        overwrite=True,
+    )
+
+    assert Path(saved_section.output_path) == target.resolve()
+    assert target.read_text(encoding="utf-8") == "## Summary\nFresh body"
 
 
 def test_save_latest_modeling_report_section_uses_newest_report(
@@ -680,6 +813,25 @@ def test_rename_saved_modeling_report_rejects_existing_target(
         rename_saved_modeling_report("source.md", "target.md")
 
 
+def test_rename_saved_modeling_report_supports_explicit_overwrite(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    source = reports_dir / "source.md"
+    target = reports_dir / "target.md"
+    source.write_text("source", encoding="utf-8")
+    target.write_text("target", encoding="utf-8")
+
+    renamed = rename_saved_modeling_report("source.md", "target.md", overwrite=True)
+
+    assert renamed.new_output_name == "target.md"
+    assert not source.exists()
+    assert target.read_text(encoding="utf-8") == "source"
+
+
 def test_rename_saved_modeling_report_rejects_traversal(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -762,6 +914,25 @@ def test_copy_saved_modeling_report_rejects_existing_target(
         copy_saved_modeling_report("source.md", "copy.md")
 
 
+def test_copy_saved_modeling_report_supports_explicit_overwrite(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    source = reports_dir / "source.md"
+    copy = reports_dir / "copy.md"
+    source.write_text("source", encoding="utf-8")
+    copy.write_text("old copy", encoding="utf-8")
+
+    copied = copy_saved_modeling_report("source.md", "copy.md", overwrite=True)
+
+    assert copied.new_output_name == "copy.md"
+    assert source.exists()
+    assert copy.read_text(encoding="utf-8") == "source"
+
+
 def test_copy_latest_modeling_report_uses_newest_report(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -800,8 +971,10 @@ def test_inspect_saved_modeling_report_returns_metadata(
     assert metadata.output_name == "inspect-me.md"
     assert metadata.output_path == str(report_path.resolve())
     assert metadata.size_bytes > 0
+    assert metadata.created_at.endswith("+00:00")
     assert metadata.metadata_changed_at.endswith("+00:00")
     assert metadata.modified_at.endswith("+00:00")
+    assert len(metadata.content_sha256) == 64
 
 
 def test_inspect_saved_modeling_report_rejects_traversal() -> None:

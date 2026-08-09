@@ -101,6 +101,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-name",
         help="Optional markdown file name inside reports/.",
     )
+    save_report_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing report with the same output name.",
+    )
 
     subparsers.add_parser(
         "list-modeling-reports",
@@ -244,6 +249,11 @@ def build_parser() -> argparse.ArgumentParser:
         dest="new_output_name",
         help="Optional markdown file name for the extracted section inside reports/.",
     )
+    save_report_section_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing report with the same output name.",
+    )
 
     save_latest_report_section_parser = subparsers.add_parser(
         "save-latest-modeling-report-section",
@@ -257,6 +267,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-name",
         dest="new_output_name",
         help="Optional markdown file name for the extracted section inside reports/.",
+    )
+    save_latest_report_section_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing report with the same output name.",
     )
 
     compare_report_sections_parser = subparsers.add_parser(
@@ -311,6 +326,11 @@ def build_parser() -> argparse.ArgumentParser:
         "new_output_name",
         help="New markdown report file name inside reports/.",
     )
+    rename_report_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing report with the new output name.",
+    )
 
     rename_latest_report_parser = subparsers.add_parser(
         "rename-latest-modeling-report",
@@ -319,6 +339,11 @@ def build_parser() -> argparse.ArgumentParser:
     rename_latest_report_parser.add_argument(
         "new_output_name",
         help="New markdown report file name inside reports/.",
+    )
+    rename_latest_report_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing report with the new output name.",
     )
 
     copy_report_parser = subparsers.add_parser(
@@ -333,6 +358,11 @@ def build_parser() -> argparse.ArgumentParser:
         "new_output_name",
         help="New markdown report file name inside reports/.",
     )
+    copy_report_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing report with the new output name.",
+    )
 
     copy_latest_report_parser = subparsers.add_parser(
         "copy-latest-modeling-report",
@@ -341,6 +371,11 @@ def build_parser() -> argparse.ArgumentParser:
     copy_latest_report_parser.add_argument(
         "new_output_name",
         help="New markdown report file name inside reports/.",
+    )
+    copy_latest_report_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing report with the new output name.",
     )
 
     inspect_report_parser = subparsers.add_parser(
@@ -468,6 +503,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             file_name=args.file_name,
             target_column=args.target_column,
             output_name=args.output_name,
+            overwrite=args.overwrite,
         )
         print(saved_report_result.output_path)
         return 0
@@ -570,6 +606,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_name=args.output_name,
             section_heading=args.section_heading,
             new_output_name=args.new_output_name,
+            overwrite=args.overwrite,
         )
         print(saved_section.output_path)
         return 0
@@ -578,6 +615,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         latest_saved_section = save_latest_modeling_report_section(
             section_heading=args.section_heading,
             new_output_name=args.new_output_name,
+            overwrite=args.overwrite,
         )
         print(latest_saved_section.output_path)
         return 0
@@ -610,12 +648,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         renamed_report = rename_saved_modeling_report(
             output_name=args.output_name,
             new_output_name=args.new_output_name,
+            overwrite=args.overwrite,
         )
         print(renamed_report.new_output_path)
         return 0
 
     if command == "rename-latest-modeling-report":
-        renamed_report = rename_latest_modeling_report(args.new_output_name)
+        renamed_report = rename_latest_modeling_report(
+            args.new_output_name,
+            overwrite=args.overwrite,
+        )
         print(renamed_report.new_output_path)
         return 0
 
@@ -623,12 +665,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         copied_report = copy_saved_modeling_report(
             output_name=args.output_name,
             new_output_name=args.new_output_name,
+            overwrite=args.overwrite,
         )
         print(copied_report.new_output_path)
         return 0
 
     if command == "copy-latest-modeling-report":
-        copied_report = copy_latest_modeling_report(args.new_output_name)
+        copied_report = copy_latest_modeling_report(
+            args.new_output_name,
+            overwrite=args.overwrite,
+        )
         print(copied_report.new_output_path)
         return 0
 

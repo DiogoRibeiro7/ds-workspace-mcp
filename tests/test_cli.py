@@ -130,6 +130,37 @@ def test_cli_save_modeling_report(
     assert saved_path.parent.name == "reports"
 
 
+def test_cli_save_modeling_report_overwrite_flag(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("MCP_DATA_ROOT", str(tmp_path))
+    write_cli_dataset(tmp_path, "sample.csv")
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    target = reports_dir / "sample-report.md"
+    target.write_text("# Existing", encoding="utf-8")
+
+    exit_code = cli.main(
+        [
+            "save-modeling-report",
+            "sample.csv",
+            "--target-column",
+            "target",
+            "--output-name",
+            "sample-report.md",
+            "--overwrite",
+        ]
+    )
+    saved_path = Path(capsys.readouterr().out.strip())
+
+    assert exit_code == 0
+    assert saved_path == target.resolve()
+    assert "## Summary" in target.read_text(encoding="utf-8")
+
+
 def test_cli_list_modeling_reports(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
