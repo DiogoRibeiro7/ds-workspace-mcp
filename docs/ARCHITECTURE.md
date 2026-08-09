@@ -96,6 +96,16 @@ Responsibilities:
 - bounds grouping cardinality and returned rows through configured SQL row limits
 - normalizes result values for JSON output
 
+### `drift.py`
+
+Responsibilities:
+
+- compares two approved datasets through the existing safe dataset-loading path
+- separates structural schema differences from statistical drift diagnostics
+- reports added/removed columns, dtype changes, null-rate shifts, analyzed row-count changes, and bounded categorical cardinality changes
+- computes transparent numeric, categorical, and timestamp drift summaries without interpreting differences as causal effects
+- bounds comparison work through the configured SQL row limit and reports whether each side was truncated
+
 ### `sql/duckdb_engine.py`
 
 Responsibilities:

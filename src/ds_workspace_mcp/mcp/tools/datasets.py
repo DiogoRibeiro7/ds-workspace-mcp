@@ -13,11 +13,35 @@ from ds_workspace_mcp.core import (
     preview_dataset,
 )
 from ds_workspace_mcp.datasets import DatasetMetadata
+from ds_workspace_mcp.drift import DatasetComparisonResult, compare_datasets_dataset
 from ds_workspace_mcp.mcp.app import _mcp_tool
 from ds_workspace_mcp.overview import DatasetOverview, summarize_dataset_overview
 from ds_workspace_mcp.tracing import traced_operation
 
 logger = logging.getLogger(__name__)
+
+
+@_mcp_tool()
+def compare_datasets(left_file_name: str, right_file_name: str) -> DatasetComparisonResult:
+    """Compare two supported datasets for schema changes and lightweight drift."""
+
+    with traced_operation(
+        "tool.compare_datasets",
+        {
+            "tool.name": "compare_datasets",
+            "dataset.left_file_name": left_file_name,
+            "dataset.right_file_name": right_file_name,
+        },
+    ):
+        logger.info(
+            "Tool compare_datasets invoked left_file_name=%s right_file_name=%s",
+            left_file_name,
+            right_file_name,
+        )
+        return compare_datasets_dataset(
+            left_file_name=left_file_name,
+            right_file_name=right_file_name,
+        )
 
 
 @_mcp_tool()

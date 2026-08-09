@@ -717,6 +717,25 @@ Arguments:
 }
 ```
 
+#### `compare_datasets`
+
+Compare two supported datasets for structural changes and lightweight drift diagnostics.
+Schema differences and statistical drift are reported separately, and the response states
+whether the comparison used full data or a bounded head sample.
+
+Arguments:
+
+```json
+{
+  "left_file_name": "sample_clinic_usage.csv",
+  "right_file_name": "sample_clinic_usage_v2.csv"
+}
+```
+
+The result includes added/removed columns, dtype changes, null-rate changes, row-count
+changes, bounded categorical cardinality changes, numeric effect-size diagnostics,
+categorical distribution shifts, timestamp range shifts, and the sampling policy used.
+
 #### `suggest_target_columns`
 
 Suggest plausible target columns for modeling, with task-type hints and reasoning.

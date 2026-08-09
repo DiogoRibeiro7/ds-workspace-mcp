@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from ds_workspace_mcp.core import list_csv_files, profile_csv_dataset
+from ds_workspace_mcp.drift import compare_datasets_dataset
 from ds_workspace_mcp.experiment_plan import build_experiment_plan_dataset
 from ds_workspace_mcp.modeling_report import build_modeling_report_dataset
 from ds_workspace_mcp.report_export import (
@@ -67,6 +68,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Profile a CSV dataset and print the result as JSON.",
     )
     profile_parser.add_argument("file_name", help="CSV dataset file name.")
+
+    compare_datasets_parser = subparsers.add_parser(
+        "compare-datasets",
+        help="Compare two supported datasets for schema changes and drift diagnostics.",
+    )
+    compare_datasets_parser.add_argument("left_file_name", help="Baseline dataset file name.")
+    compare_datasets_parser.add_argument("right_file_name", help="Comparison dataset file name.")
 
     plan_parser = subparsers.add_parser(
         "plan-modeling",
@@ -480,6 +488,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "profile-dataset":
         profile = profile_csv_dataset(args.file_name)
         print(json.dumps(profile.model_dump(mode="json"), indent=2))
+        return 0
+
+    if command == "compare-datasets":
+        comparison = compare_datasets_dataset(
+            left_file_name=args.left_file_name,
+            right_file_name=args.right_file_name,
+        )
+        print(json.dumps(comparison.model_dump(mode="json"), indent=2))
         return 0
 
     if command == "plan-modeling":
