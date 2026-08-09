@@ -1101,6 +1101,7 @@ Profiling limits:
 - The profiler returns summaries rather than raw wide-table payloads.
 - Datetime detection is conservative to avoid misclassifying free-text columns.
 - Profile results are cached in memory by file path, size, modified time, and profiling options.
+- The profile cache is thread-safe and reports path-free hit, miss, eviction, and entry metrics.
 
 #### `detect_csv_issues`
 

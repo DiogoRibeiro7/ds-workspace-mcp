@@ -140,7 +140,7 @@ Responsibilities:
 - `auth.py`: optional shared-token auth for HTTP mode
 - `logging_config.py`: process logging setup
 - `tracing.py`: optional OpenTelemetry integration
-- `cache.py`: in-memory profile caching
+- `cache.py`: typed, thread-safe in-memory profile caching with path-free metrics
 - `exceptions.py`: stable application error categories
 - `synthetic/`: reproducible sample dataset generators
 
@@ -208,6 +208,8 @@ Responsibilities:
 
 - profile results can be cached in memory
 - cache keys include file path, size, modified time, and profiling options
+- cache configuration is applied through public methods rather than private field mutation
+- cache metrics report hits, misses, evictions, and current entry count without exposing local paths
 
 ## Design Tradeoffs
 
