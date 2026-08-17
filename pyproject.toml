@@ -53,7 +53,7 @@ packages = [{ include = "ds_workspace_mcp", from = "src" }]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"
-ruff = "^0.16.1"
+ruff = "^0.16.3"
 mypy = "^1.10.0"
 pandas-stubs = "^3.0.5"
 
