@@ -6,6 +6,13 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-28
+
+### Fixed
+
+- Restored automatic PyPI publishing for GitHub release tags using OIDC Trusted Publishing.
+- Validated release tags against the package version and documented the first-time publisher setup.
+
 ## [1.1.0] - 2026-08-09
 
 ### Added
