@@ -147,6 +147,15 @@ Responsibilities:
 - classifies time series as regular, approximately regular, irregular, insufficient, or grouped heterogeneous before counting missing intervals
 - emits baseline-readiness warnings for time-series workflows
 
+### `timeseries_resampling.py`
+
+Responsibilities:
+
+- performs read-only numeric time-series aggregation into explicit UTC intervals
+- caps generated buckets before materialization and limits preview rows separately
+- identifies intervals without source observations, including grouped series
+- provides opt-in filling for structural gaps and advice about future-data leakage
+
 ### `forecasting.py`
 
 Responsibilities:

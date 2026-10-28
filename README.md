@@ -172,7 +172,7 @@ The server reads configuration from environment variables or a local `.env` file
 - `MCP_TRANSPORT`: `stdio` or `streamable-http`. Defaults to `streamable-http`.
 - `MCP_HOST`: bind host for HTTP mode. Defaults to `127.0.0.1`.
 - `MCP_PORT`: bind port for HTTP mode. Defaults to `8000`.
-- `MCP_MAX_PREVIEW_ROWS`: maximum allowed value for `preview_csv`. Defaults to `50`.
+- `MCP_MAX_PREVIEW_ROWS`: maximum allowed preview rows for dataset and time-series tools. Defaults to `50`.
 - `MCP_MAX_SQL_ROWS`: maximum rows returned by SQL queries. Defaults to `1000`.
 - `MCP_MAX_SQL_QUERY_LENGTH`: maximum allowed SQL text length for query tools. Defaults to `20000`.
 - `MCP_SQL_TIMEOUT_MS`: maximum SQL execution time before interruption. Defaults to `5000`.
@@ -186,6 +186,7 @@ The server reads configuration from environment variables or a local `.env` file
 - `MCP_MAX_EXPORT_ROWS`: maximum rows written by a single CSV export. Defaults to `1000`.
 - `MCP_MAX_EXPORT_COLUMNS`: maximum columns written by a single CSV export. Defaults to `100`.
 - `MCP_MAX_EXPORT_BYTES`: maximum UTF-8 CSV export size. Defaults to `5000000`; `MCP_MAX_DATASET_BYTES` is also enforced.
+- `MCP_MAX_RESAMPLE_INTERVALS`: maximum generated time buckets across all groups during read-only resampling. Defaults to `5000` (allowed range `1`–`50000`).
 - `MCP_LOG_LEVEL`: server log level. Defaults to `INFO`.
 - `MCP_API_KEY`: optional shared bearer token for Streamable HTTP mode. Disabled by default.
 - `MCP_TRACING_ENABLED`: enable optional OpenTelemetry spans. Defaults to `false`.
@@ -214,6 +215,7 @@ MCP_QUERY_EXPORT_ENABLED=false
 MCP_MAX_EXPORT_ROWS=1000
 MCP_MAX_EXPORT_COLUMNS=100
 MCP_MAX_EXPORT_BYTES=5000000
+MCP_MAX_RESAMPLE_INTERVALS=5000
 MCP_LOG_LEVEL=INFO
 MCP_API_KEY=
 MCP_TRACING_ENABLED=false
@@ -1404,6 +1406,40 @@ Arguments:
 }
 ```
 
+#### `resample_time_series_dataset_tool`
+
+Produce a read-only, bounded preview of a numeric dataset time series after aggregation
+into explicit time buckets. Report empty buckets, preview the first missing timestamps,
+and suggest fill strategies with forecasting leakage cautions. No files are modified.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "time_column": "date",
+  "value_column": "appointments_completed",
+  "frequency": "1D",
+  "group_column": "clinic_id",
+  "aggregation": "sum",
+  "fill_method": "none",
+  "rows": 20
+}
+```
+
+Supported aggregation methods: `mean`, `sum`, `min`, `max`, `median`, `count`.
+Fill methods: `none` (default), `forward_fill`, `backward_fill`,
+`linear_interpolation`, `zero`. Forward filling is causal; backward filling and
+interpolation can leak future observations into forecasting. Zero filling is meaningful
+only when missing intervals really indicate zero activity.
+
+Frequencies use a positive multiplier up to `999` and one of `s`, `min`, `h`, `D`,
+`W`, `MS` (month start), or `ME` (month end), for example `15min` or `1MS`.
+Timestamps are normalized to UTC. At most 20 groups and
+`MCP_MAX_RESAMPLE_INTERVALS` generated buckets are allowed; only `rows` preview
+records are returned, capped by `MCP_MAX_PREVIEW_ROWS`. Fill operations never
+change null values belonging to observed source rows.
+
 #### `evaluate_forecast_baselines`
 
 Evaluate transparent forecasting baselines with chronological rolling-origin backtesting.
@@ -1678,6 +1714,8 @@ Time-series validation notes:
 - Missing intervals are counted only after a regular or sufficiently supported approximate fixed interval is established.
 - Grouped series infer frequency per group and avoid reporting one global frequency when groups disagree.
 - History-length warnings are heuristic and intended for baseline forecasting readiness, not strict modeling requirements.
+- Resampling requires an explicit frequency, a numeric value column, and parseable timestamps. It can aggregate duplicates and downsample; it does not rewrite datasets or silently infer values for empty buckets.
+- Gap filling is opt-in and limited to buckets with no observations. Results expose counts for observed rows and values, filled buckets, and sample missing timestamps. Future-looking fill methods are explicitly flagged.
 - Forecast baselines use chronological rolling-origin evaluation and require regular inferred frequencies.
 - Seasonal naive runs only when an explicit or inferred seasonal period is valid for the horizon and training history.
 - Forecast baseline metrics include MAE, RMSE, MASE when the denominator is valid, and sMAPE with both-zero terms contributing `0`.
