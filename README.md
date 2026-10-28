@@ -173,13 +173,19 @@ The server reads configuration from environment variables or a local `.env` file
 - `MCP_HOST`: bind host for HTTP mode. Defaults to `127.0.0.1`.
 - `MCP_PORT`: bind port for HTTP mode. Defaults to `8000`.
 - `MCP_MAX_PREVIEW_ROWS`: maximum allowed value for `preview_csv`. Defaults to `50`.
-- `MCP_MAX_SQL_ROWS`: reserved maximum row limit for upcoming SQL tools. Defaults to `1000`.
+- `MCP_MAX_SQL_ROWS`: maximum rows returned by SQL queries. Defaults to `1000`.
 - `MCP_MAX_SQL_QUERY_LENGTH`: maximum allowed SQL text length for query tools. Defaults to `20000`.
 - `MCP_SQL_TIMEOUT_MS`: maximum SQL execution time before interruption. Defaults to `5000`.
 - `MCP_MAX_CATEGORICAL_VALUES`: maximum top-value examples returned per categorical column in `profile_csv`. Defaults to `5`.
 - `MCP_MAX_DATASET_BYTES`: maximum readable dataset size in bytes. Defaults to `25000000`.
 - `MCP_PROFILE_CACHE_ENABLED`: enable or disable in-memory profile caching. Defaults to `true`.
 - `MCP_PROFILE_CACHE_MAX_ENTRIES`: maximum cached profile entries. Defaults to `128`.
+- `MCP_QUERY_CACHE_ENABLED`: cache successful DuckDB query results in memory. Defaults to `true`.
+- `MCP_QUERY_CACHE_MAX_ENTRIES`: maximum cached DuckDB query results. Defaults to `32`.
+- `MCP_QUERY_EXPORT_ENABLED`: permit bounded query results to be exported as new CSV files. Defaults to `false`.
+- `MCP_MAX_EXPORT_ROWS`: maximum rows written by a single CSV export. Defaults to `1000`.
+- `MCP_MAX_EXPORT_COLUMNS`: maximum columns written by a single CSV export. Defaults to `100`.
+- `MCP_MAX_EXPORT_BYTES`: maximum UTF-8 CSV export size. Defaults to `5000000`; `MCP_MAX_DATASET_BYTES` is also enforced.
 - `MCP_LOG_LEVEL`: server log level. Defaults to `INFO`.
 - `MCP_API_KEY`: optional shared bearer token for Streamable HTTP mode. Disabled by default.
 - `MCP_TRACING_ENABLED`: enable optional OpenTelemetry spans. Defaults to `false`.
@@ -202,6 +208,12 @@ MCP_MAX_CATEGORICAL_VALUES=5
 MCP_MAX_DATASET_BYTES=25000000
 MCP_PROFILE_CACHE_ENABLED=true
 MCP_PROFILE_CACHE_MAX_ENTRIES=128
+MCP_QUERY_CACHE_ENABLED=true
+MCP_QUERY_CACHE_MAX_ENTRIES=32
+MCP_QUERY_EXPORT_ENABLED=false
+MCP_MAX_EXPORT_ROWS=1000
+MCP_MAX_EXPORT_COLUMNS=100
+MCP_MAX_EXPORT_BYTES=5000000
 MCP_LOG_LEVEL=INFO
 MCP_API_KEY=
 MCP_TRACING_ENABLED=false
@@ -1269,6 +1281,31 @@ Arguments:
 }
 ```
 
+#### `export_query_result_to_csv`
+
+Optionally export a safe `SELECT` or `WITH` query against a CSV, Parquet, JSON or
+Excel dataset into a new UTF-8 CSV inside `MCP_DATA_ROOT`. This tool is disabled
+unless the operator explicitly sets `MCP_QUERY_EXPORT_ENABLED=true`.
+
+Arguments:
+
+```json
+{
+  "file_name": "sample_clinic_usage.csv",
+  "sql": "SELECT clinic_id, SUM(appointments_completed) AS completed FROM dataset GROUP BY clinic_id",
+  "output_name": "completed_by_clinic.csv",
+  "limit": 100
+}
+```
+
+The response reports the output file name, row and column counts, bytes written,
+and applied row limit. The export is created atomically and never overwrites an
+existing file. Only a single `.csv` file name is accepted; directories, selectors,
+and traversal are rejected. Export size is bounded by `MCP_MAX_EXPORT_BYTES` and
+`MCP_MAX_DATASET_BYTES`, with separate row and column caps. CSV contents are
+preserved exactly as data, including strings beginning with spreadsheet formula
+characters; review untrusted data before opening exports in spreadsheet software.
+
 #### `list_sqlite_databases_tool`
 
 Return the SQLite database files available in the configured data directory.
@@ -1606,6 +1643,15 @@ DuckDB query safety notes:
 - A final row limit is always applied, with `MCP_MAX_SQL_ROWS` acting as the upper bound.
 - SQL text is bounded by `MCP_MAX_SQL_QUERY_LENGTH`.
 - Interruption is requested when execution or result materialization exceeds `MCP_SQL_TIMEOUT_MS`.
+- Successful query results are cached in memory by normalized SQL, resolved dataset
+  identity, file size, file modification time, and row limit. Disable caching with
+  `MCP_QUERY_CACHE_ENABLED=false` if queries rely on volatile functions or always
+  need immediate re-execution.
+- CSV reads require UTF-8 (optional UTF-8 BOM). Empty or malformed CSV and mixed
+  encodings fail with explicit, path-free errors; header-only CSV remains valid.
+- Query result export is the only optional dataset-writing tool. It is off by
+  default, writes only new CSV files under `MCP_DATA_ROOT`, and enforces limits
+  before publishing a complete file.
 
 SQLite safety notes:
 

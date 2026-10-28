@@ -29,6 +29,10 @@ class DatasetReadError(DsWorkspaceError, RuntimeError):
     """Raised when a dataset cannot be parsed or decoded safely."""
 
 
+class DatasetExportError(DsWorkspaceError, ValueError):
+    """Raised when an opt-in CSV export is disabled or violates write limits."""
+
+
 class QueryTimeoutError(DsWorkspaceError, TimeoutError):
     """Raised when a SQL query exceeds the configured execution timeout."""
 

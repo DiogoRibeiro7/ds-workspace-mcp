@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Added
+
+- Added a bounded, opt-in DuckDB query-result CSV export tool with atomic no-overwrite writes.
+- Added a configurable in-memory LRU cache for DuckDB queries keyed by normalized SQL, dataset fingerprint, and row limit.
+
+### Changed
+
+- Improved errors for empty, malformed, and non-UTF-8 CSV files, with UTF-8 BOM support.
+- Identified the relevant row, query-length, timeout, column, and byte settings in resource-limit failures.
+
 ## [1.1.1] - 2026-10-28
 
 ### Fixed

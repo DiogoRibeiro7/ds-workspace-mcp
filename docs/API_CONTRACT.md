@@ -889,6 +889,25 @@ The following are considered non-breaking:
   - queries must reference the table name `dataset`
   - external file-access and schema-changing SQL are rejected
 
+#### `export_query_result_to_csv(file_name: str, sql: str, output_name: str, limit: int | None = None)`
+
+- Stable name: `export_query_result_to_csv`
+- Purpose: write a bounded, read-only DuckDB query result to a new UTF-8 CSV under `MCP_DATA_ROOT`
+- Stable result fields:
+  - `source_file_name: str`
+  - `output_file_name: str`
+  - `row_count: int`
+  - `column_count: int`
+  - `bytes_written: int`
+  - `limit_applied: int`
+- Stable behavior:
+  - disabled unless `MCP_QUERY_EXPORT_ENABLED=true`
+  - source can be any supported tabular dataset; SQL must reference the `dataset` relation
+  - `output_name` must be a single `.csv` basename, without directories or a selector
+  - fails if an output file already exists; never overwrites an existing file
+  - enforces `MCP_MAX_EXPORT_ROWS`, `MCP_MAX_EXPORT_COLUMNS`, `MCP_MAX_EXPORT_BYTES`, `MCP_MAX_SQL_ROWS`, and `MCP_MAX_DATASET_BYTES`
+  - publishes complete output atomically and returns no absolute paths
+
 #### `list_sqlite_databases()`
 
 - Stable name: `list_sqlite_databases`
@@ -1258,6 +1277,12 @@ These runtime settings are public and documented:
 - `MCP_MAX_DATASET_BYTES`
 - `MCP_PROFILE_CACHE_ENABLED`
 - `MCP_PROFILE_CACHE_MAX_ENTRIES`
+- `MCP_QUERY_CACHE_ENABLED`
+- `MCP_QUERY_CACHE_MAX_ENTRIES`
+- `MCP_QUERY_EXPORT_ENABLED`
+- `MCP_MAX_EXPORT_ROWS`
+- `MCP_MAX_EXPORT_COLUMNS`
+- `MCP_MAX_EXPORT_BYTES`
 - `MCP_LOG_LEVEL`
 - `MCP_API_KEY`
 - `MCP_TRACING_ENABLED`
@@ -1283,6 +1308,7 @@ User-facing failures may surface through these stable exception categories:
 - `DatasetNotFoundError`
 - `DatasetTooLargeError`
 - `DatasetReadError`
+- `DatasetExportError`
 - `QueryTimeoutError`
 - `InvalidSQLError`
 - `ProfilingError`

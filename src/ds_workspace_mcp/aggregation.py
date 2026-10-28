@@ -110,7 +110,7 @@ def aggregate_dataset(request: AggregationRequest) -> AggregationResult:
     total_group_count = _count_groups(filtered, request.group_by)
     if total_group_count > settings.mcp_max_sql_rows:
         raise InvalidAggregationError(
-            f"grouping cardinality must not exceed {settings.mcp_max_sql_rows}."
+            f"grouping cardinality must not exceed {settings.mcp_max_sql_rows} (MCP_MAX_SQL_ROWS)."
         )
 
     result_frame, metric_columns = _aggregate_frame(filtered, request.group_by, request.metrics)

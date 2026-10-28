@@ -82,6 +82,7 @@ from ds_workspace_mcp.report_export import (
     StoredModelingReport,
 )
 from ds_workspace_mcp.server import create_mcp_server
+from ds_workspace_mcp.sql.csv_export import CSVQueryExportResult
 from ds_workspace_mcp.sql.duckdb_engine import DuckDBQueryResult
 from ds_workspace_mcp.sql.sqlite_engine import (
     SQLiteColumnInfo,
@@ -127,6 +128,7 @@ EXPECTED_TOOL_NAMES = [
     "detect_possible_target_leakage",
     "evaluate_baseline_model",
     "evaluate_forecast_baselines",
+    "export_query_result_to_csv",
     "inspect_dataset_file",
     "inspect_latest_modeling_report_tool",
     "inspect_modeling_report",
@@ -253,6 +255,14 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "quality_signals",
     ],
     "ClassificationMetrics": ["accuracy", "balanced_accuracy", "macro_f1", "weighted_f1"],
+    "CSVQueryExportResult": [
+        "source_file_name",
+        "output_file_name",
+        "row_count",
+        "column_count",
+        "bytes_written",
+        "limit_applied",
+    ],
     "AggregationResult": [
         "file_name",
         "group_by",
@@ -712,6 +722,7 @@ RESULT_MODELS: list[type[BaseModel]] = [
     ComparedModelingReportSection,
     CopiedModelingReport,
     CorrelationSummary,
+    CSVQueryExportResult,
     DatasetColumnMetadata,
     DatasetComparisonResult,
     DatasetComparisonSampling,
