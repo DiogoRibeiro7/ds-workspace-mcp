@@ -63,16 +63,16 @@
 - [x] Make report save, copy, and rename operations transactional with explicit overwrite semantics.
 - [x] Create isolated FastMCP server instances through a public application factory.
 - [x] Split MCP resource, tool, and prompt registrations into domain modules.
-- [ ] Cache DuckDB query results by file fingerprint and normalized SQL, mirroring the profile cache.
-- [ ] Add explicit handling and tests for malformed, empty, and mixed-encoding CSV edge cases.
-- [ ] Surface per-tool resource limits (rows, columns, bytes) in error messages consistently.
+- [x] Cache DuckDB query results by file fingerprint and normalized SQL, mirroring the profile cache.
+- [x] Add explicit handling and tests for malformed, empty, and mixed-encoding CSV edge cases.
+- [x] Surface per-tool resource limits (rows, columns, bytes) in error messages consistently.
 
 ## v1.2 — Broader data access
 
 - [x] Support Parquet datasets through the existing safe data-root checks.
 - [x] Support Excel (`.xlsx`) and JSON datasets for preview and profiling.
 - [x] Add a safe `group_by` aggregation tool so assistants avoid hand-writing SQL.
-- [ ] Add a bounded query-result export tool that writes a new CSV back into the data directory.
+- [x] Add a bounded query-result export tool that writes a new CSV back into the data directory.
 - [x] Add a dataset comparison / schema-diff tool for column and dtype drift.
 
 ## v1.3 — Richer analytics

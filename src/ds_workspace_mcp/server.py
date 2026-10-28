@@ -69,6 +69,7 @@ from ds_workspace_mcp.mcp.tools.reports import (
 )
 from ds_workspace_mcp.mcp.tools.sql import (
     describe_sqlite_table,
+    export_query_result_to_csv,
     list_sqlite_databases_tool,
     list_sqlite_tables,
     query_csv_with_duckdb,
@@ -101,6 +102,7 @@ __all__ = [
     "detect_possible_target_leakage",
     "evaluate_baseline_model",
     "evaluate_forecast_baselines",
+    "export_query_result_to_csv",
     "get_transport",
     "inspect_latest_modeling_report_tool",
     "inspect_modeling_report",

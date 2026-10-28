@@ -18,6 +18,7 @@ from ds_workspace_mcp.config import get_settings
 from ds_workspace_mcp.core import get_dataset_registry
 from ds_workspace_mcp.datasets import DatasetFormat, DatasetRef
 from ds_workspace_mcp.exceptions import InvalidSQLError, QueryTimeoutError
+from ds_workspace_mcp.sql.query_cache import QueryCache, QueryCacheKey
 from ds_workspace_mcp.tracing import traced_operation
 
 logger = logging.getLogger(__name__)
@@ -62,6 +63,15 @@ class DuckDBQueryResult(BaseModel):
     rows: list[dict[str, object]]
     row_count: int = Field(ge=0)
     limit_applied: int = Field(ge=1)
+
+
+query_cache: QueryCache[DuckDBQueryResult] = QueryCache(enabled=True, max_entries=32)
+
+
+def reset_query_cache() -> None:
+    """Clear cached query results and counters for tests or runtime resets."""
+
+    query_cache.clear(reset_metrics=True)
 
 
 def query_csv_with_duckdb_dataset(
@@ -109,6 +119,24 @@ def query_dataset_with_duckdb(
         expected_format=expected_format,
         unsupported_message=unsupported_message,
     )
+    fingerprint = resolved.reader.fingerprint(resolved.path)
+    cache_key = QueryCacheKey(
+        path=resolved.path,
+        file_name=resolved.ref.file_name,
+        file_size=fingerprint.size_bytes,
+        modified_time_ns=fingerprint.modified_time_ns,
+        normalized_sql=normalized_sql,
+        row_limit=safe_limit,
+    )
+    query_cache.configure(
+        enabled=settings.mcp_query_cache_enabled,
+        max_entries=settings.mcp_query_cache_max_entries,
+    )
+    cached_result = query_cache.get(cache_key)
+    if cached_result is not None:
+        logger.info("Returned cached DuckDB query for file_name=%s", file_name)
+        return cached_result
+
     df = resolved.reader.load_frame(resolved.ref, resolved.path)
 
     logger.info(
@@ -167,6 +195,7 @@ def query_dataset_with_duckdb(
         len(result.columns),
         settings.mcp_sql_timeout_ms,
     )
+    query_cache.set(cache_key, result)
     return result
 
 
@@ -176,11 +205,11 @@ def _resolve_limit(limit: int | None, max_sql_rows: int) -> int:
     if limit is None:
         return max_sql_rows
 
-    if not isinstance(limit, int):
+    if type(limit) is not int:
         raise InvalidSQLError("limit must be an integer.")
 
     if limit < 1 or limit > max_sql_rows:
-        raise InvalidSQLError(f"limit must be between 1 and {max_sql_rows}.")
+        raise InvalidSQLError(f"limit must be between 1 and {max_sql_rows} (MCP_MAX_SQL_ROWS).")
 
     return limit
 
@@ -195,7 +224,9 @@ def _validate_and_normalize_sql(sql: str, max_sql_query_length: int) -> str:
 
     if len(normalized_sql) > max_sql_query_length:
         logger.warning("Rejected DuckDB query because it exceeded the configured length limit.")
-        raise InvalidSQLError(f"sql must not exceed {max_sql_query_length} characters.")
+        raise InvalidSQLError(
+            f"sql must not exceed {max_sql_query_length} characters (MCP_MAX_SQL_QUERY_LENGTH)."
+        )
 
     statements = _parse_single_statement(normalized_sql)
     if len(statements) != 1:
@@ -357,7 +388,9 @@ def _execute_query_with_timeout(
                 timeout_ms,
                 _elapsed_ms(started_at),
             )
-        raise QueryTimeoutError(f"SQL query exceeded the timeout of {timeout_ms} ms.")
+        raise QueryTimeoutError(
+            f"SQL query exceeded the timeout of {timeout_ms} ms (MCP_SQL_TIMEOUT_MS)."
+        )
 
     worker.join()
     if captured_error is not None:

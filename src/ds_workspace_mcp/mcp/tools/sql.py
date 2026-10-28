@@ -3,6 +3,10 @@ from __future__ import annotations
 import logging
 
 from ds_workspace_mcp.mcp.app import _mcp_tool
+from ds_workspace_mcp.sql.csv_export import (
+    CSVQueryExportResult,
+    export_query_result_to_csv_dataset,
+)
 from ds_workspace_mcp.sql.duckdb_engine import (
     DuckDBQueryResult,
     query_csv_with_duckdb_dataset,
@@ -80,6 +84,37 @@ def query_dataset_with_duckdb(
             limit,
         )
         return query_dataset_with_duckdb_dataset(file_name=file_name, sql=sql, limit=limit)
+
+
+@_mcp_tool()
+def export_query_result_to_csv(
+    file_name: str,
+    sql: str,
+    output_name: str,
+    limit: int | None = None,
+) -> CSVQueryExportResult:
+    """Export safe DuckDB SELECT results to a new CSV inside MCP_DATA_ROOT.
+
+    Requires MCP_QUERY_EXPORT_ENABLED=true. Output paths must be plain .csv
+    names, and existing files are never overwritten. Rows, columns and bytes
+    are independently bounded by the configured export limits.
+    """
+
+    with traced_operation(
+        "tool.export_query_result_to_csv",
+        {
+            "tool.name": "export_query_result_to_csv",
+            "dataset.file_name": file_name,
+            "dataset.output_name": output_name,
+            "tool.limit": limit,
+        },
+    ):
+        return export_query_result_to_csv_dataset(
+            file_name=file_name,
+            sql=sql,
+            output_name=output_name,
+            limit=limit,
+        )
 
 
 @_mcp_tool()

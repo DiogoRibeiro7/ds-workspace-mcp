@@ -278,7 +278,7 @@ def _resolve_limit(limit: int | None, max_sql_rows: int) -> int:
     if not isinstance(limit, int):
         raise InvalidSQLError("limit must be an integer.")
     if limit < 1 or limit > max_sql_rows:
-        raise InvalidSQLError(f"limit must be between 1 and {max_sql_rows}.")
+        raise InvalidSQLError(f"limit must be between 1 and {max_sql_rows} (MCP_MAX_SQL_ROWS).")
     return limit
 
 
@@ -294,7 +294,9 @@ def _validate_and_normalize_sql(sql: str, max_sql_query_length: int) -> str:
 
     if len(normalized_sql) > max_sql_query_length:
         logger.warning("Rejected SQLite query because it exceeded the configured length limit.")
-        raise InvalidSQLError(f"sql must not exceed {max_sql_query_length} characters.")
+        raise InvalidSQLError(
+            f"sql must not exceed {max_sql_query_length} characters (MCP_MAX_SQL_QUERY_LENGTH)."
+        )
 
     if ";" in normalized_sql:
         logger.warning("Rejected SQLite query because multiple statements were detected.")
@@ -354,7 +356,9 @@ def _execute_query_with_timeout(
                 timeout_ms,
                 _elapsed_ms(started_at),
             )
-            raise QueryTimeoutError(f"SQL query exceeded the timeout of {timeout_ms} ms.") from exc
+            raise QueryTimeoutError(
+                f"SQL query exceeded the timeout of {timeout_ms} ms (MCP_SQL_TIMEOUT_MS)."
+            ) from exc
         raise
     finally:
         connection.set_progress_handler(None, 0)

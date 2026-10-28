@@ -372,4 +372,4 @@ def _validate_preview_rows(file_name: str, rows: int) -> None:
             rows,
             max_preview_rows,
         )
-        raise ValueError(f"rows must be between 1 and {max_preview_rows}.")
+        raise ValueError(f"rows must be between 1 and {max_preview_rows} (MCP_MAX_PREVIEW_ROWS).")

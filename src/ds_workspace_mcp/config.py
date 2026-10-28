@@ -22,6 +22,12 @@ DEFAULT_MAX_CATEGORICAL_VALUES = 5
 DEFAULT_MAX_DATASET_BYTES = 25_000_000
 DEFAULT_PROFILE_CACHE_ENABLED = True
 DEFAULT_PROFILE_CACHE_MAX_ENTRIES = 128
+DEFAULT_QUERY_CACHE_ENABLED = True
+DEFAULT_QUERY_CACHE_MAX_ENTRIES = 32
+DEFAULT_QUERY_EXPORT_ENABLED = False
+DEFAULT_MAX_EXPORT_ROWS = 1000
+DEFAULT_MAX_EXPORT_COLUMNS = 100
+DEFAULT_MAX_EXPORT_BYTES = 5_000_000
 DEFAULT_LOG_LEVEL: LogLevel = "INFO"
 DEFAULT_TRACING_ENABLED = False
 DEFAULT_TRACING_SERVICE_NAME = "ds-workspace-mcp"
@@ -50,6 +56,12 @@ class Settings(BaseSettings):
     mcp_max_dataset_bytes: int = DEFAULT_MAX_DATASET_BYTES
     mcp_profile_cache_enabled: bool = DEFAULT_PROFILE_CACHE_ENABLED
     mcp_profile_cache_max_entries: int = DEFAULT_PROFILE_CACHE_MAX_ENTRIES
+    mcp_query_cache_enabled: bool = DEFAULT_QUERY_CACHE_ENABLED
+    mcp_query_cache_max_entries: int = DEFAULT_QUERY_CACHE_MAX_ENTRIES
+    mcp_query_export_enabled: bool = DEFAULT_QUERY_EXPORT_ENABLED
+    mcp_max_export_rows: int = DEFAULT_MAX_EXPORT_ROWS
+    mcp_max_export_columns: int = DEFAULT_MAX_EXPORT_COLUMNS
+    mcp_max_export_bytes: int = DEFAULT_MAX_EXPORT_BYTES
     mcp_log_level: LogLevel = DEFAULT_LOG_LEVEL
     mcp_api_key: str | None = None
     mcp_tracing_enabled: bool = DEFAULT_TRACING_ENABLED
@@ -178,6 +190,42 @@ class Settings(BaseSettings):
 
         if value < 1 or value > 1024:
             raise ValueError("MCP_PROFILE_CACHE_MAX_ENTRIES must be between 1 and 1024.")
+        return value
+
+    @field_validator("mcp_query_cache_max_entries")
+    @classmethod
+    def validate_query_cache_max_entries(cls, value: int) -> int:
+        """Constrain the number of cached query results."""
+
+        if value < 1 or value > 256:
+            raise ValueError("MCP_QUERY_CACHE_MAX_ENTRIES must be between 1 and 256.")
+        return value
+
+    @field_validator("mcp_max_export_rows")
+    @classmethod
+    def validate_max_export_rows(cls, value: int) -> int:
+        """Bound the number of rows a single export can write."""
+
+        if value < 1 or value > 10000:
+            raise ValueError("MCP_MAX_EXPORT_ROWS must be between 1 and 10000.")
+        return value
+
+    @field_validator("mcp_max_export_columns")
+    @classmethod
+    def validate_max_export_columns(cls, value: int) -> int:
+        """Bound the number of columns a single export can write."""
+
+        if value < 1 or value > 1000:
+            raise ValueError("MCP_MAX_EXPORT_COLUMNS must be between 1 and 1000.")
+        return value
+
+    @field_validator("mcp_max_export_bytes")
+    @classmethod
+    def validate_max_export_bytes(cls, value: int) -> int:
+        """Bound the encoded size of a single exported CSV file."""
+
+        if value < 1 or value > 500_000_000:
+            raise ValueError("MCP_MAX_EXPORT_BYTES must be between 1 and 500000000.")
         return value
 
 

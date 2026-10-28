@@ -11,12 +11,18 @@ from ds_workspace_mcp.config import (
     DEFAULT_LOG_LEVEL,
     DEFAULT_MAX_CATEGORICAL_VALUES,
     DEFAULT_MAX_DATASET_BYTES,
+    DEFAULT_MAX_EXPORT_BYTES,
+    DEFAULT_MAX_EXPORT_COLUMNS,
+    DEFAULT_MAX_EXPORT_ROWS,
     DEFAULT_MAX_PREVIEW_ROWS,
     DEFAULT_MAX_SQL_QUERY_LENGTH,
     DEFAULT_MAX_SQL_ROWS,
     DEFAULT_PORT,
     DEFAULT_PROFILE_CACHE_ENABLED,
     DEFAULT_PROFILE_CACHE_MAX_ENTRIES,
+    DEFAULT_QUERY_CACHE_ENABLED,
+    DEFAULT_QUERY_CACHE_MAX_ENTRIES,
+    DEFAULT_QUERY_EXPORT_ENABLED,
     DEFAULT_REPORTS_ROOT,
     DEFAULT_SQL_TIMEOUT_MS,
     DEFAULT_TRACING_CONSOLE_EXPORTER,
@@ -45,6 +51,12 @@ def test_settings_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert settings.mcp_max_dataset_bytes == DEFAULT_MAX_DATASET_BYTES
     assert settings.mcp_profile_cache_enabled is DEFAULT_PROFILE_CACHE_ENABLED
     assert settings.mcp_profile_cache_max_entries == DEFAULT_PROFILE_CACHE_MAX_ENTRIES
+    assert settings.mcp_query_cache_enabled is DEFAULT_QUERY_CACHE_ENABLED
+    assert settings.mcp_query_cache_max_entries == DEFAULT_QUERY_CACHE_MAX_ENTRIES
+    assert settings.mcp_query_export_enabled is DEFAULT_QUERY_EXPORT_ENABLED
+    assert settings.mcp_max_export_rows == DEFAULT_MAX_EXPORT_ROWS
+    assert settings.mcp_max_export_columns == DEFAULT_MAX_EXPORT_COLUMNS
+    assert settings.mcp_max_export_bytes == DEFAULT_MAX_EXPORT_BYTES
     assert settings.mcp_log_level == DEFAULT_LOG_LEVEL
     assert settings.mcp_api_key is None
     assert settings.mcp_tracing_enabled is DEFAULT_TRACING_ENABLED
@@ -67,6 +79,10 @@ def test_settings_reject_invalid_row_limits(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("MCP_MAX_CATEGORICAL_VALUES", "30")
     monkeypatch.setenv("MCP_MAX_DATASET_BYTES", "1000")
     monkeypatch.setenv("MCP_PROFILE_CACHE_MAX_ENTRIES", "0")
+    monkeypatch.setenv("MCP_QUERY_CACHE_MAX_ENTRIES", "0")
+    monkeypatch.setenv("MCP_MAX_EXPORT_ROWS", "0")
+    monkeypatch.setenv("MCP_MAX_EXPORT_COLUMNS", "0")
+    monkeypatch.setenv("MCP_MAX_EXPORT_BYTES", "0")
 
     with pytest.raises(ValidationError) as exc_info:
         Settings()
@@ -79,6 +95,10 @@ def test_settings_reject_invalid_row_limits(monkeypatch: pytest.MonkeyPatch) -> 
     assert "MCP_MAX_CATEGORICAL_VALUES" in message
     assert "MCP_MAX_DATASET_BYTES" in message
     assert "MCP_PROFILE_CACHE_MAX_ENTRIES" in message
+    assert "MCP_QUERY_CACHE_MAX_ENTRIES" in message
+    assert "MCP_MAX_EXPORT_ROWS" in message
+    assert "MCP_MAX_EXPORT_COLUMNS" in message
+    assert "MCP_MAX_EXPORT_BYTES" in message
 
 
 def test_settings_accept_custom_data_root(

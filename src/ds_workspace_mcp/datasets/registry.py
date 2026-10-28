@@ -164,5 +164,6 @@ class DatasetRegistry:
         file_size = path.stat().st_size
         if file_size > self.max_dataset_bytes:
             raise DatasetTooLargeError(
-                f"Dataset exceeds the maximum allowed size of {self.max_dataset_bytes} bytes."
+                f"Dataset exceeds the maximum allowed size of {self.max_dataset_bytes} bytes "
+                "(MCP_MAX_DATASET_BYTES)."
             )

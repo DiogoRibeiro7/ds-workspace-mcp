@@ -4,7 +4,7 @@
 
 `ds-workspace-mcp` is designed for local analytical workflows and controlled self-hosted deployments. It is not a multi-tenant service and does not implement user accounts, per-user authorization, or durable audit storage.
 
-The primary security goal is to let an MCP client inspect local datasets without granting arbitrary filesystem or SQL execution access.
+The primary security goal is to let an MCP client inspect local datasets without granting arbitrary filesystem or SQL execution access. A bounded, opt-in CSV export is the only dataset-writing capability.
 
 ## Trust Boundaries
 
@@ -38,6 +38,18 @@ The primary security goal is to let an MCP client inspect local datasets without
 - only `.sqlite`, `.sqlite3`, and `.db` files are accepted for SQLite tools.
 
 This isolates the MCP surface from arbitrary host files, but it does not protect against sensitive data being placed inside `MCP_DATA_ROOT` itself.
+
+### Optional bounded CSV export
+
+- disabled by default; requires `MCP_QUERY_EXPORT_ENABLED=true` in the server environment
+- only exports the result of a validated, bounded, read-only DuckDB `SELECT` or `WITH` query
+- output names must be single `.csv` basenames inside `MCP_DATA_ROOT`; nested paths and traversal are rejected
+- existing files and symlinks are never overwritten, including on concurrent requests
+- the result is written to a temporary file and published via exclusive atomic link creation
+- row count, column count, and UTF-8 byte size are bounded independently, and exported files cannot exceed `MCP_MAX_DATASET_BYTES`
+- return values expose the output file name and safe counts, never an absolute local path
+
+The operator must trust clients to request newly written datasets once export is enabled. Untrusted CSV values are not altered for spreadsheet formula escaping, so exports should be reviewed before opening them in spreadsheet applications.
 
 ### Read-only SQL execution
 
@@ -107,11 +119,13 @@ If the service is reachable off-host, TLS and secret management must be handled 
 - accidental destructive SQL through MCP tools
 - direct SQLite writes through server-managed connections
 - accidental over-returning of SQL rows beyond configured bounds
+- accidental overwriting of datasets through query result export
 - simple unauthorized HTTP access when `MCP_API_KEY` is configured
 
 ### Threats not fully mitigated
 
 - malicious data already present inside `MCP_DATA_ROOT`
+- unwanted new CSV files if a client is allowed to use explicitly enabled export
 - denial-of-service from very large datasets or expensive queries
 - network interception when HTTP is exposed without TLS
 - secret leakage from poor environment handling outside the app
