@@ -1750,20 +1750,20 @@ files = [
 
 [[package]]
 name = "sqlglot"
-version = "30.15.0"
+version = "30.18.0"
 description = "An easily customizable SQL parser and transpiler"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "sqlglot-30.15.0-py3-none-any.whl", hash = "sha256:594da0bc9d020edfb9982fd56b61dc93483cb24edca5ed1b3bb17937ba9b59bc"},
-    {file = "sqlglot-30.15.0.tar.gz", hash = "sha256:fe5412f4da61075f532d3de2482144bf7139028980a37bbd79fb016c49dc2dbe"},
+    {file = "sqlglot-30.18.0-py3-none-any.whl", hash = "sha256:ee0f9a9f3e2193e763c326e52dfb377b96fdb4292f6305c3ff2d9a220e71c601"},
+    {file = "sqlglot-30.18.0.tar.gz", hash = "sha256:e57e1b205e341979d1df5b1212c1435c598a0437e4619e3f428b15d5bc3a5cc6"},
 ]
 
 [package.extras]
-c = ["sqlglotc (==30.15.0) ; python_version >= \"3.10\""]
-dev = ["duckdb (>=0.6)", "mypy ; python_version < \"3.10\"", "pandas", "pandas-stubs", "pdoc", "pre-commit", "pyperf", "python-dateutil", "pytz", "ruff (==0.15.6)", "setuptools_scm", "sqlglot-mypy (>=2.1.0.post9) ; python_version >= \"3.10\"", "types-python-dateutil", "types-pytz", "typing_extensions"]
-rs = ["sqlglotc (==30.15.0) ; python_version >= \"3.10\"", "sqlglotrs (==0.13.0)"]
+c = ["sqlglotc (==30.18.0) ; python_version >= \"3.10\""]
+dev = ["duckdb (>=0.6)", "mypy ; python_version < \"3.10\"", "pandas", "pandas-stubs", "pdoc", "pre-commit", "pyperf", "python-dateutil", "pytz", "ruff (==0.15.6)", "setuptools_scm", "sqlglot-mypy (>=2.3.0.post2) ; python_version >= \"3.10\"", "types-python-dateutil", "types-pytz", "typing_extensions"]
+rs = ["sqlglotc (==30.18.0) ; python_version >= \"3.10\"", "sqlglotrs (==0.13.0)"]
 
 [[package]]
 name = "sse-starlette"
@@ -1902,4 +1902,4 @@ opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.13"
-content-hash = "311da5203bd16f113ee2dfcf21144b64739e2a9640faae3a21382c80965132b2"
+content-hash = "d181ff82324eea09fa8cdee3ac61c006a5beae09057550d502daa3c694659d1d"
