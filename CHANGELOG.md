@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-28
+
 ### Added
 
 - Added read-only, bounded time-series resampling with explicit aggregation, grouped gaps, opt-in interval filling, and leakage-aware fill suggestions.
