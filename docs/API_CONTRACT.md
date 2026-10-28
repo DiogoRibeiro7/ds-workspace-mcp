@@ -1035,6 +1035,36 @@ The following are considered non-breaking:
   - grouped validation infers frequency per group and does not force one global frequency when groups disagree
   - history sufficiency warnings are baseline-readiness guidance, not modeling guarantees
 
+#### `resample_time_series_dataset(file_name: str, time_column: str, value_column: str, frequency: str, group_column: str | None = None, aggregation: str = "mean", fill_method: str = "none", rows: int = 20)`
+
+- Stable MCP name: `resample_time_series_dataset_tool`
+- Purpose: preview read-only numeric resampling with bounded time buckets, explicit fill policy, missing-interval examples, and fill advice
+- Stable result fields:
+  - `file_name: str`
+  - `time_column: str`
+  - `value_column: str`
+  - `group_column: str | null`
+  - `frequency: str`
+  - `aggregation: "mean" | "sum" | "min" | "max" | "median" | "count"`
+  - `fill_method: "none" | "forward_fill" | "backward_fill" | "linear_interpolation" | "zero"`
+  - `source_rows: int`
+  - `source_missing_values: int`
+  - `group_count: int`
+  - `generated_intervals: int`
+  - `missing_intervals: int`
+  - `filled_intervals: int`
+  - `preview_truncated: bool`
+  - `preview_rows: list[ResampledTimePoint]`
+  - `missing_interval_examples: list[MissingIntervalExample]`
+  - `fill_suggestions: list[IntervalFillSuggestion]`
+  - `warnings: list[str]`
+- `ResampledTimePoint`: `timestamp: str`, `group: str | null`, `value: float | null`, `observed_rows: int`, `observed_values: int`, `filled: bool`
+- `MissingIntervalExample`: `timestamp: str`, `group: str | null`
+- `IntervalFillSuggestion`: `method: str`, `guidance: str`, `uses_future_values: bool`
+- Accepted frequencies use a multiplier between `1` and `999` and `s`, `min`, `h`, `D`, `W`, `MS`, or `ME`. Timestamps are normalized to UTC.
+- Resource bounds: `rows` between `1` and `MCP_MAX_PREVIEW_ROWS`, total generated buckets at most `MCP_MAX_RESAMPLE_INTERVALS` (default `5000`, maximum configurable `50000`), at most `20` distinct groups, and existing `MCP_MAX_DATASET_BYTES` for CSV reading.
+- Structural gap filling is opt-in; it does not modify source datasets or impute null values from observed rows. `backward_fill` and `linear_interpolation` may leak future observations; `zero` presumes zero events for empty intervals.
+
 #### `evaluate_forecast_baselines(file_name: str, time_column: str, target_column: str, group_column: str | None = None, forecast_horizon: int = 1, test_size: float = 0.2, seasonal_period: int | None = None)`
 
 - Stable name: `evaluate_forecast_baselines`

@@ -96,6 +96,12 @@ from ds_workspace_mcp.timeseries import (
     GroupTimeSeriesSummary,
     TimeSeriesValidationResult,
 )
+from ds_workspace_mcp.timeseries_resampling import (
+    IntervalFillSuggestion,
+    MissingIntervalExample,
+    ResampledTimePoint,
+    TimeSeriesResamplingResult,
+)
 
 EXPECTED_RESOURCE_URIS = [
     "databases://sqlite",
@@ -154,6 +160,7 @@ EXPECTED_TOOL_NAMES = [
     "read_modeling_report_section",
     "rename_latest_modeling_report_tool",
     "rename_modeling_report",
+    "resample_time_series_dataset_tool",
     "save_latest_modeling_report_section_tool",
     "save_modeling_report",
     "save_modeling_report_section_tool",
@@ -517,6 +524,7 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "frequency",
     ],
     "GroupForecastBaselineResult": ["group", "row_count", "frequency", "baselines"],
+    "IntervalFillSuggestion": ["method", "guidance", "uses_future_values"],
     "LeakageSummary": ["file_name", "target_column", "warnings"],
     "LeakageWarning": ["column", "warning_type", "description", "severity", "confidence"],
     "ModelingReadinessResult": [
@@ -556,6 +564,7 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "markdown",
         "evaluation_manifest",
     ],
+    "MissingIntervalExample": ["timestamp", "group"],
     "ModelingReportSection": ["heading", "level"],
     "ModelingReportSectionMatch": [
         "output_name",
@@ -704,6 +713,34 @@ EXPECTED_RESULT_MODEL_FIELDS = {
         "test_group_count",
         "group_overlap",
     ],
+    "ResampledTimePoint": [
+        "timestamp",
+        "group",
+        "value",
+        "observed_rows",
+        "observed_values",
+        "filled",
+    ],
+    "TimeSeriesResamplingResult": [
+        "file_name",
+        "time_column",
+        "value_column",
+        "group_column",
+        "frequency",
+        "aggregation",
+        "fill_method",
+        "source_rows",
+        "source_missing_values",
+        "group_count",
+        "generated_intervals",
+        "missing_intervals",
+        "filled_intervals",
+        "preview_truncated",
+        "preview_rows",
+        "missing_interval_examples",
+        "fill_suggestions",
+        "warnings",
+    ],
 }
 
 RESULT_MODELS: list[type[BaseModel]] = [
@@ -747,6 +784,7 @@ RESULT_MODELS: list[type[BaseModel]] = [
     FrequencyInferenceResult,
     GroupForecastBaselineResult,
     GroupTimeSeriesSummary,
+    IntervalFillSuggestion,
     LeakageSummary,
     LeakageWarning,
     ManifestConfigBounds,
@@ -759,6 +797,7 @@ RESULT_MODELS: list[type[BaseModel]] = [
     ModelingReportSection,
     ModelingReportSectionMatch,
     ModelingReportSectionSummary,
+    MissingIntervalExample,
     NullRateChange,
     NumericColumnProfile,
     NumericDrift,
@@ -769,6 +808,7 @@ RESULT_MODELS: list[type[BaseModel]] = [
     ReadModelingReport,
     ReadModelingReportSection,
     RenamedModelingReport,
+    ResampledTimePoint,
     ReportSearchMatch,
     RowCountChange,
     SavedModelingReport,
@@ -781,6 +821,7 @@ RESULT_MODELS: list[type[BaseModel]] = [
     TargetSuggestionResult,
     TimestampRangeChange,
     TimeSeriesValidationResult,
+    TimeSeriesResamplingResult,
     ValueFrequency,
     ValidationSplitMetadata,
 ]

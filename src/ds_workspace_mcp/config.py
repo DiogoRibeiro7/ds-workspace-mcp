@@ -28,6 +28,7 @@ DEFAULT_QUERY_EXPORT_ENABLED = False
 DEFAULT_MAX_EXPORT_ROWS = 1000
 DEFAULT_MAX_EXPORT_COLUMNS = 100
 DEFAULT_MAX_EXPORT_BYTES = 5_000_000
+DEFAULT_MAX_RESAMPLE_INTERVALS = 5_000
 DEFAULT_LOG_LEVEL: LogLevel = "INFO"
 DEFAULT_TRACING_ENABLED = False
 DEFAULT_TRACING_SERVICE_NAME = "ds-workspace-mcp"
@@ -62,6 +63,7 @@ class Settings(BaseSettings):
     mcp_max_export_rows: int = DEFAULT_MAX_EXPORT_ROWS
     mcp_max_export_columns: int = DEFAULT_MAX_EXPORT_COLUMNS
     mcp_max_export_bytes: int = DEFAULT_MAX_EXPORT_BYTES
+    mcp_max_resample_intervals: int = DEFAULT_MAX_RESAMPLE_INTERVALS
     mcp_log_level: LogLevel = DEFAULT_LOG_LEVEL
     mcp_api_key: str | None = None
     mcp_tracing_enabled: bool = DEFAULT_TRACING_ENABLED
@@ -226,6 +228,15 @@ class Settings(BaseSettings):
 
         if value < 1 or value > 500_000_000:
             raise ValueError("MCP_MAX_EXPORT_BYTES must be between 1 and 500000000.")
+        return value
+
+    @field_validator("mcp_max_resample_intervals")
+    @classmethod
+    def validate_max_resample_intervals(cls, value: int) -> int:
+        """Bound the total generated time buckets across all series."""
+
+        if value < 1 or value > 50_000:
+            raise ValueError("MCP_MAX_RESAMPLE_INTERVALS must be between 1 and 50000.")
         return value
 
 
